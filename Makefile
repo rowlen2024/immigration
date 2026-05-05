@@ -48,3 +48,19 @@ install:
 clean:
 	docker-compose down -v
 	rm -rf frontend/.nuxt frontend/.output frontend/node_modules
+
+# Docker 生产部署
+docker-build:
+	docker compose -f docker-compose.prod.yml build
+
+docker-up:
+	docker compose -f docker-compose.prod.yml up -d
+
+docker-down:
+	docker compose -f docker-compose.prod.yml down
+
+docker-logs:
+	docker compose -f docker-compose.prod.yml logs -f
+
+docker-restart:
+	docker compose -f docker-compose.prod.yml up -d --build
