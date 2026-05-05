@@ -1,0 +1,10 @@
+*.exe
+/.claude
+/.omc
+/.superpowers
+/backend/uploads
+/backend/*.exe
+/frontend/node_modules
+/frontend/.omc
+/frontend/.nuxt
+/frontend/.output

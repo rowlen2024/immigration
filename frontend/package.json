@@ -1,0 +1,40 @@
+{
+  "name": "mygo-immigration-frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview"
+  },
+  "dependencies": {
+    "@element-plus/nuxt": "^1.0.0",
+    "@pinia/nuxt": "^0.5.0",
+    "@tiptap/extension-code-block-lowlight": "^3.22.5",
+    "@tiptap/extension-color": "^3.22.5",
+    "@tiptap/extension-highlight": "^3.22.5",
+    "@tiptap/extension-image": "^3.22.5",
+    "@tiptap/extension-table": "^3.22.5",
+    "@tiptap/extension-table-cell": "^3.22.5",
+    "@tiptap/extension-table-header": "^3.22.5",
+    "@tiptap/extension-table-row": "^3.22.5",
+    "@tiptap/extension-text-align": "^3.22.5",
+    "@tiptap/extension-text-style": "^3.22.5",
+    "@tiptap/extension-underline": "^3.22.5",
+    "@tiptap/extension-youtube": "^3.22.5",
+    "@tiptap/starter-kit": "^3.22.5",
+    "@tiptap/vue-3": "^3.22.5",
+    "bcryptjs": "^3.0.3",
+    "element-plus": "^2.8.0",
+    "lowlight": "^3.3.0",
+    "nuxt": "~3.20.2",
+    "pinia": "^2.2.0",
+    "pinyin-pro": "^3.28.1",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "sass": "^1.78.0",
+    "typescript": "^5.5.0"
+  }
+}
