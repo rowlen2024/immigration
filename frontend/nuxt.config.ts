@@ -1,6 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  ssr: false,
+  ssr: true,
 
   css: ['~/assets/css/variables.css', '~/assets/css/global.css', '~/assets/css/admin.css'],
 
