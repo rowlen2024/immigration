@@ -8,3 +8,6 @@
 /frontend/.omc
 /frontend/.nuxt
 /frontend/.output
+
+# Production environment
+.env.production
