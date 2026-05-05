@@ -1,0 +1,5 @@
+.git
+.env
+*.out
+coverage.out
+__debug_bin
