@@ -45,12 +45,20 @@ type ProjectShowcaseConfig struct {
 	FeaturedSlugs   []string `json:"featured_slugs"`
 }
 
+// CaseShowcaseConfig holds the case showcase section settings.
+type CaseShowcaseConfig struct {
+	SectionTitle    string   `json:"section_title"`
+	SectionSubtitle string   `json:"section_subtitle"`
+	FeaturedCaseIDs []uint64 `json:"featured_case_ids"`
+}
+
 // HomeConfigData holds the parsed homepage configuration data.
 type HomeConfigData struct {
 	HeroSlides      []HeroSlide              `json:"hero_slides"`
 	AdvantageItems  []AdvantageItem          `json:"advantage_items"`
 	AdvantageSection  *AdvantageSectionConfig  `json:"advantage_section"`
 	ProjectShowcase *ProjectShowcaseConfig   `json:"project_showcase"`
+	CaseShowcase    *CaseShowcaseConfig      `json:"case_showcase"`
 }
 
 // Get returns the homepage configuration with parsed hero_slides and advantage_items.
@@ -73,6 +81,12 @@ func (s *HomeConfigService) Get() (*HomeConfigData, error) {
 		var psc ProjectShowcaseConfig
 		if err := json.Unmarshal(projCfg.ConfigValue, &psc); err == nil {
 			data.ProjectShowcase = &psc
+		}
+	}
+	if caseCfg, err := s.repo.FindByKey("case_showcase"); err == nil {
+		var csc CaseShowcaseConfig
+		if err := json.Unmarshal(caseCfg.ConfigValue, &csc); err == nil {
+			data.CaseShowcase = &csc
 		}
 	}
 

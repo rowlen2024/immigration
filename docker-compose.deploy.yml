@@ -1,0 +1,74 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mygo-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    networks:
+      - mygo-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: registry.cn-hangzhou.aliyuncs.com/your-namespace/mygo-backend:latest
+    container_name: mygo-backend
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_EXPIRY: ${JWT_ACCESS_EXPIRY:-24h}
+      JWT_REFRESH_EXPIRY: ${JWT_REFRESH_EXPIRY:-168h}
+      SERVER_PORT: "8080"
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://your-domain.com}
+      ENV: production
+    networks:
+      - mygo-net
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    image: registry.cn-hangzhou.aliyuncs.com/your-namespace/mygo-frontend:latest
+    container_name: mygo-frontend
+    restart: unless-stopped
+    environment:
+      NITRO_HOST: "0.0.0.0"
+      NITRO_PORT: "3000"
+    networks:
+      - mygo-net
+    depends_on:
+      - backend
+
+  nginx:
+    image: registry.cn-hangzhou.aliyuncs.com/your-namespace/mygo-nginx:latest
+    container_name: mygo-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - mygo-net
+    depends_on:
+      - frontend
+      - backend
+
+networks:
+  mygo-net:
+    driver: bridge
+
+volumes:
+  mysql_data:

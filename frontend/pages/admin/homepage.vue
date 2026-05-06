@@ -131,6 +131,55 @@
         </div>
       </el-card>
       </el-tab-pane>
+
+      <el-tab-pane label="案例展示区" name="cases">
+        <el-card class="config-card">
+          <template #header><h3 class="admin-card-title">案例展示区</h3></template>
+          <el-form label-width="100px">
+            <el-form-item label="区域标题">
+              <el-input v-model="caseShowcase.section_title" placeholder="成功案例" />
+            </el-form-item>
+            <el-form-item label="区域副标题">
+              <el-input v-model="caseShowcase.section_subtitle" placeholder="数百家庭的信赖之选" />
+            </el-form-item>
+            <el-form-item label="精选案例">
+              <div class="featured-area">
+                <div v-if="caseShowcase.featured_case_ids.length === 0" class="admin-empty-hint">
+                  未选择精选案例，首页将展示全部案例。
+                </div>
+                <div v-else class="config-list">
+                  <div v-for="(id, i) in caseShowcase.featured_case_ids" :key="id" class="config-item">
+                    <span class="config-item-name">{{ getCaseTitle(id) }}</span>
+                    <div class="config-item-actions">
+                      <button class="action-btn" :disabled="i === 0" @click="moveCaseFeatured(i, -1)">↑</button>
+                      <button class="action-btn" :disabled="i === caseShowcase.featured_case_ids.length - 1" @click="moveCaseFeatured(i, 1)">↓</button>
+                      <button class="action-btn danger" @click="removeCaseFeatured(i)">移除</button>
+                    </div>
+                  </div>
+                </div>
+                <el-select
+                  v-if="availableCases.length > 0"
+                  value=""
+                  placeholder="添加案例..."
+                  clearable
+                  @change="(val: number | string) => { if (val) addCaseFeatured(val as number) }"
+                  class="add-project-select"
+                >
+                  <el-option
+                    v-for="c in availableCases"
+                    :key="c.id"
+                    :label="c.name"
+                    :value="c.id"
+                  />
+                </el-select>
+              </div>
+            </el-form-item>
+          </el-form>
+          <div class="card-footer">
+            <el-button type="primary" :loading="caseSaving" @click="saveCaseShowcase">保存</el-button>
+          </div>
+        </el-card>
+      </el-tab-pane>
     </el-tabs>
 
     <!-- Slide Edit Drawer -->
@@ -222,6 +271,12 @@ interface ProjectShowcase {
   featured_slugs: string[];
 }
 
+interface CaseShowcase {
+  section_title: string;
+  section_subtitle: string;
+  featured_case_ids: number[];
+}
+
 interface ProjectOption {
   slug: string;
   name: string;
@@ -241,20 +296,37 @@ const projectShowcase = ref<ProjectShowcase>({
   featured_slugs: [],
 });
 const allProjects = ref<ProjectOption[]>([]);
+
+const caseShowcase = ref<CaseShowcase>({
+  section_title: '',
+  section_subtitle: '',
+  featured_case_ids: [],
+});
+
+interface CaseOption {
+  id: number;
+  name: string;
+}
+
+const allCases = ref<CaseOption[]>([]);
+const caseSaving = ref(false);
+
 const loading = ref(true);
 
 const load = async () => {
   loading.value = true;
   try {
     const api = useApi();
-    const [config, projects] = await Promise.all([
+    const [config, projects, casesData] = await Promise.all([
       api<{
         hero_slides: HeroSlide[];
         advantage_items: AdvantageItem[];
         advantage_section: { section_title: string; section_subtitle: string; image: string } | null;
         project_showcase: ProjectShowcase | null;
+        case_showcase: CaseShowcase | null;
       }>('/admin/home-config'),
       api<{ items: ProjectOption[] }>('/projects'),
+      api<{ items: CaseOption[] } | CaseOption[]>('/cases'),
     ]);
 
     if (config) {
@@ -266,6 +338,9 @@ const load = async () => {
       if (config.project_showcase) {
         projectShowcase.value = config.project_showcase;
       }
+      if (config.case_showcase) {
+        caseShowcase.value = config.case_showcase;
+      }
     }
 
     if (projects?.items) {
@@ -275,6 +350,18 @@ const load = async () => {
         seen.add(p.slug);
         return true;
       });
+    }
+
+    if (casesData) {
+      const items = Array.isArray(casesData) ? casesData : (casesData as { items: CaseOption[] }).items;
+      if (items) {
+        const seen = new Set<number>();
+        allCases.value = items.filter((c) => {
+          if (seen.has(c.id)) return false;
+          seen.add(c.id);
+          return true;
+        });
+      }
     }
   } finally {
     loading.value = false;
@@ -356,6 +443,50 @@ const availableProjects = computed(() => {
   const featured = new Set(projectShowcase.value.featured_slugs);
   return allProjects.value.filter((p) => !featured.has(p.slug));
 });
+
+// --- Case Showcase ---
+const availableCases = computed(() => {
+  const featured = new Set(caseShowcase.value.featured_case_ids);
+  return allCases.value.filter((c) => !featured.has(c.id));
+});
+
+function getCaseTitle(id: number): string {
+  return allCases.value.find((c) => c.id === id)?.name || String(id);
+}
+
+function moveCaseFeatured(index: number, direction: -1 | 1) {
+  const target = index + direction;
+  if (target < 0 || target >= caseShowcase.value.featured_case_ids.length) return;
+  const ids = [...caseShowcase.value.featured_case_ids];
+  [ids[index], ids[target]] = [ids[target], ids[index]];
+  caseShowcase.value.featured_case_ids = ids;
+}
+
+function removeCaseFeatured(index: number) {
+  caseShowcase.value.featured_case_ids.splice(index, 1);
+}
+
+function addCaseFeatured(id: number) {
+  if (!caseShowcase.value.featured_case_ids.includes(id)) {
+    caseShowcase.value.featured_case_ids.push(id);
+  }
+}
+
+async function saveCaseShowcase() {
+  caseSaving.value = true;
+  try {
+    const api = useApi();
+    await api('/admin/home-config', {
+      method: 'PUT',
+      body: { case_showcase: caseShowcase.value },
+    });
+    ElMessage.success('案例展示区已保存');
+  } catch {
+    ElMessage.error('保存失败');
+  } finally {
+    caseSaving.value = false;
+  }
+}
 
 function moveFeatured(index: number, direction: -1 | 1) {
   const target = index + direction;

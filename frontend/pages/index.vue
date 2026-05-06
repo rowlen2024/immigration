@@ -113,6 +113,49 @@
       </div>
     </section>
 
+    <!-- Cases Section -->
+    <section class="section cases-section">
+      <div class="container">
+        <div class="section-header">
+          <h2>{{ caseTitle }}</h2>
+          <p v-if="caseSubtitle">{{ caseSubtitle }}</p>
+        </div>
+
+        <div v-if="pending.cases" class="loading-state">
+          <div class="skeleton" style="height:360px;"></div>
+        </div>
+        <div v-else-if="error.cases" class="error-state">
+          <div class="error-card">
+            <span v-html="getIconSvg('alert-circle', 24, '#c0392b')"></span>
+            <p>加载失败，请刷新重试</p>
+          </div>
+        </div>
+        <div v-else class="cases-grid">
+          <div v-for="item in featuredCases" :key="item.id" class="case-card reveal">
+            <div class="case-image">
+              <img
+                :src="item.photo_url || ''"
+                :alt="item.name"
+                loading="lazy"
+              />
+            </div>
+            <div class="case-body">
+              <div class="case-meta">
+                <span class="case-country">{{ item.country_from }}</span>
+                <span v-if="item.project?.name" class="case-project">{{ item.project.name }}</span>
+              </div>
+              <h3 class="case-name">{{ item.name }}</h3>
+              <p class="case-desc">{{ item.description }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="!pending.cases && featuredCases.length === 0" class="empty-state">
+          暂无成功案例
+        </div>
+      </div>
+    </section>
+
     <!-- Advantages Section -->
     <section class="section advantages-section">
       <div class="container">
@@ -214,12 +257,29 @@ const { data: projectsData, pending: pendingProjects, error: errorProjectsRaw } 
   },
 });
 
+interface CaseItem {
+  id: number;
+  name: string;
+  country_from: string;
+  photo_url: string;
+  description: string;
+  project?: { name: string };
+}
+
+const { data: casesData, pending: pendingCases, error: errorCasesRaw } = await useFetch<{
+  data?: CaseItem[];
+}>('/api/v1/cases', {
+  onResponseError() {},
+});
+
 const pending = computed(() => ({
   projects: pendingProjects.value,
+  cases: pendingCases.value,
 }));
 
 const error = computed(() => ({
   projects: errorProjectsRaw.value ? '加载失败，请刷新重试' : null,
+  cases: errorCasesRaw.value ? '加载失败，请刷新重试' : null,
 }));
 
 // Override slides from API if available
@@ -251,6 +311,45 @@ const showcaseConfig = computed(() => {
     }
   }
   return null;
+});
+
+const caseShowcaseConfig = computed(() => {
+  if (homeConfig.value) {
+    const config = homeConfig.value as unknown as Record<string, unknown>;
+    const data = config.data as Record<string, unknown> | undefined;
+    if (data && data.case_showcase) {
+      return data.case_showcase as {
+        section_title?: string;
+        section_subtitle?: string;
+        featured_case_ids?: number[];
+      };
+    }
+  }
+  return null;
+});
+
+const caseTitle = computed(() => caseShowcaseConfig.value?.section_title || '成功案例');
+const caseSubtitle = computed(() => caseShowcaseConfig.value?.section_subtitle || '');
+
+const featuredCases = computed<CaseItem[]>(() => {
+  const apiData = casesData.value as { data?: CaseItem[] } | null;
+  const all = apiData?.data ?? [];
+  if (all.length === 0) return [];
+
+  const featured = caseShowcaseConfig.value?.featured_case_ids;
+  if (featured && featured.length > 0) {
+    const orderMap = new Map(featured.map((id: number, i: number) => [id, i]));
+    return all
+      .filter((c) => orderMap.has(c.id))
+      .sort((a, b) => {
+        const ai = orderMap.get(a.id);
+        const bi = orderMap.get(b.id);
+        if (ai !== undefined && bi !== undefined) return ai - bi;
+        return 0;
+      });
+  }
+
+  return all;
 });
 
 const advantageSection = computed(() => {
@@ -981,6 +1080,93 @@ onUnmounted(() => {
   }
 }
 
+/* Cases Section */
+.cases-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.case-card {
+  background-color: var(--bg-white);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.case-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
+}
+
+.case-image {
+  height: 200px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0F1E3D, #1A3A5C);
+}
+
+.case-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.case-card:hover .case-image img {
+  transform: scale(1.05);
+}
+
+.case-body {
+  padding: 24px;
+}
+
+.case-meta {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.case-country,
+.case-project {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.case-country {
+  background-color: rgba(26, 58, 92, 0.1);
+  color: var(--primary);
+}
+
+.case-project {
+  background-color: rgba(200, 150, 62, 0.1);
+  color: var(--accent-dark);
+}
+
+.case-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.case-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-light);
+  font-size: 15px;
+}
+
 /* CTA Section */
 .cta-section {
   padding: 72px 0;
@@ -1109,6 +1295,10 @@ onUnmounted(() => {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .cases-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .advantages-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1136,6 +1326,7 @@ onUnmounted(() => {
   }
 
   .project-cards,
+  .cases-grid,
   .advantages-grid {
     grid-template-columns: 1fr;
   }

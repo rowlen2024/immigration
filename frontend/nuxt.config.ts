@@ -1,7 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  ssr: true,
-
   css: ['~/assets/css/variables.css', '~/assets/css/global.css', '~/assets/css/admin.css'],
 
   modules: ['@pinia/nuxt', '@element-plus/nuxt'],
@@ -20,6 +18,23 @@ export default defineNuxtConfig({
       '/uploads': 'http://localhost:8080',
     },
     routeRules: {
+      // Pre-rendered at build time — SSR during build, static HTML at runtime
+      '/': { ssr: true, prerender: true },
+      '/projects/eb5': { ssr: true, prerender: true },
+      '/projects/cies': { ssr: true, prerender: true },
+      '/projects/panama': { ssr: true, prerender: true },
+      '/cases': { ssr: true, prerender: true },
+      '/faq': { ssr: true, prerender: true },
+      '/contact': { ssr: true, prerender: true },
+      '/compare': { ssr: true, prerender: true },
+
+      // Admin — never SSR
+      '/admin/**': { ssr: false },
+
+      // All other routes — SPA fallback (no runtime SSR)
+      '/**': { ssr: false },
+
+      // Legacy redirects
       '/usa/eb5': { redirect: '/projects/eb5' },
       '/hongkong/cies': { redirect: '/projects/cies' },
       '/panama/property': { redirect: '/projects/panama' },

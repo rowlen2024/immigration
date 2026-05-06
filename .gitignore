@@ -1,8 +1,10 @@
 *.exe
+/.idea
 /.claude
 /.omc
 /.superpowers
 /backend/uploads
+/backend/.omc
 /backend/*.exe
 /frontend/node_modules
 /frontend/.omc
