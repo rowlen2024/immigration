@@ -1,7 +1,7 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: mygo-mysql
+    container_name: immigration-mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
@@ -20,9 +20,11 @@ services:
       retries: 5
 
   backend:
-    image: registry.cn-hangzhou.aliyuncs.com/your-namespace/mygo-backend:latest
-    container_name: mygo-backend
+    image: crpi-aejpgd9d8unswtqu.cn-shenzhen.personal.cr.aliyuncs.com/immigration/backend:latest
+    container_name: immigration-backend
     restart: unless-stopped
+    volumes:
+      - ./backend/uploads:/app/uploads
     environment:
       DB_HOST: mysql
       DB_PORT: "3306"
@@ -42,8 +44,8 @@ services:
         condition: service_healthy
 
   frontend:
-    image: registry.cn-hangzhou.aliyuncs.com/your-namespace/mygo-frontend:latest
-    container_name: mygo-frontend
+    image: crpi-aejpgd9d8unswtqu.cn-shenzhen.personal.cr.aliyuncs.com/immigration/frontend:latest
+    container_name: immigration-frontend
     restart: unless-stopped
     environment:
       NITRO_HOST: "0.0.0.0"
@@ -54,8 +56,8 @@ services:
       - backend
 
   nginx:
-    image: registry.cn-hangzhou.aliyuncs.com/your-namespace/mygo-nginx:latest
-    container_name: mygo-nginx
+    image: crpi-aejpgd9d8unswtqu.cn-shenzhen.personal.cr.aliyuncs.com/immigration/nginx:latest
+    container_name: immigration-nginx
     restart: unless-stopped
     ports:
       - "80:80"

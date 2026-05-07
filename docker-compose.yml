@@ -26,6 +26,8 @@ services:
     build: ./backend
     container_name: immigration-backend
     restart: unless-stopped
+    volumes:
+      - ./backend/uploads:/app/uploads
     environment:
       DB_HOST: mysql
       DB_PORT: "3306"
