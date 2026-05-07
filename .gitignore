@@ -10,6 +10,7 @@
 /frontend/.omc
 /frontend/.nuxt
 /frontend/.output
+/frontend/dist
 
 # Production environment
 .env.production

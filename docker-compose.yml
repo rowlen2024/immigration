@@ -1,7 +1,7 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: mygo-mysql
+    container_name: immigration-mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
@@ -14,11 +14,64 @@ services:
       - mysql_data:/var/lib/mysql
       #- ./database/migrations:/docker-entrypoint-initdb.d
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    networks:
+      - mygo-net
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  backend:
+    build: ./backend
+    container_name: immigration-backend
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_EXPIRY: ${JWT_ACCESS_EXPIRY:-24h}
+      JWT_REFRESH_EXPIRY: ${JWT_REFRESH_EXPIRY:-168h}
+      SERVER_PORT: "8080"
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://your-domain.com}
+      ENV: production
+    networks:
+      - mygo-net
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    container_name: immigration-frontend
+    restart: unless-stopped
+    environment:
+      NITRO_HOST: "0.0.0.0"
+      NITRO_PORT: "3000"
+    networks:
+      - mygo-net
+    depends_on:
+      - backend
+
+  nginx:
+    build: ./nginx
+    container_name: immigration-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - mygo-net
+    depends_on:
+      - frontend
+      - backend
+
+networks:
+  mygo-net:
+    driver: bridge
 
 volumes:
   mysql_data:
