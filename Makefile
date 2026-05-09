@@ -1,12 +1,22 @@
 .PHONY: dev up down migrate seed test build clean
 
-# Start MySQL
+
+build:
+	docker-compose -f docker-compose.yml build
+
 up:
-	docker-compose up -d mysql
+	docker-compose -f docker-compose.yml up -d
 
 # Stop all services
 down:
-	docker-compose down
+	docker-compose -f docker-compose.yml down
+
+
+docker-restart:
+	docker-compose -f docker-compose.yml up -d --build
+
+docker-logs:
+	docker-compose -f docker-compose.yml logs -f
 
 # Run database migrations
 migrate:
@@ -35,9 +45,6 @@ test:
 test-cover:
 	cd backend && go test ./... -coverprofile=coverage.out && go tool cover -func=coverage.out
 
-# Build frontend
-build:
-	cd frontend && npm run build
 
 # Install dependencies
 install:
@@ -48,19 +55,3 @@ install:
 clean:
 	docker-compose down -v
 	rm -rf frontend/.nuxt frontend/.output frontend/node_modules
-
-# Docker 生产部署
-docker-build:
-	docker compose -f docker-compose.prod.yml build
-
-docker-up:
-	docker compose -f docker-compose.prod.yml up -d
-
-docker-down:
-	docker compose -f docker-compose.prod.yml down
-
-docker-logs:
-	docker compose -f docker-compose.prod.yml logs -f
-
-docker-restart:
-	docker compose -f docker-compose.prod.yml up -d --build
