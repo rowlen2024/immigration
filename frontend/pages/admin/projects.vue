@@ -443,8 +443,8 @@
           <el-form-item label="描述" prop="description">
             <el-input v-model="subForm.description" type="textarea" :rows="3" />
           </el-form-item>
-          <el-form-item label="照片URL" prop="photo_url">
-            <el-input v-model="subForm.photo_url" />
+          <el-form-item label="照片" prop="photo_url">
+            <ImageInput v-model="subForm.photo_url" placeholder="图片 URL 或上传" />
           </el-form-item>
           <el-form-item label="排序" prop="sort_order">
             <el-input-number v-model="subForm.sort_order" :min="0" />
