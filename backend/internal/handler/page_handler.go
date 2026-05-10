@@ -37,21 +37,21 @@ func (h *Handler) GetPage(c *gin.Context) {
 }
 
 func (h *Handler) AdminListPages(c *gin.Context) {
+	pageType := c.Query("page_type")
+	search := c.Query("search")
+	status := c.Query("status")
+
 	if c.Query("all") == "true" {
-		pages, err := h.svc.Page.List()
+		pages, _, err := h.svc.Page.AdminList(1, 1000, pageType, search, status)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
 			return
 		}
-		c.JSON(http.StatusOK, dto.Success(pages))
+		c.JSON(http.StatusOK, dto.SuccessPaginated(pages, 1, 1000, int64(len(pages))))
 		return
 	}
 
 	paginationPage, perPage := parsePagination(c)
-
-	pageType := c.Query("page_type")
-	search := c.Query("search")
-	status := c.Query("status")
 
 	pages, total, err := h.svc.Page.AdminList(paginationPage, perPage, pageType, search, status)
 	if err != nil {

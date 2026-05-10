@@ -70,7 +70,7 @@ func (h *Handler) AdminListProjects(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
 			return
 		}
-		c.JSON(http.StatusOK, dto.Success(projects))
+		c.JSON(http.StatusOK, dto.SuccessPaginated(projects, 1, 1000, int64(len(projects))))
 		return
 	}
 
