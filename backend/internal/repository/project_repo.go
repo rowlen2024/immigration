@@ -42,10 +42,14 @@ func (r *ProjectRepo) FindAll(page, perPage int, search, status string) ([]model
 		q = q.Where("status = ?", status)
 	}
 
-	q.Count(&total)
+	// Clone for count to avoid mutation
+	countQ := q.Session(&gorm.Session{})
+	if err := countQ.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
 
 	offset := (page - 1) * perPage
-	err := q.Session(&gorm.Session{}).Order("sort_order asc").Offset(offset).Limit(perPage).Find(&projects).Error
+	err := q.Order("sort_order asc").Offset(offset).Limit(perPage).Find(&projects).Error
 	if err != nil {
 		return nil, 0, err
 	}
