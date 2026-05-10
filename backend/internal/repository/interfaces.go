@@ -22,6 +22,9 @@ type ProjectRepository interface {
 	Create(project *model.Project) error
 	Update(project *model.Project) error
 	Delete(id uint64) error
+	FindNews(projectID uint64) ([]model.Page, error)
+	AddNews(projectID uint64, pageIDs []uint64) error
+	RemoveNews(projectID, pageID uint64) error
 }
 
 // FAQQueryParams holds optional filters for FAQ queries.

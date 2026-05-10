@@ -27,6 +27,15 @@ func (s *CaseService) List() ([]model.Case, error) {
 	return cases, nil
 }
 
+// ListByProject returns cases for a specific project.
+func (s *CaseService) ListByProject(projectID uint64) ([]model.Case, error) {
+	cases, err := s.repo.FindByProjectID(projectID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list cases by project: %w", err)
+	}
+	return cases, nil
+}
+
 // AdminList returns paginated cases.
 func (s *CaseService) AdminList(page, perPage int, search string) ([]model.Case, int64, error) {
 	if page < 1 {

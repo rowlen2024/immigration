@@ -188,6 +188,21 @@ func (s *ProjectService) Update(id uint64, project *model.Project) (*model.Proje
 }
 
 // Delete performs a soft delete on a project by ID.
+// ListNews returns news pages linked to a project.
+func (s *ProjectService) ListNews(projectID uint64) ([]model.Page, error) {
+	return s.repo.FindNews(projectID)
+}
+
+// AddNews links news pages to a project.
+func (s *ProjectService) AddNews(projectID uint64, pageIDs []uint64) error {
+	return s.repo.AddNews(projectID, pageIDs)
+}
+
+// RemoveNews unlinks a news page from a project.
+func (s *ProjectService) RemoveNews(projectID, pageID uint64) error {
+	return s.repo.RemoveNews(projectID, pageID)
+}
+
 func (s *ProjectService) Delete(id uint64) error {
 	if id == 0 {
 		return errors.New("project id is required")
