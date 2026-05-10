@@ -49,7 +49,9 @@ func (h *Handler) AdminListPages(c *gin.Context) {
 
 	paginationPage, perPage := parsePagination(c)
 
-	pages, total, err := h.svc.Page.AdminList(paginationPage, perPage, "")
+	pageType := c.Query("page_type")
+
+	pages, total, err := h.svc.Page.AdminList(paginationPage, perPage, pageType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
 		return
