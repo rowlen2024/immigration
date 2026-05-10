@@ -11,7 +11,7 @@ import (
 // mockPageRepo implements repository.PageRepository for testing.
 type mockPageRepo struct {
 	findBySlugFn          func(slug string) (*model.Page, error)
-	findAllFn             func(pageType string) ([]model.Page, error)
+	findAllFn             func(pageType, search, status string) ([]model.Page, error)
 	findByProjectIDFn     func(projectID uint64) ([]model.Page, error)
 	findAllPublishedFn    func() ([]model.Page, error)
 	findBySlugPublishedFn func(slug string) (*model.Page, error)
@@ -28,9 +28,9 @@ func (m *mockPageRepo) FindBySlug(slug string) (*model.Page, error) {
 	return nil, errors.New("not found")
 }
 
-func (m *mockPageRepo) FindAll(pageType string) ([]model.Page, error) {
+func (m *mockPageRepo) FindAll(pageType, search, status string) ([]model.Page, error) {
 	if m.findAllFn != nil {
-		return m.findAllFn(pageType)
+		return m.findAllFn(pageType, search, status)
 	}
 	return nil, nil
 }
@@ -349,14 +349,14 @@ func TestPage_AdminList_Success(t *testing.T) {
 	}
 
 	repo := &mockPageRepo{
-		findAllFn: func(pageType string) ([]model.Page, error) {
+		findAllFn: func(pageType, search, status string) ([]model.Page, error) {
 			return samplePages, nil
 		},
 	}
 
 	svc := NewPageService(repo)
 
-	pages, total, err := svc.AdminList(1, 2, "")
+	pages, total, err := svc.AdminList(1, 2, "", "", "")
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -379,14 +379,14 @@ func TestPage_AdminList_Page2(t *testing.T) {
 	}
 
 	repo := &mockPageRepo{
-		findAllFn: func(pageType string) ([]model.Page, error) {
+		findAllFn: func(pageType, search, status string) ([]model.Page, error) {
 			return samplePages, nil
 		},
 	}
 
 	svc := NewPageService(repo)
 
-	pages, total, err := svc.AdminList(2, 2, "")
+	pages, total, err := svc.AdminList(2, 2, "", "", "")
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -400,14 +400,14 @@ func TestPage_AdminList_Page2(t *testing.T) {
 
 func TestPage_AdminList_BeyondRange(t *testing.T) {
 	repo := &mockPageRepo{
-		findAllFn: func(pageType string) ([]model.Page, error) {
+		findAllFn: func(pageType, search, status string) ([]model.Page, error) {
 			return []model.Page{{ID: 1, Title: "Page A", Slug: "page-a"}}, nil
 		},
 	}
 
 	svc := NewPageService(repo)
 
-	pages, total, err := svc.AdminList(10, 10, "")
+	pages, total, err := svc.AdminList(10, 10, "", "", "")
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -421,13 +421,13 @@ func TestPage_AdminList_BeyondRange(t *testing.T) {
 
 func TestPage_AdminList_DefaultPagination(t *testing.T) {
 	repo := &mockPageRepo{
-		findAllFn: func(pageType string) ([]model.Page, error) {
+		findAllFn: func(pageType, search, status string) ([]model.Page, error) {
 			return []model.Page{}, nil
 		},
 	}
 
 	svc := NewPageService(repo)
-	_, _, err := svc.AdminList(0, 0, "")
+	_, _, err := svc.AdminList(0, 0, "", "", "")
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -435,14 +435,14 @@ func TestPage_AdminList_DefaultPagination(t *testing.T) {
 
 func TestPage_AdminList_Error(t *testing.T) {
 	repo := &mockPageRepo{
-		findAllFn: func(pageType string) ([]model.Page, error) {
+		findAllFn: func(pageType, search, status string) ([]model.Page, error) {
 			return nil, errors.New("db error")
 		},
 	}
 
 	svc := NewPageService(repo)
 
-	_, _, err := svc.AdminList(1, 10, "")
+	_, _, err := svc.AdminList(1, 10, "", "", "")
 	if err == nil {
 		t.Fatal("expected error from repo")
 	}

@@ -17,7 +17,7 @@ const defaultPerPage = 10
 func (h *Handler) ListProjects(c *gin.Context) {
 	page, perPage := parsePagination(c)
 
-	projects, total, err := h.svc.Project.List(page, perPage)
+	projects, total, err := h.svc.Project.List(page, perPage, "", "")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
 		return
@@ -61,8 +61,11 @@ func (h *Handler) CompareProjects(c *gin.Context) {
 }
 
 func (h *Handler) AdminListProjects(c *gin.Context) {
+	search := c.Query("search")
+	status := c.Query("status")
+
 	if c.Query("all") == "true" {
-		projects, _, err := h.svc.Project.AdminList(1, 1000)
+		projects, _, err := h.svc.Project.AdminList(1, 1000, search, status)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
 			return
@@ -73,7 +76,7 @@ func (h *Handler) AdminListProjects(c *gin.Context) {
 
 	page, perPage := parsePagination(c)
 
-	projects, total, err := h.svc.Project.AdminList(page, perPage)
+	projects, total, err := h.svc.Project.AdminList(page, perPage, search, status)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
 		return

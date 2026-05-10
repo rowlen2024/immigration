@@ -21,8 +21,9 @@ func (h *Handler) ListCases(c *gin.Context) {
 
 func (h *Handler) AdminListCases(c *gin.Context) {
 	page, perPage := parsePagination(c)
+	search := c.Query("search")
 
-	cases, total, err := h.svc.Case.AdminList(page, perPage)
+	cases, total, err := h.svc.Case.AdminList(page, perPage, search)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
 		return

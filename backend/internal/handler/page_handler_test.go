@@ -22,7 +22,7 @@ type handlerMockPageRepo struct {
 func (m *handlerMockPageRepo) FindBySlug(slug string) (*model.Page, error) {
 	return m.findBySlug(slug)
 }
-func (m *handlerMockPageRepo) FindAll(pageType string) ([]model.Page, error)    { return nil, nil }
+func (m *handlerMockPageRepo) FindAll(pageType, search, status string) ([]model.Page, error) { return nil, nil }
 func (m *handlerMockPageRepo) FindAllPublished() ([]model.Page, error)           { return nil, nil }
 func (m *handlerMockPageRepo) FindBySlugPublished(slug string) (*model.Page, error) {
 	return m.findBySlug(slug)

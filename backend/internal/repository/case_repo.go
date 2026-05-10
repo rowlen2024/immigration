@@ -23,12 +23,13 @@ func (r *CaseRepo) FindByProjectID(projectID uint64) ([]model.Case, error) {
 	return cases, nil
 }
 
-func (r *CaseRepo) FindAll() ([]model.Case, error) {
+func (r *CaseRepo) FindAll(search string) ([]model.Case, error) {
 	var cases []model.Case
-	err := r.db.
-		Preload("Project").
-		Order("sort_order asc").
-		Find(&cases).Error
+	q := r.db.Preload("Project").Order("sort_order asc")
+	if search != "" {
+		q = q.Where("name LIKE ? OR content LIKE ?", "%"+search+"%", "%"+search+"%")
+	}
+	err := q.Find(&cases).Error
 	if err != nil {
 		return nil, err
 	}

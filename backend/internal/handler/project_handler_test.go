@@ -17,7 +17,7 @@ import (
 // handlerMockProjectRepo implements repository.ProjectRepository.
 type handlerMockProjectRepo struct {
 	findBySlug  func(slug string) (*model.Project, error)
-	findAll     func(page, perPage int) ([]model.Project, int64, error)
+	findAll     func(page, perPage int, search, status string) ([]model.Project, int64, error)
 	findBySlugs func(slugs []string) ([]model.Project, error)
 	create      func(project *model.Project) error
 	update      func(project *model.Project) error
@@ -30,9 +30,9 @@ func (m *handlerMockProjectRepo) FindBySlug(slug string) (*model.Project, error)
 	}
 	return nil, errors.New("not found")
 }
-func (m *handlerMockProjectRepo) FindAll(page, perPage int) ([]model.Project, int64, error) {
+func (m *handlerMockProjectRepo) FindAll(page, perPage int, search, status string) ([]model.Project, int64, error) {
 	if m.findAll != nil {
-		return m.findAll(page, perPage)
+		return m.findAll(page, perPage, search, status)
 	}
 	return nil, 0, nil
 }
@@ -63,7 +63,7 @@ func (m *handlerMockProjectRepo) Delete(id uint64) error {
 
 func TestProjectHandler_ListProjects(t *testing.T) {
 	mockRepo := &handlerMockProjectRepo{
-		findAll: func(page, perPage int) ([]model.Project, int64, error) {
+		findAll: func(page, perPage int, search, status string) ([]model.Project, int64, error) {
 			return []model.Project{
 				{ID: 1, Name: "Project A", Slug: "project-a"},
 				{ID: 2, Name: "Project B", Slug: "project-b"},
@@ -221,7 +221,7 @@ func TestProjectHandler_CompareProjects_TooMany(t *testing.T) {
 
 func TestProjectHandler_AdminListProjects_Success(t *testing.T) {
 	mockRepo := &handlerMockProjectRepo{
-		findAll: func(page, perPage int) ([]model.Project, int64, error) {
+		findAll: func(page, perPage int, search, status string) ([]model.Project, int64, error) {
 			return []model.Project{
 				{ID: 1, Name: "Project A", Slug: "project-a"},
 				{ID: 2, Name: "Project B", Slug: "project-b"},
@@ -390,7 +390,7 @@ func TestProjectHandler_DeleteProject_Success(t *testing.T) {
 
 func TestProjectHandler_ListProjects_ServiceError(t *testing.T) {
 	mockRepo := &handlerMockProjectRepo{
-		findAll: func(page, perPage int) ([]model.Project, int64, error) {
+		findAll: func(page, perPage int, search, status string) ([]model.Project, int64, error) {
 			return nil, 0, errors.New("db error")
 		},
 	}

@@ -61,8 +61,8 @@ func (s *PageService) List() ([]model.Page, error) {
 	return pages, nil
 }
 
-// AdminList returns paginated pages, optionally filtered by page_type.
-func (s *PageService) AdminList(page, perPage int, pageType string) ([]model.Page, int64, error) {
+// AdminList returns paginated pages, optionally filtered by page_type, search, and status.
+func (s *PageService) AdminList(page, perPage int, pageType, search, status string) ([]model.Page, int64, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -70,7 +70,7 @@ func (s *PageService) AdminList(page, perPage int, pageType string) ([]model.Pag
 		perPage = 10
 	}
 
-	pages, err := s.repo.FindAll(pageType)
+	pages, err := s.repo.FindAll(pageType, search, status)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list pages: %w", err)
 	}

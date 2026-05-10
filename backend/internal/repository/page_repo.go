@@ -20,11 +20,17 @@ func (r *PageRepo) FindBySlug(slug string) (*model.Page, error) {
 	return &page, nil
 }
 
-func (r *PageRepo) FindAll(pageType string) ([]model.Page, error) {
+func (r *PageRepo) FindAll(pageType, search, status string) ([]model.Page, error) {
 	var pages []model.Page
 	q := r.db.Order("sort_order asc")
 	if pageType != "" {
 		q = q.Where("page_type = ?", pageType)
+	}
+	if search != "" {
+		q = q.Where("title LIKE ?", "%"+search+"%")
+	}
+	if status != "" {
+		q = q.Where("status = ?", status)
 	}
 	err := q.Find(&pages).Error
 	if err != nil {

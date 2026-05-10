@@ -10,7 +10,7 @@ import (
 // mockCaseRepo implements repository.CaseRepository for testing.
 type mockCaseRepo struct {
 	findByProjectIDFn func(projectID uint64) ([]model.Case, error)
-	findAllFn         func() ([]model.Case, error)
+	findAllFn         func(search string) ([]model.Case, error)
 	createFn          func(c *model.Case) error
 	updateFn          func(c *model.Case) error
 	deleteFn          func(id uint64) error
@@ -23,9 +23,9 @@ func (m *mockCaseRepo) FindByProjectID(projectID uint64) ([]model.Case, error) {
 	return nil, nil
 }
 
-func (m *mockCaseRepo) FindAll() ([]model.Case, error) {
+func (m *mockCaseRepo) FindAll(search string) ([]model.Case, error) {
 	if m.findAllFn != nil {
-		return m.findAllFn()
+		return m.findAllFn(search)
 	}
 	return nil, nil
 }
@@ -59,7 +59,7 @@ func TestCase_List(t *testing.T) {
 	}
 
 	repo := &mockCaseRepo{
-		findAllFn: func() ([]model.Case, error) {
+		findAllFn: func(search string) ([]model.Case, error) {
 			return sampleCases, nil
 		},
 	}
@@ -77,7 +77,7 @@ func TestCase_List(t *testing.T) {
 
 func TestCase_List_Error(t *testing.T) {
 	repo := &mockCaseRepo{
-		findAllFn: func() ([]model.Case, error) {
+		findAllFn: func(search string) ([]model.Case, error) {
 			return nil, errors.New("db error")
 		},
 	}
@@ -267,14 +267,14 @@ func TestCase_AdminList_Success(t *testing.T) {
 	}
 
 	repo := &mockCaseRepo{
-		findAllFn: func() ([]model.Case, error) {
+		findAllFn: func(search string) ([]model.Case, error) {
 			return sampleCases, nil
 		},
 	}
 
 	svc := NewCaseService(repo)
 
-	cases, total, err := svc.AdminList(1, 2)
+	cases, total, err := svc.AdminList(1, 2, "")
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -297,14 +297,14 @@ func TestCase_AdminList_Page2(t *testing.T) {
 	}
 
 	repo := &mockCaseRepo{
-		findAllFn: func() ([]model.Case, error) {
+		findAllFn: func(search string) ([]model.Case, error) {
 			return sampleCases, nil
 		},
 	}
 
 	svc := NewCaseService(repo)
 
-	cases, total, err := svc.AdminList(2, 2)
+	cases, total, err := svc.AdminList(2, 2, "")
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -318,14 +318,14 @@ func TestCase_AdminList_Page2(t *testing.T) {
 
 func TestCase_AdminList_BeyondRange(t *testing.T) {
 	repo := &mockCaseRepo{
-		findAllFn: func() ([]model.Case, error) {
+		findAllFn: func(search string) ([]model.Case, error) {
 			return []model.Case{{ID: 1, Name: "Case A"}}, nil
 		},
 	}
 
 	svc := NewCaseService(repo)
 
-	cases, total, err := svc.AdminList(5, 10)
+	cases, total, err := svc.AdminList(5, 10, "")
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -339,13 +339,13 @@ func TestCase_AdminList_BeyondRange(t *testing.T) {
 
 func TestCase_AdminList_DefaultPagination(t *testing.T) {
 	repo := &mockCaseRepo{
-		findAllFn: func() ([]model.Case, error) {
+		findAllFn: func(search string) ([]model.Case, error) {
 			return []model.Case{}, nil
 		},
 	}
 
 	svc := NewCaseService(repo)
-	_, _, err := svc.AdminList(0, 0)
+	_, _, err := svc.AdminList(0, 0, "")
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -353,14 +353,14 @@ func TestCase_AdminList_DefaultPagination(t *testing.T) {
 
 func TestCase_AdminList_RepoError(t *testing.T) {
 	repo := &mockCaseRepo{
-		findAllFn: func() ([]model.Case, error) {
+		findAllFn: func(search string) ([]model.Case, error) {
 			return nil, errors.New("db error")
 		},
 	}
 
 	svc := NewCaseService(repo)
 
-	_, _, err := svc.AdminList(1, 10)
+	_, _, err := svc.AdminList(1, 10, "")
 	if err == nil {
 		t.Fatal("expected error from repo")
 	}

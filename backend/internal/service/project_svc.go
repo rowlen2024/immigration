@@ -33,14 +33,14 @@ func (s *ProjectService) GetBySlug(slug string) (*model.Project, error) {
 }
 
 // List returns paginated projects.
-func (s *ProjectService) List(page, perPage int) ([]model.Project, int64, error) {
+func (s *ProjectService) List(page, perPage int, search, status string) ([]model.Project, int64, error) {
 	if page < 1 {
 		page = 1
 	}
 	if perPage < 1 || perPage > 100 {
 		perPage = 10
 	}
-	projects, total, err := s.repo.FindAll(page, perPage)
+	projects, total, err := s.repo.FindAll(page, perPage, search, status)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list projects: %w", err)
 	}
@@ -48,8 +48,8 @@ func (s *ProjectService) List(page, perPage int) ([]model.Project, int64, error)
 }
 
 // AdminList returns paginated projects (alias for List).
-func (s *ProjectService) AdminList(page, perPage int) ([]model.Project, int64, error) {
-	return s.List(page, perPage)
+func (s *ProjectService) AdminList(page, perPage int, search, status string) ([]model.Project, int64, error) {
+	return s.List(page, perPage, search, status)
 }
 
 // Compare returns multiple projects by their slugs for side-by-side comparison.

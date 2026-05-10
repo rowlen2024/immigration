@@ -20,7 +20,7 @@ func NewCaseService(repo repository.CaseRepository) *CaseService {
 
 // List returns all cases.
 func (s *CaseService) List() ([]model.Case, error) {
-	cases, err := s.repo.FindAll()
+	cases, err := s.repo.FindAll("")
 	if err != nil {
 		return nil, fmt.Errorf("failed to list cases: %w", err)
 	}
@@ -28,7 +28,7 @@ func (s *CaseService) List() ([]model.Case, error) {
 }
 
 // AdminList returns paginated cases.
-func (s *CaseService) AdminList(page, perPage int) ([]model.Case, int64, error) {
+func (s *CaseService) AdminList(page, perPage int, search string) ([]model.Case, int64, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -36,7 +36,7 @@ func (s *CaseService) AdminList(page, perPage int) ([]model.Case, int64, error) 
 		perPage = 10
 	}
 
-	cases, err := s.repo.FindAll()
+	cases, err := s.repo.FindAll(search)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list cases: %w", err)
 	}

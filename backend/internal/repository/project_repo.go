@@ -28,18 +28,22 @@ func (r *ProjectRepo) FindBySlug(slug string) (*model.Project, error) {
 	return &project, nil
 }
 
-func (r *ProjectRepo) FindAll(page, perPage int) ([]model.Project, int64, error) {
+func (r *ProjectRepo) FindAll(page, perPage int, search, status string) ([]model.Project, int64, error) {
 	var projects []model.Project
 	var total int64
 
-	r.db.Model(&model.Project{}).Count(&total)
+	q := r.db.Model(&model.Project{})
+	if search != "" {
+		q = q.Where("name LIKE ?", "%"+search+"%")
+	}
+	if status != "" {
+		q = q.Where("status = ?", status)
+	}
+
+	q.Count(&total)
 
 	offset := (page - 1) * perPage
-	err := r.db.
-		Order("sort_order asc").
-		Offset(offset).
-		Limit(perPage).
-		Find(&projects).Error
+	err := q.Session(&gorm.Session{}).Order("sort_order asc").Offset(offset).Limit(perPage).Find(&projects).Error
 	if err != nil {
 		return nil, 0, err
 	}
