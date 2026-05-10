@@ -240,6 +240,46 @@ func TestProjectHandler_CompareProjects_TooMany(t *testing.T) {
 	}
 }
 
+func TestProjectHandler_CompareProjects_ThreeWay(t *testing.T) {
+	mockRepo := &handlerMockProjectRepo{
+		findBySlugs: func(slugs []string) ([]model.Project, error) {
+			return []model.Project{
+				{ID: 1, Name: "Project A", Slug: "a", InvestmentAmount: "100万", ProcessingPeriod: "12月", TargetCrowd: "投资者"},
+				{ID: 2, Name: "Project B", Slug: "b", InvestmentAmount: "200万", ProcessingPeriod: "24月", TargetCrowd: "企业家"},
+				{ID: 3, Name: "Project C", Slug: "c", InvestmentAmount: "300万", ProcessingPeriod: "36月", TargetCrowd: "高净值"},
+			}, nil
+		},
+	}
+	projectSvc := service.NewProjectService(mockRepo)
+	h := &Handler{svc: &service.Service{Project: projectSvc}}
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = makeGetRequest("/api/v1/projects/compare?slugs=a,b,c")
+
+	h.CompareProjects(c)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d, body: %s", w.Code, w.Body.String())
+	}
+
+	var body map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	data := body["data"].(map[string]interface{})
+	projects := data["projects"].([]interface{})
+	if len(projects) != 3 {
+		t.Errorf("expected 3 projects in response, got %d", len(projects))
+	}
+	rows := data["rows"].([]interface{})
+	firstRow := rows[0].(map[string]interface{})
+	values := firstRow["values"].([]interface{})
+	if len(values) != 3 {
+		t.Errorf("expected 3 values per row, got %d", len(values))
+	}
+}
+
 func TestProjectHandler_AdminListProjects_Success(t *testing.T) {
 	mockRepo := &handlerMockProjectRepo{
 		findAll: func(page, perPage int, search, status string) ([]model.Project, int64, error) {
