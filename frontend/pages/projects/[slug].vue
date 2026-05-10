@@ -47,6 +47,42 @@
           <ProjectFAQAccordion :items="faqs" />
         </section>
 
+        <section v-if="project.cases.length > 0" class="detail-section">
+          <h2 class="detail-section-title">成功案例</h2>
+          <div class="case-grid">
+            <div v-for="c in project.cases" :key="c.name" class="case-card">
+              <img v-if="c.photo" :src="c.photo" :alt="c.name" class="case-photo" />
+              <div class="case-body">
+                <h4 class="case-name">{{ c.name }}</h4>
+                <p class="case-meta">{{ c.country }} | {{ c.amount }} | {{ c.period }}</p>
+                <p v-if="c.description" class="case-desc">{{ c.description }}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section v-if="project.news.length > 0" class="detail-section">
+          <h2 class="detail-section-title">最新资讯</h2>
+          <div class="news-list">
+            <NuxtLink v-for="n in project.news" :key="n.id" :to="`/pages/${n.slug}`" class="news-item">
+              <img v-if="n.cover" :src="n.cover" :alt="n.title" class="news-cover" />
+              <div class="news-body">
+                <h4 class="news-title">{{ n.title }}</h4>
+                <span v-if="n.date" class="news-date">{{ new Date(n.date).toLocaleDateString('zh-CN') }}</span>
+              </div>
+            </NuxtLink>
+          </div>
+        </section>
+
+        <section v-if="project.compare_config && project.compare_config.compare_with.length >= 2" class="detail-section">
+          <h2 class="detail-section-title">项目对比</h2>
+          <div class="compare-link-wrap">
+            <NuxtLink :to="`/compare?slugs=${project.compare_config.compare_with.join(',')}`" class="btn-primary">
+              查看对比详情
+            </NuxtLink>
+          </div>
+        </section>
+
         <section class="detail-cta">
           <h3>对{{ project.title }}感兴趣？</h3>
           <p>立即联系我们，专业顾问为您一对一解答</p>
@@ -65,6 +101,9 @@ interface ApiRequirement { label: string; is_required: boolean; }
 interface ApiCostItem { name: string; amount: string; note: string; }
 interface ApiTimelinePhase { phase_number: number; title: string; description: string; duration: string; }
 interface ApiFAQ { question: string; answer: string; }
+interface ApiCase { name: string; country_from: string; investment_amount: string; processing_period: string; description: string; photo_url: string; }
+interface ApiNewsPage { id: number; title: string; slug: string; cover_image: string; created_at: string; }
+interface ApiCompareConfig { compare_with: string[]; compare_fields: string[]; }
 
 interface ApiProject {
   name: string;
@@ -84,6 +123,9 @@ interface ApiProject {
   cost_items: ApiCostItem[];
   timeline_phases: ApiTimelinePhase[];
   faqs: ApiFAQ[];
+  cases: ApiCase[];
+  news: ApiNewsPage[];
+  compare_config: ApiCompareConfig | null;
 }
 
 const { data, pending, error } = await useFetch<{ data: ApiProject }>(`/api/v1/projects/${slug}`);
@@ -107,6 +149,22 @@ const project = computed(() => {
       period: t.duration,
     })),
     faqs: (p?.faqs || []).map((f) => ({ question: f.question, answer: f.answer })),
+    cases: (p?.cases || []).map((c) => ({
+      name: c.name,
+      country: c.country_from,
+      amount: c.investment_amount,
+      period: c.processing_period,
+      description: c.description,
+      photo: c.photo_url,
+    })),
+    news: (p?.news || []).map((n) => ({
+      id: n.id,
+      title: n.title,
+      slug: n.slug,
+      cover: n.cover_image,
+      date: n.created_at,
+    })),
+    compare_config: p?.compare_config || null,
   };
 });
 
@@ -223,6 +281,97 @@ const faqs = computed(() => project.value.faqs);
 
 .error-state {
   color: #c62828;
+}
+
+.case-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.case-card {
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.case-photo {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.case-body {
+  padding: 16px;
+}
+
+.case-name {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.case-meta {
+  font-size: 13px;
+  color: var(--text-light);
+  margin-bottom: 8px;
+}
+
+.case-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.news-item {
+  display: flex;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.2s;
+}
+
+.news-item:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.news-cover {
+  width: 120px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.news-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.news-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.news-date {
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+.compare-link-wrap {
+  text-align: center;
 }
 
 @media (max-width: 767px) {
