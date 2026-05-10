@@ -52,8 +52,8 @@
             <tbody>
               <tr v-for="row in comparison.rows" :key="row.label">
                 <td class="row-label">{{ row.label }}</td>
-                <td :class="getColClass(row.a, row.b, 'a')">{{ row.a }}</td>
-                <td :class="getColClass(row.a, row.b, 'b')">{{ row.b }}</td>
+                <td class="col-a">{{ row.values[0] }}</td>
+                <td class="col-b">{{ row.values[1] }}</td>
               </tr>
             </tbody>
           </table>
@@ -102,7 +102,7 @@ const sameProjectWarning = computed(() =>
 
 interface ComparisonData {
   projects: Array<{ title: string; slug: string }>;
-  rows: Array<{ label: string; a: string; b: string }>;
+  rows: Array<{ label: string; values: string[] }>;
 }
 
 const {
@@ -136,10 +136,6 @@ const onSelect = () => {
   }
 };
 
-const getColClass = (_valueA: string, _valueB: string, col: 'a' | 'b') => {
-  if (col === 'a') return 'col-a';
-  return 'col-b';
-};
 
 // Trigger initial fetch if both selected from query params
 const route = useRoute();
