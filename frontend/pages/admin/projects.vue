@@ -346,15 +346,18 @@
 
         <el-tab-pane label="项目对比" name="compare">
           <div style="margin-bottom: 12px">
-            <el-button type="primary" size="small" @click="saveCompareConfig">保存对比配置</el-button>
+            <el-button type="primary" size="small" :disabled="compareConfig.compare_with.length < 2" @click="saveCompareConfig">保存对比配置</el-button>
           </div>
           <el-form label-position="top">
             <el-form-item label="对比项目（至少 2 个）">
               <el-select v-model="compareConfig.compare_with" multiple filterable placeholder="选择对比项目" style="width: 100%">
                 <el-option v-for="p in projectOptions" :key="p.slug" :label="p.name" :value="p.slug" />
               </el-select>
-              <div style="font-size: 12px; color: var(--el-text-color-secondary); margin-top: 4px">
+              <div v-if="compareConfig.compare_with.length < 2" style="font-size: 12px; color: var(--el-color-danger); margin-top: 4px">
                 当前项目默认在内，请至少追加 1 个其他项目
+              </div>
+              <div v-else style="font-size: 12px; color: var(--el-text-color-secondary); margin-top: 4px">
+                已选择 {{ compareConfig.compare_with.length }} 个项目
               </div>
             </el-form-item>
             <el-form-item label="对比属性">
