@@ -48,6 +48,11 @@ func (r *CaseRepo) Delete(id uint64) error {
 	return r.db.Delete(&model.Case{}, id).Error
 }
 
+// HardDelete permanently removes a case record (bypasses soft delete).
+func (r *CaseRepo) HardDelete(id uint64) error {
+	return r.db.Unscoped().Delete(&model.Case{}, id).Error
+}
+
 func (r *CaseRepo) Count() (int64, error) {
 	var c int64
 	err := r.db.Model(&model.Case{}).Count(&c).Error
