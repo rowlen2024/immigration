@@ -11,6 +11,7 @@
 /frontend/.nuxt
 /frontend/.output
 /frontend/dist
+/docs/superpowers
 
 # Production environment
 .env.production

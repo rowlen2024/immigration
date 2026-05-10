@@ -119,7 +119,7 @@
             />
           </el-select>
           <div v-if="form.page_id" class="link-preview">
-            链接预览：<code>/{{ selectedPageSlug }}</code>
+            链接预览：<code>/pages/{{ selectedPageSlug }}</code>
           </div>
         </el-form-item>
 
