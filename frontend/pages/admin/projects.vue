@@ -902,7 +902,7 @@ const loadProjectOptions = async () => {
 const saveCompareConfig = async () => {
   if (!editingId.value) return;
   if (compareConfig.compare_with.length < 2) {
-    ElMessage.warning('请至少选择 2 个对比项目');
+    ElMessage({ message: '请至少选择 2 个对比项目', type: 'warning', zIndex: 9999 });
     return;
   }
   try {
