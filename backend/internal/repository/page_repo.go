@@ -20,15 +20,35 @@ func (r *PageRepo) FindBySlug(slug string) (*model.Page, error) {
 	return &page, nil
 }
 
-func (r *PageRepo) FindAll() ([]model.Page, error) {
+func (r *PageRepo) FindAll(pageType string) ([]model.Page, error) {
 	var pages []model.Page
-	err := r.db.
-		Order("sort_order asc").
-		Find(&pages).Error
+	q := r.db.Order("sort_order asc")
+	if pageType != "" {
+		q = q.Where("page_type = ?", pageType)
+	}
+	err := q.Find(&pages).Error
 	if err != nil {
 		return nil, err
 	}
 	return pages, nil
+}
+
+func (r *PageRepo) FindAllPublished() ([]model.Page, error) {
+	var pages []model.Page
+	err := r.db.Where("status = ?", "published").Order("sort_order asc").Find(&pages).Error
+	if err != nil {
+		return nil, err
+	}
+	return pages, nil
+}
+
+func (r *PageRepo) FindBySlugPublished(slug string) (*model.Page, error) {
+	var page model.Page
+	err := r.db.Where("slug = ? AND status = ?", slug, "published").First(&page).Error
+	if err != nil {
+		return nil, err
+	}
+	return &page, nil
 }
 
 func (r *PageRepo) FindByProjectID(projectID uint64) ([]model.Page, error) {
