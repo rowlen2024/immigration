@@ -35,33 +35,34 @@ var sanitizer = func() *bluemonday.Policy {
 	p.AllowAttrs("class").OnElements("table", "thead", "tbody", "tr", "img", "a")
 	p.AllowStyles("color", "background-color", "text-align").OnElements("span", "td", "th")
 	p.AllowURLSchemes("http", "https", "mailto")
+	p.AllowRelativeURLs(true)
 	p.RequireNoFollowOnLinks(true)
 	return p
 }()
 
-// GetBySlug returns a page by its slug.
+// GetBySlug returns a published page by its slug.
 func (s *PageService) GetBySlug(slug string) (*model.Page, error) {
 	if slug == "" {
 		return nil, errors.New("slug is required")
 	}
-	page, err := s.repo.FindBySlug(slug)
+	page, err := s.repo.FindBySlugPublished(slug)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get page by slug: %w", err)
 	}
 	return page, nil
 }
 
-// List returns all pages.
+// List returns all published pages.
 func (s *PageService) List() ([]model.Page, error) {
-	pages, err := s.repo.FindAll()
+	pages, err := s.repo.FindAllPublished()
 	if err != nil {
 		return nil, fmt.Errorf("failed to list pages: %w", err)
 	}
 	return pages, nil
 }
 
-// AdminList returns paginated pages.
-func (s *PageService) AdminList(page, perPage int) ([]model.Page, int64, error) {
+// AdminList returns paginated pages, optionally filtered by page_type.
+func (s *PageService) AdminList(page, perPage int, pageType string) ([]model.Page, int64, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -69,7 +70,7 @@ func (s *PageService) AdminList(page, perPage int) ([]model.Page, int64, error) 
 		perPage = 10
 	}
 
-	pages, err := s.repo.FindAll()
+	pages, err := s.repo.FindAll(pageType)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list pages: %w", err)
 	}

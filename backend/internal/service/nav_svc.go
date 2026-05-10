@@ -232,7 +232,7 @@ func (s *NavService) lookupPageSlug(id uint64) string {
 	}
 	pageSlugMu.RUnlock()
 
-	pages, _ := s.pageRepo.FindAll()
+	pages, _ := s.pageRepo.FindAll("")
 
 	pageSlugMu.Lock()
 	for _, p := range pages {
