@@ -76,10 +76,25 @@
 
         <section v-if="project.compare_config && project.compare_config.compare_with.length >= 2" class="detail-section">
           <h2 class="detail-section-title">项目对比</h2>
-          <div class="compare-link-wrap">
-            <NuxtLink :to="`/compare?slugs=${project.compare_config.compare_with.join(',')}`" class="btn-primary">
-              查看对比详情
-            </NuxtLink>
+          <div v-if="comparePending" class="compare-loading">加载对比数据...</div>
+          <div v-else-if="compareError" class="compare-error">{{ compareError }}</div>
+          <div v-else-if="compareData" class="compare-table-wrap">
+            <table class="compare-table">
+              <thead>
+                <tr>
+                  <th class="compare-label-col">对比项目</th>
+                  <th v-for="(proj, i) in compareData.projects" :key="i" class="compare-col-header">
+                    {{ proj.title }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in compareData.rows" :key="row.label">
+                  <td class="compare-label">{{ row.label }}</td>
+                  <td v-for="(val, j) in row.values" :key="j" class="compare-value">{{ val }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </section>
 
@@ -167,6 +182,42 @@ const project = computed(() => {
     compare_config: p?.compare_config || null,
   };
 });
+
+// Compare data fetch
+interface CompareRowData {
+  label: string;
+  values: string[];
+}
+
+interface CompareTableData {
+  projects: Array<{ title: string; slug: string }>;
+  rows: CompareRowData[];
+}
+
+const compareSlugs = computed(() => {
+  const cfg = project.value.compare_config;
+  if (!cfg || !cfg.compare_with || cfg.compare_with.length < 2) return '';
+  return cfg.compare_with.join(',');
+});
+
+const {
+  data: compareRaw,
+  pending: comparePending,
+  error: compareErrorRaw,
+} = useFetch<{ data: CompareTableData }>(
+  () => `/api/v1/projects/compare?slugs=${compareSlugs.value}`,
+);
+
+const compareData = computed<CompareTableData | null>(() => {
+  const raw = compareRaw.value as any;
+  if (raw?.data?.rows) return raw.data;
+  if (raw?.rows) return raw as CompareTableData;
+  return null;
+});
+
+const compareError = computed(() =>
+  compareErrorRaw.value ? '加载对比数据失败' : null
+);
 
 useSeo({
   title: project.value.title || '项目详情',
@@ -370,8 +421,93 @@ const faqs = computed(() => project.value.faqs);
   color: var(--text-light);
 }
 
-.compare-link-wrap {
+.compare-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: max-content;
+}
+
+.compare-table thead {
+  background-color: var(--primary);
+  color: var(--bg-white);
+}
+
+.compare-table thead th {
+  padding: 14px 16px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.compare-table thead th:first-child {
+  border-radius: var(--radius-md) 0 0 0;
+}
+
+.compare-table thead th:last-child {
+  border-radius: 0 var(--radius-md) 0 0;
+}
+
+.compare-label-col {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background-color: var(--primary);
+  min-width: 120px;
+}
+
+.compare-col-header {
+  min-width: 180px;
+}
+
+.compare-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.compare-table tbody tr:nth-child(even) {
+  background-color: var(--bg-light);
+}
+
+.compare-label {
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 120px;
+}
+
+.compare-table tbody tr:nth-child(even) .compare-label {
+  background-color: var(--bg-light);
+}
+
+.compare-table tbody tr:nth-child(odd) .compare-label {
+  background-color: var(--bg-white);
+}
+
+.compare-value {
+  min-width: 180px;
+}
+
+.compare-loading,
+.compare-error {
   text-align: center;
+  padding: 24px;
+  color: var(--text-light);
+  font-size: 14px;
+}
+
+.compare-error {
+  color: #c62828;
 }
 
 @media (max-width: 767px) {
