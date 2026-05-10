@@ -23,6 +23,7 @@ type Service struct {
 	Requirement   *RequirementService
 	CostItem      *CostItemService
 	TimelinePhase *TimelinePhaseService
+	CompareConfig *CompareConfigService
 }
 
 func New(repo *repository.Repository, cfg *config.Config) *Service {
@@ -42,6 +43,7 @@ func New(repo *repository.Repository, cfg *config.Config) *Service {
 		Requirement:   &RequirementService{repo: repo.Requirement},
 		CostItem:      &CostItemService{repo: repo.CostItem},
 		TimelinePhase: &TimelinePhaseService{repo: repo.TimelinePhase},
+		CompareConfig: &CompareConfigService{repo: repo.CompareConfig},
 	}
 }
 
