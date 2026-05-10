@@ -84,6 +84,14 @@ type CaseRepository interface {
 	Create(c *model.Case) error
 	Update(c *model.Case) error
 	Delete(id uint64) error
+	HardDelete(id uint64) error
+}
+
+// CompareConfigRepository defines the interface for compare config data access.
+type CompareConfigRepository interface {
+	FindByProjectID(projectID uint64) (*model.CompareConfig, error)
+	Upsert(cfg *model.CompareConfig) error
+	DeleteByProjectID(projectID uint64) error
 }
 
 // RequirementRepository defines the interface for requirement data access.

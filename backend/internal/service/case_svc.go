@@ -92,3 +92,14 @@ func (s *CaseService) Delete(id uint64) error {
 	}
 	return nil
 }
+
+// HardDelete permanently removes a case study by ID.
+func (s *CaseService) HardDelete(id uint64) error {
+	if id == 0 {
+		return errors.New("case id is required")
+	}
+	if err := s.repo.HardDelete(id); err != nil {
+		return fmt.Errorf("failed to hard delete case: %w", err)
+	}
+	return nil
+}
