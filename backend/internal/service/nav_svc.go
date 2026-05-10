@@ -163,7 +163,7 @@ func (s *NavService) fillLink(nav *model.Navigation) {
 	case "page":
 		if nav.PageID != nil {
 			slug := s.lookupPageSlug(*nav.PageID)
-			link := "/" + slug
+			link := "/pages/" + slug
 			nav.Link = &link
 		}
 	}
@@ -181,7 +181,7 @@ func (s *NavService) fillLinks(items []model.Navigation) {
 		case "page":
 			if items[i].PageID != nil {
 				slug := s.lookupPageSlug(*items[i].PageID)
-				link := "/" + slug
+				link := "/pages/" + slug
 				items[i].Link = &link
 			}
 		}
