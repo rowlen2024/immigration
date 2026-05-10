@@ -99,6 +99,7 @@ func (r *ProjectRepo) FindNews(projectID uint64) ([]model.Page, error) {
 	err := r.db.
 		Joins("JOIN project_news ON project_news.page_id = pages.id").
 		Where("project_news.project_id = ?", projectID).
+		Where("pages.deleted_at IS NULL").
 		Order("project_news.created_at DESC").
 		Find(&news).Error
 	return news, err

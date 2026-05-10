@@ -320,20 +320,20 @@
           <el-table :data="subNews" border size="small" max-height="360">
             <el-table-column label="标题" min-width="180">
               <template #default="{ row }">
-                <span>{{ row.page?.title || '(已删除)' }}</span>
+                <span>{{ row.title }}</span>
               </template>
             </el-table-column>
             <el-table-column label="状态" width="80">
               <template #default="{ row }">
-                <span :class="['status-pill', row.page?.status === 'published' ? 'published' : 'draft']">
-                  {{ row.page?.status === 'published' ? '已发布' : '草稿' }}
+                <span :class="['status-pill', row.status === 'published' ? 'published' : 'draft']">
+                  {{ row.status === 'published' ? '已发布' : '草稿' }}
                 </span>
               </template>
             </el-table-column>
             <el-table-column label="操作" width="80" fixed="right">
               <template #default="{ row }">
                 <div class="table-actions">
-                  <el-popconfirm title="确定解除关联？" @confirm="removeNewsLink(row.page_id)">
+                  <el-popconfirm title="确定解除关联？" @confirm="removeNewsLink(row.id)">
                     <template #reference>
                       <button class="action-btn danger">移除</button>
                     </template>
@@ -523,12 +523,6 @@ interface NewsItem {
   created_at: string;
 }
 
-interface NewsLink {
-  page_id: number;
-  page?: NewsItem;
-  created_at: string;
-}
-
 interface CompareField {
   key: string;
   label: string;
@@ -635,7 +629,7 @@ const subDialogTitle = computed(() => {
   return `${prefix}${subTypeLabels[subType.value]}`;
 });
 
-const subNews = ref<NewsLink[]>([]);
+const subNews = ref<NewsItem[]>([]);
 const newsDialogVisible = ref(false);
 const newsOptions = ref<NewsItem[]>([]);
 const newsSelected = ref<number[]>([]);
@@ -836,7 +830,7 @@ const loadNews = async () => {
   if (!editingId.value) return;
   try {
     const api = useApi();
-    const data = await api<NewsLink[]>(`/admin/projects/${editingId.value}/news`);
+    const data = await api<NewsItem[]>(`/admin/projects/${editingId.value}/news`);
     subNews.value = data ?? [];
   } catch { subNews.value = []; }
 };
