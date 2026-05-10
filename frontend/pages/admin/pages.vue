@@ -19,6 +19,11 @@
         <el-option label="已发布" value="published" />
         <el-option label="草稿" value="draft" />
       </el-select>
+      <el-select v-model="pageTypeFilter" placeholder="页面类型" clearable class="admin-filter-select" @change="loadList">
+        <el-option label="全部" value="" />
+        <el-option label="默认" value="default" />
+        <el-option label="新闻" value="news" />
+      </el-select>
       <el-button :icon="Refresh" circle @click="loadList" :loading="loading" style="margin-left:auto;" />
     </div>
 
@@ -33,6 +38,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="template" label="模板" width="100" />
+        <el-table-column prop="page_type" label="类型" width="80">
+          <template #default="{ row }">
+            <span>{{ row.page_type === 'news' ? '新闻' : '默认' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <span :class="['status-pill', row.status === 'published' ? 'published' : 'draft']">
@@ -87,6 +97,9 @@
         <el-form-item label="内容" prop="content">
           <RichEditor v-model="form.content" />
         </el-form-item>
+        <el-form-item label="封面图片" prop="cover_image">
+          <MediaPicker v-model="form.cover_image" />
+        </el-form-item>
         <el-row :gutter="12">
           <el-col :span="12">
             <el-form-item label="SEO 标题" prop="meta_title">
@@ -100,7 +113,7 @@
           </el-col>
         </el-row>
         <el-row :gutter="12">
-          <el-col :span="12">
+          <el-col :span="8">
             <el-form-item label="模板" prop="template">
               <el-select v-model="form.template">
                 <el-option label="默认" value="default" />
@@ -109,7 +122,15 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="8">
+            <el-form-item label="页面类型" prop="page_type">
+              <el-select v-model="form.page_type">
+                <el-option label="默认" value="default" />
+                <el-option label="新闻" value="news" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
             <el-form-item label="状态" prop="status">
               <el-select v-model="form.status">
                 <el-option label="草稿" value="draft" />
@@ -140,9 +161,11 @@ interface Page {
   title: string;
   slug: string;
   content: string;
+  cover_image: string;
   meta_title: string;
   meta_description: string;
   template: string;
+  page_type: string;
   status: string;
 }
 
@@ -159,6 +182,7 @@ const formRef = ref<FormInstance>();
 
 const searchQuery = ref('');
 const statusFilter = ref('');
+const pageTypeFilter = ref('');
 
 let searchTimer: ReturnType<typeof setTimeout>;
 const onSearch = () => {
@@ -173,9 +197,11 @@ const defaultForm = (): Partial<Page> => ({
   title: '',
   slug: '',
   content: '',
+  cover_image: '',
   meta_title: '',
   meta_description: '',
   template: 'default',
+  page_type: 'default',
   status: 'draft',
 });
 
@@ -193,6 +219,7 @@ const loadList = async () => {
     let url = `/admin/pages?page=${page.value}&per_page=${pageSize.value}`;
     if (searchQuery.value) url += `&search=${encodeURIComponent(searchQuery.value)}`;
     if (statusFilter.value) url += `&status=${statusFilter.value}`;
+    if (pageTypeFilter.value) url += `&page_type=${encodeURIComponent(pageTypeFilter.value)}`;
     const data = await api<{ items: Page[]; total: number }>(url);
     list.value = data.items ?? [];
     total.value = data.total ?? 0;
