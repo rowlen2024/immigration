@@ -33,14 +33,14 @@ func (s *ProjectService) GetBySlug(slug string) (*model.Project, error) {
 }
 
 // List returns paginated projects.
-func (s *ProjectService) List(page, perPage int) ([]model.Project, int64, error) {
+func (s *ProjectService) List(page, perPage int, search, status string) ([]model.Project, int64, error) {
 	if page < 1 {
 		page = 1
 	}
 	if perPage < 1 || perPage > 100 {
 		perPage = 10
 	}
-	projects, total, err := s.repo.FindAll(page, perPage)
+	projects, total, err := s.repo.FindAll(page, perPage, search, status)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list projects: %w", err)
 	}
@@ -48,8 +48,8 @@ func (s *ProjectService) List(page, perPage int) ([]model.Project, int64, error)
 }
 
 // AdminList returns paginated projects (alias for List).
-func (s *ProjectService) AdminList(page, perPage int) ([]model.Project, int64, error) {
-	return s.List(page, perPage)
+func (s *ProjectService) AdminList(page, perPage int, search, status string) ([]model.Project, int64, error) {
+	return s.List(page, perPage, search, status)
 }
 
 // Compare returns multiple projects by their slugs for side-by-side comparison.
@@ -69,9 +69,8 @@ func (s *ProjectService) Compare(slugs []string) ([]model.Project, error) {
 
 // CompareRow represents a single comparison row.
 type CompareRow struct {
-	Label string `json:"label"`
-	A     string `json:"a"`
-	B     string `json:"b"`
+	Label  string   `json:"label"`
+	Values []string `json:"values"`
 }
 
 // CompareResult holds the full comparison output.
@@ -86,39 +85,39 @@ type CompareProject struct {
 	Slug  string `json:"slug"`
 }
 
-// CompareRows returns formatted comparison rows for two projects.
+// CompareRows returns formatted comparison rows for N projects.
 func (s *ProjectService) CompareRows(slugs []string) (*CompareResult, error) {
 	projects, err := s.Compare(slugs)
 	if err != nil {
 		return nil, err
 	}
 	if len(projects) < 2 {
-		return nil, errors.New("需要两个项目进行对比")
+		return nil, errors.New("需要至少两个项目进行对比")
 	}
 
-	a, b := projects[0], projects[1]
-
-	projInfo := []CompareProject{
-		{Title: a.Name, Slug: a.Slug},
-		{Title: b.Name, Slug: b.Slug},
+	projInfo := make([]CompareProject, len(projects))
+	for i, p := range projects {
+		projInfo[i] = CompareProject{Title: p.Name, Slug: p.Slug}
 	}
-
-	reqsA := joinRequirements(a.Requirements)
-	reqsB := joinRequirements(b.Requirements)
-
-	phaseCountA := fmt.Sprintf("%d 个阶段", len(a.TimelinePhases))
-	phaseCountB := fmt.Sprintf("%d 个阶段", len(b.TimelinePhases))
 
 	rows := []CompareRow{
-		{Label: "投资金额", A: a.InvestmentAmount, B: b.InvestmentAmount},
-		{Label: "办理周期", A: a.ProcessingPeriod, B: b.ProcessingPeriod},
-		{Label: "适合人群", A: a.TargetCrowd, B: b.TargetCrowd},
-		{Label: "申请条件", A: reqsA, B: reqsB},
-		{Label: "费用总计", A: a.CostsTotal, B: b.CostsTotal},
-		{Label: "流程步骤", A: phaseCountA, B: phaseCountB},
+		{Label: "投资金额", Values: pluck(projects, func(p model.Project) string { return p.InvestmentAmount })},
+		{Label: "办理周期", Values: pluck(projects, func(p model.Project) string { return p.ProcessingPeriod })},
+		{Label: "适合人群", Values: pluck(projects, func(p model.Project) string { return p.TargetCrowd })},
+		{Label: "申请条件", Values: pluck(projects, func(p model.Project) string { return joinRequirements(p.Requirements) })},
+		{Label: "费用总计", Values: pluck(projects, func(p model.Project) string { return p.CostsTotal })},
+		{Label: "流程步骤", Values: pluck(projects, func(p model.Project) string { return fmt.Sprintf("%d 个阶段", len(p.TimelinePhases)) })},
 	}
 
 	return &CompareResult{Projects: projInfo, Rows: rows}, nil
+}
+
+func pluck(projects []model.Project, fn func(model.Project) string) []string {
+	values := make([]string, len(projects))
+	for i, p := range projects {
+		values[i] = fn(p)
+	}
+	return values
 }
 
 func joinRequirements(reqs []model.Requirement) string {
@@ -188,6 +187,21 @@ func (s *ProjectService) Update(id uint64, project *model.Project) (*model.Proje
 }
 
 // Delete performs a soft delete on a project by ID.
+// ListNews returns news pages linked to a project.
+func (s *ProjectService) ListNews(projectID uint64) ([]model.Page, error) {
+	return s.repo.FindNews(projectID)
+}
+
+// AddNews links news pages to a project.
+func (s *ProjectService) AddNews(projectID uint64, pageIDs []uint64) error {
+	return s.repo.AddNews(projectID, pageIDs)
+}
+
+// RemoveNews unlinks a news page from a project.
+func (s *ProjectService) RemoveNews(projectID, pageID uint64) error {
+	return s.repo.RemoveNews(projectID, pageID)
+}
+
 func (s *ProjectService) Delete(id uint64) error {
 	if id == 0 {
 		return errors.New("project id is required")

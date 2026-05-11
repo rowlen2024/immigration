@@ -17,7 +17,7 @@ const defaultPerPage = 10
 func (h *Handler) ListProjects(c *gin.Context) {
 	page, perPage := parsePagination(c)
 
-	projects, total, err := h.svc.Project.List(page, perPage)
+	projects, total, err := h.svc.Project.List(page, perPage, "", "")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
 		return
@@ -61,19 +61,22 @@ func (h *Handler) CompareProjects(c *gin.Context) {
 }
 
 func (h *Handler) AdminListProjects(c *gin.Context) {
+	search := c.Query("search")
+	status := c.Query("status")
+
 	if c.Query("all") == "true" {
-		projects, _, err := h.svc.Project.AdminList(1, 1000)
+		projects, _, err := h.svc.Project.AdminList(1, 1000, search, status)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
 			return
 		}
-		c.JSON(http.StatusOK, dto.Success(projects))
+		c.JSON(http.StatusOK, dto.SuccessPaginated(projects, 1, 1000, int64(len(projects))))
 		return
 	}
 
 	page, perPage := parsePagination(c)
 
-	projects, total, err := h.svc.Project.AdminList(page, perPage)
+	projects, total, err := h.svc.Project.AdminList(page, perPage, search, status)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
 		return
@@ -152,6 +155,71 @@ func parsePagination(c *gin.Context) (int, int) {
 	}
 
 	return page, perPage
+}
+
+type addNewsRequest struct {
+	PageIDs []uint64 `json:"page_ids"`
+}
+
+// ListProjectNews returns news pages linked to a project.
+func (h *Handler) ListProjectNews(c *gin.Context) {
+	projectID, err := parseIDParam(c, "id")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid project id"))
+		return
+	}
+
+	news, err := h.svc.Project.ListNews(projectID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Success(news))
+}
+
+// AddProjectNews links news pages to a project.
+func (h *Handler) AddProjectNews(c *gin.Context) {
+	projectID, err := parseIDParam(c, "id")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid project id"))
+		return
+	}
+
+	var req addNewsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request"))
+		return
+	}
+
+	if err := h.svc.Project.AddNews(projectID, req.PageIDs); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Success(nil))
+}
+
+// RemoveProjectNews unlinks a news page from a project.
+func (h *Handler) RemoveProjectNews(c *gin.Context) {
+	projectID, err := parseIDParam(c, "id")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid project id"))
+		return
+	}
+
+	pageID, err := parseIDParam(c, "page_id")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid page id"))
+		return
+	}
+
+	if err := h.svc.Project.RemoveNews(projectID, pageID); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Success(nil))
 }
 
 func parseIDParam(c *gin.Context, param string) (uint64, error) {

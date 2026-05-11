@@ -20,15 +20,24 @@ func NewCaseService(repo repository.CaseRepository) *CaseService {
 
 // List returns all cases.
 func (s *CaseService) List() ([]model.Case, error) {
-	cases, err := s.repo.FindAll()
+	cases, err := s.repo.FindAll("")
 	if err != nil {
 		return nil, fmt.Errorf("failed to list cases: %w", err)
 	}
 	return cases, nil
 }
 
+// ListByProject returns cases for a specific project.
+func (s *CaseService) ListByProject(projectID uint64) ([]model.Case, error) {
+	cases, err := s.repo.FindByProjectID(projectID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list cases by project: %w", err)
+	}
+	return cases, nil
+}
+
 // AdminList returns paginated cases.
-func (s *CaseService) AdminList(page, perPage int) ([]model.Case, int64, error) {
+func (s *CaseService) AdminList(page, perPage int, search string) ([]model.Case, int64, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -36,7 +45,7 @@ func (s *CaseService) AdminList(page, perPage int) ([]model.Case, int64, error) 
 		perPage = 10
 	}
 
-	cases, err := s.repo.FindAll()
+	cases, err := s.repo.FindAll(search)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list cases: %w", err)
 	}
@@ -89,6 +98,17 @@ func (s *CaseService) Delete(id uint64) error {
 	}
 	if err := s.repo.Delete(id); err != nil {
 		return fmt.Errorf("failed to delete case: %w", err)
+	}
+	return nil
+}
+
+// HardDelete permanently removes a case study by ID.
+func (s *CaseService) HardDelete(id uint64) error {
+	if id == 0 {
+		return errors.New("case id is required")
+	}
+	if err := s.repo.HardDelete(id); err != nil {
+		return fmt.Errorf("failed to hard delete case: %w", err)
 	}
 	return nil
 }

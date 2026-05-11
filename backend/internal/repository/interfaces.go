@@ -17,11 +17,14 @@ type UserRepository interface {
 // ProjectRepository defines the interface for project data access.
 type ProjectRepository interface {
 	FindBySlug(slug string) (*model.Project, error)
-	FindAll(page, perPage int) ([]model.Project, int64, error)
+	FindAll(page, perPage int, search, status string) ([]model.Project, int64, error)
 	FindBySlugs(slugs []string) ([]model.Project, error)
 	Create(project *model.Project) error
 	Update(project *model.Project) error
 	Delete(id uint64) error
+	FindNews(projectID uint64) ([]model.Page, error)
+	AddNews(projectID uint64, pageIDs []uint64) error
+	RemoveNews(projectID, pageID uint64) error
 }
 
 // FAQQueryParams holds optional filters for FAQ queries.
@@ -45,7 +48,9 @@ type FAQRepository interface {
 // PageRepository defines the interface for page data access.
 type PageRepository interface {
 	FindBySlug(slug string) (*model.Page, error)
-	FindAll() ([]model.Page, error)
+	FindAll(pageType, search, status string) ([]model.Page, error)
+	FindAllPublished() ([]model.Page, error)
+	FindBySlugPublished(slug string) (*model.Page, error)
 	FindByProjectID(projectID uint64) ([]model.Page, error)
 	Create(page *model.Page) error
 	Update(page *model.Page) error
@@ -78,10 +83,18 @@ type NavigationRepository interface {
 // CaseRepository defines the interface for case data access.
 type CaseRepository interface {
 	FindByProjectID(projectID uint64) ([]model.Case, error)
-	FindAll() ([]model.Case, error)
+	FindAll(search string) ([]model.Case, error)
 	Create(c *model.Case) error
 	Update(c *model.Case) error
 	Delete(id uint64) error
+	HardDelete(id uint64) error
+}
+
+// CompareConfigRepository defines the interface for compare config data access.
+type CompareConfigRepository interface {
+	FindByProjectID(projectID uint64) (*model.CompareConfig, error)
+	Upsert(cfg *model.CompareConfig) error
+	DeleteByProjectID(projectID uint64) error
 }
 
 // RequirementRepository defines the interface for requirement data access.

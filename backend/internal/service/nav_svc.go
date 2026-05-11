@@ -163,7 +163,7 @@ func (s *NavService) fillLink(nav *model.Navigation) {
 	case "page":
 		if nav.PageID != nil {
 			slug := s.lookupPageSlug(*nav.PageID)
-			link := "/" + slug
+			link := "/pages/" + slug
 			nav.Link = &link
 		}
 	}
@@ -181,7 +181,7 @@ func (s *NavService) fillLinks(items []model.Navigation) {
 		case "page":
 			if items[i].PageID != nil {
 				slug := s.lookupPageSlug(*items[i].PageID)
-				link := "/" + slug
+				link := "/pages/" + slug
 				items[i].Link = &link
 			}
 		}
@@ -208,7 +208,7 @@ func (s *NavService) lookupProjectSlug(id uint64) string {
 	}
 	projectSlugMu.RUnlock()
 
-	projects, _, _ := s.projectRepo.FindAll(1, 1000)
+	projects, _, _ := s.projectRepo.FindAll(1, 1000, "", "")
 
 	projectSlugMu.Lock()
 	for _, p := range projects {
@@ -232,7 +232,7 @@ func (s *NavService) lookupPageSlug(id uint64) string {
 	}
 	pageSlugMu.RUnlock()
 
-	pages, _ := s.pageRepo.FindAll()
+	pages, _ := s.pageRepo.FindAll("", "", "")
 
 	pageSlugMu.Lock()
 	for _, p := range pages {

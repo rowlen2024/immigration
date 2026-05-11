@@ -32,7 +32,11 @@ type searchMockPageRepo struct {
 }
 
 func (m *searchMockPageRepo) FindBySlug(slug string) (*model.Page, error)      { return nil, nil }
-func (m *searchMockPageRepo) FindAll() ([]model.Page, error)                   { return nil, nil }
+func (m *searchMockPageRepo) FindAll(pageType, search, status string) ([]model.Page, error) { return nil, nil }
+func (m *searchMockPageRepo) FindAllPublished() ([]model.Page, error)           { return nil, nil }
+func (m *searchMockPageRepo) FindBySlugPublished(slug string) (*model.Page, error) {
+	return nil, nil
+}
 func (m *searchMockPageRepo) FindByProjectID(projectID uint64) ([]model.Page, error) {
 	return nil, nil
 }

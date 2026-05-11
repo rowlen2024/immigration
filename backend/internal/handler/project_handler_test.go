@@ -17,11 +17,14 @@ import (
 // handlerMockProjectRepo implements repository.ProjectRepository.
 type handlerMockProjectRepo struct {
 	findBySlug  func(slug string) (*model.Project, error)
-	findAll     func(page, perPage int) ([]model.Project, int64, error)
+	findAll     func(page, perPage int, search, status string) ([]model.Project, int64, error)
 	findBySlugs func(slugs []string) ([]model.Project, error)
 	create      func(project *model.Project) error
 	update      func(project *model.Project) error
 	delete      func(id uint64) error
+	findNews    func(projectID uint64) ([]model.Page, error)
+	addNews     func(projectID uint64, pageIDs []uint64) error
+	removeNews  func(projectID, pageID uint64) error
 }
 
 func (m *handlerMockProjectRepo) FindBySlug(slug string) (*model.Project, error) {
@@ -30,9 +33,9 @@ func (m *handlerMockProjectRepo) FindBySlug(slug string) (*model.Project, error)
 	}
 	return nil, errors.New("not found")
 }
-func (m *handlerMockProjectRepo) FindAll(page, perPage int) ([]model.Project, int64, error) {
+func (m *handlerMockProjectRepo) FindAll(page, perPage int, search, status string) ([]model.Project, int64, error) {
 	if m.findAll != nil {
-		return m.findAll(page, perPage)
+		return m.findAll(page, perPage, search, status)
 	}
 	return nil, 0, nil
 }
@@ -60,10 +63,28 @@ func (m *handlerMockProjectRepo) Delete(id uint64) error {
 	}
 	return nil
 }
+func (m *handlerMockProjectRepo) FindNews(projectID uint64) ([]model.Page, error) {
+	if m.findNews != nil {
+		return m.findNews(projectID)
+	}
+	return nil, nil
+}
+func (m *handlerMockProjectRepo) AddNews(projectID uint64, pageIDs []uint64) error {
+	if m.addNews != nil {
+		return m.addNews(projectID, pageIDs)
+	}
+	return nil
+}
+func (m *handlerMockProjectRepo) RemoveNews(projectID, pageID uint64) error {
+	if m.removeNews != nil {
+		return m.removeNews(projectID, pageID)
+	}
+	return nil
+}
 
 func TestProjectHandler_ListProjects(t *testing.T) {
 	mockRepo := &handlerMockProjectRepo{
-		findAll: func(page, perPage int) ([]model.Project, int64, error) {
+		findAll: func(page, perPage int, search, status string) ([]model.Project, int64, error) {
 			return []model.Project{
 				{ID: 1, Name: "Project A", Slug: "project-a"},
 				{ID: 2, Name: "Project B", Slug: "project-b"},
@@ -219,9 +240,49 @@ func TestProjectHandler_CompareProjects_TooMany(t *testing.T) {
 	}
 }
 
+func TestProjectHandler_CompareProjects_ThreeWay(t *testing.T) {
+	mockRepo := &handlerMockProjectRepo{
+		findBySlugs: func(slugs []string) ([]model.Project, error) {
+			return []model.Project{
+				{ID: 1, Name: "Project A", Slug: "a", InvestmentAmount: "100万", ProcessingPeriod: "12月", TargetCrowd: "投资者"},
+				{ID: 2, Name: "Project B", Slug: "b", InvestmentAmount: "200万", ProcessingPeriod: "24月", TargetCrowd: "企业家"},
+				{ID: 3, Name: "Project C", Slug: "c", InvestmentAmount: "300万", ProcessingPeriod: "36月", TargetCrowd: "高净值"},
+			}, nil
+		},
+	}
+	projectSvc := service.NewProjectService(mockRepo)
+	h := &Handler{svc: &service.Service{Project: projectSvc}}
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = makeGetRequest("/api/v1/projects/compare?slugs=a,b,c")
+
+	h.CompareProjects(c)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d, body: %s", w.Code, w.Body.String())
+	}
+
+	var body map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	data := body["data"].(map[string]interface{})
+	projects := data["projects"].([]interface{})
+	if len(projects) != 3 {
+		t.Errorf("expected 3 projects in response, got %d", len(projects))
+	}
+	rows := data["rows"].([]interface{})
+	firstRow := rows[0].(map[string]interface{})
+	values := firstRow["values"].([]interface{})
+	if len(values) != 3 {
+		t.Errorf("expected 3 values per row, got %d", len(values))
+	}
+}
+
 func TestProjectHandler_AdminListProjects_Success(t *testing.T) {
 	mockRepo := &handlerMockProjectRepo{
-		findAll: func(page, perPage int) ([]model.Project, int64, error) {
+		findAll: func(page, perPage int, search, status string) ([]model.Project, int64, error) {
 			return []model.Project{
 				{ID: 1, Name: "Project A", Slug: "project-a"},
 				{ID: 2, Name: "Project B", Slug: "project-b"},
@@ -390,7 +451,7 @@ func TestProjectHandler_DeleteProject_Success(t *testing.T) {
 
 func TestProjectHandler_ListProjects_ServiceError(t *testing.T) {
 	mockRepo := &handlerMockProjectRepo{
-		findAll: func(page, perPage int) ([]model.Project, int64, error) {
+		findAll: func(page, perPage int, search, status string) ([]model.Project, int64, error) {
 			return nil, 0, errors.New("db error")
 		},
 	}

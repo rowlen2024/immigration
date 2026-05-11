@@ -41,6 +41,8 @@ type Project struct {
 	Milestones     []Milestone     `gorm:"foreignKey:ProjectID" json:"milestones,omitempty"`
 	FAQs           []FAQ           `gorm:"foreignKey:ProjectID" json:"faqs,omitempty"`
 	Cases          []Case          `gorm:"foreignKey:ProjectID" json:"cases,omitempty"`
+	News           []Page         `gorm:"many2many:project_news;" json:"news,omitempty"`
+	CompareConfig  *CompareConfig `gorm:"foreignKey:ProjectID" json:"compare_config,omitempty"`
 }
 
 func (Project) TableName() string { return "projects" }

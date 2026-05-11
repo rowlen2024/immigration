@@ -71,7 +71,22 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 				projects.POST("/:id/timeline-phases", middleware.RBAC("projects:write"), h.CreateTimelinePhase)
 				projects.PUT("/:id/timeline-phases/:tid", middleware.RBAC("projects:write"), h.UpdateTimelinePhase)
 				projects.DELETE("/:id/timeline-phases/:tid", middleware.RBAC("projects:write"), h.DeleteTimelinePhase)
-			}
+
+				// Cases sub-resources
+				projects.GET("/:id/cases", middleware.RBAC("admin:read"), h.ListProjectCases)
+				projects.POST("/:id/cases", middleware.RBAC("projects:write"), h.CreateProjectCase)
+				projects.PUT("/:id/cases/:cid", middleware.RBAC("projects:write"), h.UpdateProjectCase)
+				projects.DELETE("/:id/cases/:cid", middleware.RBAC("projects:write"), h.DeleteProjectCase)
+
+				// News sub-resources
+				projects.GET("/:id/news", middleware.RBAC("admin:read"), h.ListProjectNews)
+				projects.POST("/:id/news", middleware.RBAC("projects:write"), h.AddProjectNews)
+				projects.DELETE("/:id/news/:page_id", middleware.RBAC("projects:write"), h.RemoveProjectNews)
+
+				// Compare config
+				projects.GET("/:id/compare-config", middleware.RBAC("admin:read"), h.GetCompareConfig)
+				projects.PUT("/:id/compare-config", middleware.RBAC("projects:write"), h.SaveCompareConfig)
+				}
 
 			admin.GET("/faqs", middleware.RBAC("admin:read"), h.AdminListFAQs)
 			admin.POST("/faqs", middleware.RBAC("content:write"), h.CreateFAQ)
@@ -88,6 +103,7 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			admin.PUT("/cases/:id", middleware.RBAC("content:write"), h.UpdateCase)
 			admin.DELETE("/cases/:id", middleware.RBAC("content:write"), h.DeleteCase)
 
+			admin.GET("/compare-fields", middleware.RBAC("admin:read"), h.ListCompareFields)
 			admin.GET("/leads", middleware.RBAC("leads:read"), h.AdminListLeads)
 			admin.PUT("/leads/:id", middleware.RBAC("leads:read"), h.UpdateLead)
 

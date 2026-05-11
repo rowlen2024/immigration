@@ -10,11 +10,14 @@ import (
 // mockProjectRepo implements repository.ProjectRepository for testing.
 type mockProjectRepo struct {
 	findBySlugFn  func(slug string) (*model.Project, error)
-	findAllFn     func(page, perPage int) ([]model.Project, int64, error)
+	findAllFn     func(page, perPage int, search, status string) ([]model.Project, int64, error)
 	findBySlugsFn func(slugs []string) ([]model.Project, error)
 	createFn      func(project *model.Project) error
 	updateFn      func(project *model.Project) error
 	deleteFn      func(id uint64) error
+	findNewsFn    func(projectID uint64) ([]model.Page, error)
+	addNewsFn     func(projectID uint64, pageIDs []uint64) error
+	removeNewsFn  func(projectID, pageID uint64) error
 }
 
 func (m *mockProjectRepo) FindBySlug(slug string) (*model.Project, error) {
@@ -24,9 +27,9 @@ func (m *mockProjectRepo) FindBySlug(slug string) (*model.Project, error) {
 	return nil, errors.New("not found")
 }
 
-func (m *mockProjectRepo) FindAll(page, perPage int) ([]model.Project, int64, error) {
+func (m *mockProjectRepo) FindAll(page, perPage int, search, status string) ([]model.Project, int64, error) {
 	if m.findAllFn != nil {
-		return m.findAllFn(page, perPage)
+		return m.findAllFn(page, perPage, search, status)
 	}
 	return nil, 0, nil
 }
@@ -59,6 +62,27 @@ func (m *mockProjectRepo) Delete(id uint64) error {
 	return nil
 }
 
+func (m *mockProjectRepo) FindNews(projectID uint64) ([]model.Page, error) {
+	if m.findNewsFn != nil {
+		return m.findNewsFn(projectID)
+	}
+	return nil, nil
+}
+
+func (m *mockProjectRepo) AddNews(projectID uint64, pageIDs []uint64) error {
+	if m.addNewsFn != nil {
+		return m.addNewsFn(projectID, pageIDs)
+	}
+	return nil
+}
+
+func (m *mockProjectRepo) RemoveNews(projectID, pageID uint64) error {
+	if m.removeNewsFn != nil {
+		return m.removeNewsFn(projectID, pageID)
+	}
+	return nil
+}
+
 func TestProject_List(t *testing.T) {
 	sampleProjects := []model.Project{
 		{ID: 1, Name: "Project A", Slug: "project-a"},
@@ -67,14 +91,14 @@ func TestProject_List(t *testing.T) {
 	}
 
 	repo := &mockProjectRepo{
-		findAllFn: func(page, perPage int) ([]model.Project, int64, error) {
+		findAllFn: func(page, perPage int, search, status string) ([]model.Project, int64, error) {
 			return sampleProjects, int64(len(sampleProjects)), nil
 		},
 	}
 
 	svc := NewProjectService(repo)
 
-	projects, total, err := svc.List(1, 10)
+	projects, total, err := svc.List(1, 10, "", "")
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -88,7 +112,7 @@ func TestProject_List(t *testing.T) {
 
 func TestProject_List_DefaultPagination(t *testing.T) {
 	repo := &mockProjectRepo{
-		findAllFn: func(page, perPage int) ([]model.Project, int64, error) {
+		findAllFn: func(page, perPage int, search, status string) ([]model.Project, int64, error) {
 			if page != 1 {
 				t.Errorf("expected page 1 (default), got %d", page)
 			}
@@ -100,7 +124,7 @@ func TestProject_List_DefaultPagination(t *testing.T) {
 	}
 
 	svc := NewProjectService(repo)
-	_, _, err := svc.List(0, 0)
+	_, _, err := svc.List(0, 0, "", "")
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -383,14 +407,14 @@ func TestProject_AdminList_Success(t *testing.T) {
 	}
 
 	repo := &mockProjectRepo{
-		findAllFn: func(page, perPage int) ([]model.Project, int64, error) {
+		findAllFn: func(page, perPage int, search, status string) ([]model.Project, int64, error) {
 			return sampleProjects, int64(len(sampleProjects)), nil
 		},
 	}
 
 	svc := NewProjectService(repo)
 
-	projects, total, err := svc.AdminList(1, 10)
+	projects, total, err := svc.AdminList(1, 10, "", "")
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -404,7 +428,7 @@ func TestProject_AdminList_Success(t *testing.T) {
 
 func TestProject_AdminList_DefaultPagination(t *testing.T) {
 	repo := &mockProjectRepo{
-		findAllFn: func(page, perPage int) ([]model.Project, int64, error) {
+		findAllFn: func(page, perPage int, search, status string) ([]model.Project, int64, error) {
 			if page != 1 {
 				t.Errorf("expected page 1 (default), got %d", page)
 			}
@@ -416,7 +440,7 @@ func TestProject_AdminList_DefaultPagination(t *testing.T) {
 	}
 
 	svc := NewProjectService(repo)
-	_, _, err := svc.AdminList(0, 0)
+	_, _, err := svc.AdminList(0, 0, "", "")
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -424,14 +448,14 @@ func TestProject_AdminList_DefaultPagination(t *testing.T) {
 
 func TestProject_List_RepoError(t *testing.T) {
 	repo := &mockProjectRepo{
-		findAllFn: func(page, perPage int) ([]model.Project, int64, error) {
+		findAllFn: func(page, perPage int, search, status string) ([]model.Project, int64, error) {
 			return nil, 0, errors.New("db error")
 		},
 	}
 
 	svc := NewProjectService(repo)
 
-	_, _, err := svc.List(1, 10)
+	_, _, err := svc.List(1, 10, "", "")
 	if err == nil {
 		t.Fatal("expected error from repo")
 	}

@@ -91,7 +91,7 @@
     <el-drawer
       v-model="drawerVisible"
       :title="editingId ? '编辑项目' : '新建项目'"
-      size="560px"
+      size="700px"
       destroy-on-close
       @opened="onDialogOpened"
     >
@@ -224,7 +224,7 @@
               </template>
             </el-table-column>
             <el-table-column prop="sort_order" label="排序" width="60" />
-            <el-table-column label="操作" width="120">
+            <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row: r }">
                 <div class="table-actions">
                   <button class="action-btn" @click="openSubDialog('requirement', r)">编辑</button>
@@ -248,7 +248,7 @@
             <el-table-column prop="amount" label="金额" width="100" />
             <el-table-column prop="note" label="说明" min-width="160" />
             <el-table-column prop="sort_order" label="排序" width="60" />
-            <el-table-column label="操作" width="120">
+            <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row: r }">
                 <div class="table-actions">
                   <button class="action-btn" @click="openSubDialog('costItem', r)">编辑</button>
@@ -273,7 +273,7 @@
             <el-table-column prop="description" label="描述" min-width="160" />
             <el-table-column prop="duration" label="周期" width="90" />
             <el-table-column prop="sort_order" label="排序" width="60" />
-            <el-table-column label="操作" width="120">
+            <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row: r }">
                 <div class="table-actions">
                   <button class="action-btn" @click="openSubDialog('timelinePhase', r)">编辑</button>
@@ -286,6 +286,88 @@
               </template>
             </el-table-column>
           </el-table>
+        </el-tab-pane>
+
+        <el-tab-pane label="成功案例" name="cases">
+          <div style="margin-bottom: 12px">
+            <el-button type="primary" size="small" @click="openSubDialog('caseItem')">添加案例</el-button>
+          </div>
+          <el-table :data="subData.cases" border size="small" max-height="360">
+            <el-table-column prop="name" label="名称" min-width="120" />
+            <el-table-column prop="country_from" label="来源国" width="80" />
+            <el-table-column prop="investment_amount" label="投资金额" width="100" />
+            <el-table-column prop="processing_period" label="处理周期" width="90" />
+            <el-table-column prop="sort_order" label="排序" width="60" />
+            <el-table-column label="操作" width="120" fixed="right">
+              <template #default="{ row: r }">
+                <div class="table-actions">
+                  <button class="action-btn" @click="openSubDialog('caseItem', r)">编辑</button>
+                  <el-popconfirm title="确定删除？" @confirm="deleteSubItem('caseItem', r.id)">
+                    <template #reference>
+                      <button class="action-btn danger">删除</button>
+                    </template>
+                  </el-popconfirm>
+                </div>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
+
+        <el-tab-pane label="资讯" name="news">
+          <div style="margin-bottom: 12px">
+            <el-button type="primary" size="small" @click="openNewsDialog">添加资讯</el-button>
+          </div>
+          <el-table :data="subNews" border size="small" max-height="360">
+            <el-table-column label="标题" min-width="180">
+              <template #default="{ row }">
+                <span>{{ row.title }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="状态" width="80">
+              <template #default="{ row }">
+                <span :class="['status-pill', row.status === 'published' ? 'published' : 'draft']">
+                  {{ row.status === 'published' ? '已发布' : '草稿' }}
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="80" fixed="right">
+              <template #default="{ row }">
+                <div class="table-actions">
+                  <el-popconfirm title="确定解除关联？" @confirm="removeNewsLink(row.id)">
+                    <template #reference>
+                      <button class="action-btn danger">移除</button>
+                    </template>
+                  </el-popconfirm>
+                </div>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
+
+        <el-tab-pane label="项目对比" name="compare">
+          <div style="margin-bottom: 12px">
+            <el-button type="primary" size="small" :disabled="compareConfig.compare_with.length < 2" @click="saveCompareConfig">保存对比配置</el-button>
+          </div>
+          <el-form label-position="top">
+            <el-form-item label="对比项目（至少 2 个）">
+              <el-select v-model="compareConfig.compare_with" multiple filterable placeholder="选择对比项目" style="width: 100%">
+                <el-option v-for="p in projectOptions" :key="p.slug" :label="p.name" :value="p.slug" />
+              </el-select>
+              <div v-if="compareConfig.compare_with.length < 2" style="font-size: 12px; color: var(--el-color-danger); margin-top: 4px">
+                当前项目默认在内，请至少追加 1 个其他项目
+              </div>
+              <div v-else style="font-size: 12px; color: var(--el-text-color-secondary); margin-top: 4px">
+                已选择 {{ compareConfig.compare_with.length }} 个项目
+              </div>
+            </el-form-item>
+            <el-form-item label="对比属性">
+              <el-checkbox-group v-model="compareConfig.compare_fields">
+                <el-checkbox v-for="f in compareFields" :key="f.key" :label="f.key" :value="f.key">
+                  {{ f.label }}
+                </el-checkbox>
+              </el-checkbox-group>
+            </el-form-item>
+          </el-form>
         </el-tab-pane>
       </el-tabs>
 
@@ -345,10 +427,43 @@
             <el-input-number v-model="subForm.sort_order" :min="0" />
           </el-form-item>
         </template>
+        <template v-else-if="subType === 'caseItem'">
+          <el-form-item label="名称" prop="name">
+            <el-input v-model="subForm.name" />
+          </el-form-item>
+          <el-form-item label="来源国" prop="country_from">
+            <el-input v-model="subForm.country_from" />
+          </el-form-item>
+          <el-form-item label="投资金额" prop="investment_amount">
+            <el-input v-model="subForm.investment_amount" />
+          </el-form-item>
+          <el-form-item label="处理周期" prop="processing_period">
+            <el-input v-model="subForm.processing_period" />
+          </el-form-item>
+          <el-form-item label="描述" prop="description">
+            <el-input v-model="subForm.description" type="textarea" :rows="3" />
+          </el-form-item>
+          <el-form-item label="封面图片" prop="photo_url">
+            <ImageInput v-model="subForm.photo_url" placeholder="图片 URL 或上传" />
+          </el-form-item>
+          <el-form-item label="排序" prop="sort_order">
+            <el-input-number v-model="subForm.sort_order" :min="0" />
+          </el-form-item>
+        </template>
       </el-form>
       <template #footer>
         <el-button @click="subDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="subSaving" @click="handleSubSave">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="newsDialogVisible" title="添加资讯" width="500px" destroy-on-close>
+      <el-select v-model="newsSelected" multiple filterable placeholder="搜索新闻页面..." style="width: 100%">
+        <el-option v-for="n in newsOptions" :key="n.id" :label="n.title" :value="n.id" />
+      </el-select>
+      <template #footer>
+        <el-button @click="newsDialogVisible = false">取消</el-button>
+        <el-button type="primary" :disabled="newsSelected.length === 0" @click="addNewsLinks">确认添加</el-button>
       </template>
     </el-dialog>
   </div>
@@ -387,6 +502,41 @@ interface Project {
   cover_image: string;
   sort_order: number;
   status: number;
+}
+
+interface CaseItem {
+  id: number;
+  name: string;
+  country_from: string;
+  investment_amount: string;
+  processing_period: string;
+  description: string;
+  photo_url: string;
+  sort_order: number;
+}
+
+interface NewsItem {
+  id: number;
+  title: string;
+  slug: string;
+  status: string;
+  created_at: string;
+}
+
+interface CompareField {
+  key: string;
+  label: string;
+  from: string;
+}
+
+interface CompareConfig {
+  compare_with: string[];
+  compare_fields: string[];
+}
+
+interface ProjectOption {
+  slug: string;
+  name: string;
 }
 
 const list = ref<Project[]>([]);
@@ -446,23 +596,26 @@ const rules: FormRules = {
   country: [{ required: true, message: '请输入国家', trigger: 'blur' }],
 };
 
-type SubType = 'requirement' | 'costItem' | 'timelinePhase';
+type SubType = 'requirement' | 'costItem' | 'timelinePhase' | 'caseItem';
 const subTypeLabels: Record<SubType, string> = {
   requirement: '申请条件',
   costItem: '费用明细',
   timelinePhase: '申请流程',
+  caseItem: '成功案例',
 };
 
 interface SubState {
   requirements: any[];
   costItems: any[];
   timelinePhases: any[];
+  cases: any[];
 }
 
 const subData = reactive<SubState>({
   requirements: [],
   costItems: [],
   timelinePhases: [],
+  cases: [],
 });
 
 const subDialogVisible = ref(false);
@@ -476,6 +629,15 @@ const subDialogTitle = computed(() => {
   return `${prefix}${subTypeLabels[subType.value]}`;
 });
 
+const subNews = ref<NewsItem[]>([]);
+const newsDialogVisible = ref(false);
+const newsOptions = ref<NewsItem[]>([]);
+const newsSelected = ref<number[]>([]);
+
+const compareFields = ref<CompareField[]>([]);
+const compareConfig = reactive<CompareConfig>({ compare_with: [], compare_fields: [] });
+const projectOptions = ref<ProjectOption[]>([]);
+
 const defaultSubForm = (type: SubType): Record<string, any> => {
   switch (type) {
     case 'requirement':
@@ -484,6 +646,8 @@ const defaultSubForm = (type: SubType): Record<string, any> => {
       return { name: '', amount: '', note: '', sort_order: 0 };
     case 'timelinePhase':
       return { phase_number: 1, title: '', description: '', duration: '', sort_order: 0 };
+    case 'caseItem':
+      return { name: '', country_from: '', investment_amount: '', processing_period: '', description: '', photo_url: '', sort_order: 0 };
   }
 };
 
@@ -524,6 +688,9 @@ const openEdit = (row: Project) => {
 const onDialogOpened = () => {
   if (editingId.value) {
     loadSubData();
+    loadNews();
+    loadCompareConfig();
+    loadProjectOptions();
   }
 };
 
@@ -531,14 +698,16 @@ const loadSubData = async () => {
   if (!editingId.value) return;
   const api = useApi();
   try {
-    const [reqs, costs, phases] = await Promise.all([
+    const [reqs, costs, phases, cases] = await Promise.all([
       api<any[]>(`/admin/projects/${editingId.value}/requirements`),
       api<any[]>(`/admin/projects/${editingId.value}/cost-items`),
       api<any[]>(`/admin/projects/${editingId.value}/timeline-phases`),
+      api<CaseItem[]>(`/admin/projects/${editingId.value}/cases`),
     ]);
     subData.requirements = reqs ?? [];
     subData.costItems = costs ?? [];
     subData.timelinePhases = phases ?? [];
+    subData.cases = cases ?? [];
   } catch {
     // best-effort sub-data load
   }
@@ -548,6 +717,7 @@ const resetSubData = () => {
   subData.requirements = [];
   subData.costItems = [];
   subData.timelinePhases = [];
+  subData.cases = [];
 };
 
 const handleSave = async () => {
@@ -622,6 +792,7 @@ const handleSubSave = async () => {
     let endpoint = `/admin/projects/${editingId.value}`;
     if (subType.value === 'requirement') endpoint += '/requirements';
     else if (subType.value === 'costItem') endpoint += '/cost-items';
+    else if (subType.value === 'caseItem') endpoint += '/cases';
     else endpoint += '/timeline-phases';
 
     if (subEditingId.value) {
@@ -646,12 +817,103 @@ const deleteSubItem = async (type: SubType, id: number) => {
     let endpoint = `/admin/projects/${editingId.value}`;
     if (type === 'requirement') endpoint += `/requirements/${id}`;
     else if (type === 'costItem') endpoint += `/cost-items/${id}`;
+    else if (type === 'caseItem') endpoint += `/cases/${id}`;
     else endpoint += `/timeline-phases/${id}`;
     await api(endpoint, { method: 'DELETE' });
     loadSubData();
   } catch {
     ElMessage.error('删除失败');
   }
+};
+
+const loadNews = async () => {
+  if (!editingId.value) return;
+  try {
+    const api = useApi();
+    const data = await api<NewsItem[]>(`/admin/projects/${editingId.value}/news`);
+    subNews.value = data ?? [];
+  } catch { subNews.value = []; }
+};
+
+const openNewsDialog = async () => {
+  try {
+    const api = useApi();
+    const data = await api<{ items: NewsItem[] }>('/admin/pages?page_type=news&status=published&all=true');
+    newsOptions.value = data.items ?? [];
+  } catch { newsOptions.value = []; }
+  newsSelected.value = [];
+  newsDialogVisible.value = true;
+};
+
+const addNewsLinks = async () => {
+  if (!editingId.value || newsSelected.value.length === 0) return;
+  try {
+    const api = useApi();
+    await api(`/admin/projects/${editingId.value}/news`, { method: 'POST', body: { page_ids: newsSelected.value } });
+    newsDialogVisible.value = false;
+    loadNews();
+  } catch { ElMessage.error('添加资讯失败'); }
+};
+
+const removeNewsLink = async (pageId: number) => {
+  if (!editingId.value) return;
+  try {
+    const api = useApi();
+    await api(`/admin/projects/${editingId.value}/news/${pageId}`, { method: 'DELETE' });
+    loadNews();
+  } catch { ElMessage.error('解除关联失败'); }
+};
+
+const loadCompareConfig = async () => {
+  if (!editingId.value) return;
+  try {
+    const api = useApi();
+    const [fields, cfg] = await Promise.all([
+      api<CompareField[]>('/admin/compare-fields'),
+      api<CompareConfig>(`/admin/projects/${editingId.value}/compare-config`),
+    ]);
+    compareFields.value = fields ?? [];
+    if (cfg) {
+      compareConfig.compare_with = cfg.compare_with ?? [];
+      compareConfig.compare_fields = cfg.compare_fields ?? [];
+    } else {
+      compareConfig.compare_with = [];
+      compareConfig.compare_fields = [];
+    }
+    // Auto-include current project
+    const currentSlug = form.slug || '';
+    if (currentSlug && !compareConfig.compare_with.includes(currentSlug)) {
+      compareConfig.compare_with.unshift(currentSlug);
+    }
+  } catch {}
+};
+
+const loadProjectOptions = async () => {
+  try {
+    const api = useApi();
+    const data = await api<{ items: ProjectOption[] }>('/admin/projects?all=true');
+    projectOptions.value = data.items ?? [];
+  } catch { projectOptions.value = []; }
+};
+
+const saveCompareConfig = async () => {
+  if (!editingId.value) return;
+  if (compareConfig.compare_with.length < 2) {
+    ElMessage({ message: '请至少选择 2 个对比项目', type: 'warning', zIndex: 9999 });
+    return;
+  }
+  try {
+    const api = useApi();
+    await api(`/admin/projects/${editingId.value}/compare-config`, {
+      method: 'PUT',
+      body: {
+        project_id: Number(editingId.value),
+        compare_with: compareConfig.compare_with,
+        compare_fields: compareConfig.compare_fields,
+      },
+    });
+    ElMessage.success('项目对比配置已保存');
+  } catch { ElMessage.error('保存对比配置失败'); }
 };
 
 

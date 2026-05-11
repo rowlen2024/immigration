@@ -13,9 +13,28 @@
         </template>
       </div>
       <template v-else-if="page">
-        <ProjectBreadcrumb :label="page?.title" />
-        <h1 class="page-title">{{ page.title }}</h1>
-        <div class="page-content" v-html="page.content"></div>
+        <!-- default layout -->
+        <template v-if="template === 'default'">
+          <div class="container">
+            <ProjectBreadcrumb :label="page.title" />
+            <h1 class="page-title">{{ page.title }}</h1>
+            <div class="page-content" v-html="page.content"></div>
+          </div>
+        </template>
+
+        <!-- fullwidth layout -->
+        <template v-else-if="template === 'fullwidth'">
+          <ProjectBreadcrumb :label="page.title" />
+          <div class="container">
+            <h1 class="page-title">{{ page.title }}</h1>
+          </div>
+          <div class="page-content page-content--fullwidth" v-html="page.content"></div>
+        </template>
+
+        <!-- landing layout -->
+        <template v-else-if="template === 'landing'">
+          <div class="page-content page-content--landing" v-html="page.content"></div>
+        </template>
       </template>
     </div>
   </div>
@@ -33,6 +52,8 @@ const slug = computed(() => {
 interface CmsPage {
   title: string;
   content: string;
+  template?: string;
+  cover_image?: string;
   meta_title?: string;
   meta_description?: string;
 }
@@ -48,6 +69,8 @@ const { data, pending, error: fetchError } = await useFetch(
 );
 
 const page = computed(() => data.value || null);
+
+const template = computed(() => page.value?.template || 'default');
 
 const error = computed(() => {
   if (!fetchError.value) return null;
@@ -191,6 +214,25 @@ useSeo({
 
   .not-found-title {
     font-size: 80px;
+  }
+}
+
+.page-content--fullwidth {
+  padding: 0 16px;
+}
+
+.page-content--landing {
+  /* No container — full bleed */
+}
+
+.page-content--landing :deep(img) {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (min-width: 768px) {
+  .page-content--fullwidth {
+    padding: 0 24px;
   }
 }
 </style>

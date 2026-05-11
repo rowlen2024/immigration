@@ -16,7 +16,8 @@ type Repository struct {
 	Nav           *NavRepo
 	Requirement   *RequirementRepo
 	CostItem      *CostItemRepo
-	TimelinePhase *TimelinePhaseRepo
+	TimelinePhase  *TimelinePhaseRepo
+	CompareConfig  *CompareConfigRepo
 }
 
 func New(db *gorm.DB) *Repository {
@@ -32,6 +33,7 @@ func New(db *gorm.DB) *Repository {
 		Nav:           &NavRepo{db: db},
 		Requirement:   &RequirementRepo{db: db},
 		CostItem:      &CostItemRepo{db: db},
-		TimelinePhase: &TimelinePhaseRepo{db: db},
+		TimelinePhase:  &TimelinePhaseRepo{db: db},
+		CompareConfig:  &CompareConfigRepo{db: db},
 	}
 }

@@ -47,6 +47,57 @@
           <ProjectFAQAccordion :items="faqs" />
         </section>
 
+        <section v-if="project.cases.length > 0" class="detail-section">
+          <h2 class="detail-section-title">成功案例</h2>
+          <div class="case-grid">
+            <div v-for="c in project.cases" :key="c.name" class="case-card">
+              <img v-if="c.photo" :src="c.photo" :alt="c.name" class="case-photo" />
+              <div class="case-body">
+                <h4 class="case-name">{{ c.name }}</h4>
+                <p class="case-meta">{{ c.country }} | {{ c.amount }} | {{ c.period }}</p>
+                <p v-if="c.description" class="case-desc">{{ c.description }}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section v-if="project.news.length > 0" class="detail-section">
+          <h2 class="detail-section-title">最新资讯</h2>
+          <div class="news-list">
+            <NuxtLink v-for="n in project.news" :key="n.id" :to="`/pages/${n.slug}`" class="news-item">
+              <img v-if="n.cover" :src="n.cover" :alt="n.title" class="news-cover" />
+              <div class="news-body">
+                <h4 class="news-title">{{ n.title }}</h4>
+                <span v-if="n.date" class="news-date">{{ new Date(n.date).toLocaleDateString('zh-CN') }}</span>
+              </div>
+            </NuxtLink>
+          </div>
+        </section>
+
+        <section v-if="project.compare_config && project.compare_config.compare_with.length >= 2" class="detail-section">
+          <h2 class="detail-section-title">项目对比</h2>
+          <div v-if="comparePending" class="compare-loading">加载对比数据...</div>
+          <div v-else-if="compareError" class="compare-error">{{ compareError }}</div>
+          <div v-else-if="compareData" class="compare-table-wrap">
+            <table class="compare-table">
+              <thead>
+                <tr>
+                  <th class="compare-label-col">对比项目</th>
+                  <th v-for="(proj, i) in compareData.projects" :key="i" class="compare-col-header">
+                    {{ proj.title }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in compareData.rows" :key="row.label">
+                  <td class="compare-label">{{ row.label }}</td>
+                  <td v-for="(val, j) in row.values" :key="j" class="compare-value">{{ val }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         <section class="detail-cta">
           <h3>对{{ project.title }}感兴趣？</h3>
           <p>立即联系我们，专业顾问为您一对一解答</p>
@@ -65,6 +116,9 @@ interface ApiRequirement { label: string; is_required: boolean; }
 interface ApiCostItem { name: string; amount: string; note: string; }
 interface ApiTimelinePhase { phase_number: number; title: string; description: string; duration: string; }
 interface ApiFAQ { question: string; answer: string; }
+interface ApiCase { name: string; country_from: string; investment_amount: string; processing_period: string; description: string; photo_url: string; }
+interface ApiNewsPage { id: number; title: string; slug: string; cover_image: string; created_at: string; }
+interface ApiCompareConfig { compare_with: string[]; compare_fields: string[]; }
 
 interface ApiProject {
   name: string;
@@ -84,6 +138,9 @@ interface ApiProject {
   cost_items: ApiCostItem[];
   timeline_phases: ApiTimelinePhase[];
   faqs: ApiFAQ[];
+  cases: ApiCase[];
+  news: ApiNewsPage[];
+  compare_config: ApiCompareConfig | null;
 }
 
 const { data, pending, error } = await useFetch<{ data: ApiProject }>(`/api/v1/projects/${slug}`);
@@ -107,8 +164,60 @@ const project = computed(() => {
       period: t.duration,
     })),
     faqs: (p?.faqs || []).map((f) => ({ question: f.question, answer: f.answer })),
+    cases: (p?.cases || []).map((c) => ({
+      name: c.name,
+      country: c.country_from,
+      amount: c.investment_amount,
+      period: c.processing_period,
+      description: c.description,
+      photo: c.photo_url,
+    })),
+    news: (p?.news || []).map((n) => ({
+      id: n.id,
+      title: n.title,
+      slug: n.slug,
+      cover: n.cover_image,
+      date: n.created_at,
+    })),
+    compare_config: p?.compare_config || null,
   };
 });
+
+// Compare data fetch
+interface CompareRowData {
+  label: string;
+  values: string[];
+}
+
+interface CompareTableData {
+  projects: Array<{ title: string; slug: string }>;
+  rows: CompareRowData[];
+}
+
+const compareSlugs = computed(() => {
+  const cfg = project.value.compare_config;
+  if (!cfg || !cfg.compare_with || cfg.compare_with.length < 2) return '';
+  return cfg.compare_with.join(',');
+});
+
+const {
+  data: compareRaw,
+  pending: comparePending,
+  error: compareErrorRaw,
+} = useFetch<{ data: CompareTableData }>(
+  () => `/api/v1/projects/compare?slugs=${compareSlugs.value}`,
+);
+
+const compareData = computed<CompareTableData | null>(() => {
+  const raw = compareRaw.value as any;
+  if (raw?.data?.rows) return raw.data;
+  if (raw?.rows) return raw as CompareTableData;
+  return null;
+});
+
+const compareError = computed(() =>
+  compareErrorRaw.value ? '加载对比数据失败' : null
+);
 
 useSeo({
   title: project.value.title || '项目详情',
@@ -222,6 +331,182 @@ const faqs = computed(() => project.value.faqs);
 }
 
 .error-state {
+  color: #c62828;
+}
+
+.case-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.case-card {
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.case-photo {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.case-body {
+  padding: 16px;
+}
+
+.case-name {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.case-meta {
+  font-size: 13px;
+  color: var(--text-light);
+  margin-bottom: 8px;
+}
+
+.case-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.news-item {
+  display: flex;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.2s;
+}
+
+.news-item:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.news-cover {
+  width: 120px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.news-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.news-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.news-date {
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+.compare-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: max-content;
+}
+
+.compare-table thead {
+  background-color: var(--primary);
+  color: var(--bg-white);
+}
+
+.compare-table thead th {
+  padding: 14px 16px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.compare-table thead th:first-child {
+  border-radius: var(--radius-md) 0 0 0;
+}
+
+.compare-table thead th:last-child {
+  border-radius: 0 var(--radius-md) 0 0;
+}
+
+.compare-label-col {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background-color: var(--primary);
+  min-width: 120px;
+}
+
+.compare-col-header {
+  min-width: 180px;
+}
+
+.compare-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.compare-table tbody tr:nth-child(even) {
+  background-color: var(--bg-light);
+}
+
+.compare-label {
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 120px;
+}
+
+.compare-table tbody tr:nth-child(even) .compare-label {
+  background-color: var(--bg-light);
+}
+
+.compare-table tbody tr:nth-child(odd) .compare-label {
+  background-color: var(--bg-white);
+}
+
+.compare-value {
+  min-width: 180px;
+}
+
+.compare-loading,
+.compare-error {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-light);
+  font-size: 14px;
+}
+
+.compare-error {
   color: #c62828;
 }
 
