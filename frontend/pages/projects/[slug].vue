@@ -11,18 +11,28 @@
       </div>
     </section>
 
+    <nav v-if="tabs.length > 0" class="tab-nav" ref="tabNavRef">
+      <div class="container">
+        <div class="tab-nav-scroll">
+          <button
+            v-for="tab in tabs"
+            :key="tab.id"
+            class="tab-btn"
+            :class="{ active: activeTab === tab.id }"
+            @click="scrollToSection(tab.id)"
+          >{{ tab.label }}</button>
+        </div>
+      </div>
+    </nav>
+
     <div class="container">
       <div v-if="pending" class="loading-state">加载中...</div>
       <div v-else-if="error" class="error-state">{{ error }}</div>
       <template v-else>
-        <section class="detail-section">
+        <section id="overview" class="detail-section">
           <h2 class="detail-section-title">项目概览</h2>
           <ProjectQuickFacts :facts="quickFacts" />
-        </section>
-
-        <section v-if="project.description" class="detail-section">
-          <h2 class="detail-section-title">项目介绍</h2>
-          <div class="detail-content">
+          <div v-if="project.description" class="detail-content" style="margin-top: 24px;">
             <p>{{ project.description }}</p>
           </div>
         </section>
@@ -42,12 +52,23 @@
           <ProjectTimeline :phases="timelinePhases" />
         </section>
 
-        <section v-if="faqs.length > 0" class="detail-section">
-          <h2 class="detail-section-title">常见问题</h2>
-          <ProjectFAQAccordion :items="faqs" />
+        <section id="advantages" v-if="advantages.length > 0" class="detail-section">
+          <h2 class="detail-section-title">项目优势</h2>
+          <div class="advantages-grid">
+            <div v-for="(adv, index) in advantages" :key="index" class="advantage-card">
+              <div class="advantage-icon">
+                <span v-if="getIconByName(adv.icon)" v-html="getIconSvg(adv.icon, 22, '#C8963E')" class="advantage-svg"></span>
+                <span v-else class="advantage-svg-fallback">
+                  <span v-html="getIconSvg('star', 22, '#C8963E')"></span>
+                </span>
+              </div>
+              <h3 class="advantage-title">{{ adv.title }}</h3>
+              <p class="advantage-desc">{{ adv.description }}</p>
+            </div>
+          </div>
         </section>
 
-        <section v-if="project.cases.length > 0" class="detail-section">
+        <section id="cases" v-if="project.cases.length > 0" class="detail-section">
           <h2 class="detail-section-title">成功案例</h2>
           <div class="case-grid">
             <div v-for="c in project.cases" :key="c.name" class="case-card">
@@ -61,7 +82,7 @@
           </div>
         </section>
 
-        <section v-if="project.news.length > 0" class="detail-section">
+        <section id="news" v-if="project.news.length > 0" class="detail-section">
           <h2 class="detail-section-title">最新资讯</h2>
           <div class="news-list">
             <NuxtLink v-for="n in project.news" :key="n.id" :to="`/pages/${n.slug}`" class="news-item">
@@ -74,7 +95,7 @@
           </div>
         </section>
 
-        <section v-if="project.compare_config && project.compare_config.compare_with.length >= 2" class="detail-section">
+        <section id="compare" v-if="project.compare_config && project.compare_config.compare_with.length >= 2" class="detail-section">
           <h2 class="detail-section-title">项目对比</h2>
           <div v-if="comparePending" class="compare-loading">加载对比数据...</div>
           <div v-else-if="compareError" class="compare-error">{{ compareError }}</div>
@@ -91,11 +112,23 @@
               <tbody>
                 <tr v-for="row in compareData.rows" :key="row.label">
                   <td class="compare-label">{{ row.label }}</td>
-                  <td v-for="(val, j) in row.values" :key="j" class="compare-value">{{ val }}</td>
+                  <td v-for="(val, j) in row.values" :key="j" class="compare-value">
+                    <template v-if="row.label === '申请条件' && row.items?.[j]?.length">
+                      <div class="compare-requirements-grid">
+                        <span v-for="(item, k) in row.items[j]" :key="k">{{ item }}</span>
+                      </div>
+                    </template>
+                    <template v-else>{{ val }}</template>
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
+        </section>
+
+        <section id="faqs" v-if="faqs.length > 0" class="detail-section">
+          <h2 class="detail-section-title">常见问题</h2>
+          <ProjectFAQAccordion :items="faqs" />
         </section>
 
         <section class="detail-cta">
@@ -109,6 +142,8 @@
 </template>
 
 <script setup lang="ts">
+import { getIconByName, getIconSvg } from '~/composables/lucideIcons';
+
 const route = useRoute();
 const slug = route.params.slug as string;
 
@@ -119,6 +154,8 @@ interface ApiFAQ { question: string; answer: string; }
 interface ApiCase { name: string; country_from: string; investment_amount: string; processing_period: string; description: string; photo_url: string; }
 interface ApiNewsPage { id: number; title: string; slug: string; cover_image: string; created_at: string; }
 interface ApiCompareConfig { compare_with: string[]; compare_fields: string[]; }
+
+interface ApiAdvantage { icon: string; icon_type: string; title: string; description: string; }
 
 interface ApiProject {
   name: string;
@@ -141,6 +178,7 @@ interface ApiProject {
   cases: ApiCase[];
   news: ApiNewsPage[];
   compare_config: ApiCompareConfig | null;
+  advantages: ApiAdvantage[];
 }
 
 const { data, pending, error } = await useFetch<{ data: ApiProject }>(`/api/v1/projects/${slug}`);
@@ -180,6 +218,12 @@ const project = computed(() => {
       date: n.created_at,
     })),
     compare_config: p?.compare_config || null,
+    advantages: (p?.advantages || []).map((a) => ({
+      icon: a.icon,
+      icon_type: a.icon_type,
+      title: a.title,
+      description: a.description,
+    })),
   };
 });
 
@@ -187,6 +231,7 @@ const project = computed(() => {
 interface CompareRowData {
   label: string;
   values: string[];
+  items?: string[][];
 }
 
 interface CompareTableData {
@@ -242,9 +287,110 @@ const requirements = computed(() => project.value.requirements);
 const costTable = computed(() => project.value.cost_table);
 const timelinePhases = computed(() => project.value.timeline);
 const faqs = computed(() => project.value.faqs);
+const advantages = computed(() => project.value.advantages);
+
+interface TabItem {
+  id: string;
+  label: string;
+}
+
+const tabs = computed<TabItem[]>(() => {
+  const items: TabItem[] = [];
+  items.push({ id: 'overview', label: '项目概览' });
+  if (requirements.value.length > 0) items.push({ id: 'requirements', label: '申请条件' });
+  if (costTable.value.length > 0) items.push({ id: 'cost', label: '费用明细' });
+  if (timelinePhases.value.length > 0) items.push({ id: 'timeline', label: '申请流程' });
+  if (advantages.value.length > 0) items.push({ id: 'advantages', label: '项目优势' });
+  if (project.value.cases.length > 0) items.push({ id: 'cases', label: '成功案例' });
+  if (project.value.news.length > 0) items.push({ id: 'news', label: '最新资讯' });
+  if (project.value.compare_config && project.value.compare_config.compare_with.length >= 2) items.push({ id: 'compare', label: '项目对比' });
+  if (faqs.value.length > 0) items.push({ id: 'faqs', label: '常见问题' });
+  return items;
+});
+
+const activeTab = ref('overview');
+const tabNavRef = ref<HTMLElement | null>(null);
+
+function scrollToSection(id: string) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const navH = tabNavRef.value?.offsetHeight || 0;
+  const top = el.getBoundingClientRect().top + window.scrollY - navH - 64;
+  window.scrollTo({ top, behavior: 'smooth' });
+}
+
+let observer: IntersectionObserver | null = null;
+
+onMounted(() => {
+  observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          activeTab.value = entry.target.id;
+        }
+      }
+    },
+    { rootMargin: `-${(tabNavRef.value?.offsetHeight || 0) + 64}px 0px -60% 0px` },
+  );
+  for (const tab of tabs.value) {
+    const el = document.getElementById(tab.id);
+    if (el) observer.observe(el);
+  }
+});
+
+onUnmounted(() => {
+  observer?.disconnect();
+  observer = null;
+});
 </script>
 
 <style scoped>
+.tab-nav {
+  position: sticky;
+  top: var(--header-height);
+  z-index: 50;
+  background: var(--bg-white);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.tab-nav-scroll {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.tab-nav-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-btn {
+  flex-shrink: 0;
+  padding: 14px 20px;
+  font-size: 15px;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  color: var(--primary);
+}
+
+.tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
 .detail-hero {
   background-size: cover;
   background-position: center;
@@ -498,6 +644,12 @@ const faqs = computed(() => project.value.faqs);
   min-width: 180px;
 }
 
+.compare-requirements-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+
 .compare-loading,
 .compare-error {
   text-align: center;
@@ -530,5 +682,68 @@ const faqs = computed(() => project.value.faqs);
   .detail-section-title {
     font-size: 24px;
   }
+}
+
+.advantages-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+@media (max-width: 992px) {
+  .advantages-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .advantages-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.advantage-card {
+  text-align: center;
+  padding: 24px 16px;
+  border-radius: 12px;
+  background: var(--bg-card, #fafafa);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.advantage-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.advantage-icon {
+  margin-bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(200, 150, 62, 0.1);
+}
+
+.advantage-svg,
+.advantage-svg-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.advantage-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 8px;
+}
+
+.advantage-desc {
+  font-size: 13px;
+  color: var(--color-text-muted, #666);
+  line-height: 1.6;
+  margin: 0;
 }
 </style>
