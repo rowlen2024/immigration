@@ -293,7 +293,16 @@
             <el-button type="primary" size="small" @click="openSubDialog('advantage')">添加优势</el-button>
           </div>
           <el-table :data="subData.advantages" border size="small">
-            <el-table-column prop="icon" label="图标" width="70" />
+            <el-table-column label="图标" width="70">
+              <template #default="{ row: r }">
+                <span
+                  v-if="getIconByName(r.icon)"
+                  v-html="getIconSvg(r.icon, 18, '#c8963e')"
+                  style="display:inline-flex;align-items:center"
+                ></span>
+                <span v-else>{{ r.icon }}</span>
+              </template>
+            </el-table-column>
             <el-table-column prop="title" label="标题" min-width="130" />
             <el-table-column prop="description" label="描述" min-width="160" />
             <el-table-column prop="sort_order" label="排序" width="60" />
@@ -476,7 +485,7 @@
         </template>
         <template v-else-if="subType === 'advantage'">
           <el-form-item label="图标" prop="icon">
-            <el-input v-model="subForm.icon" />
+            <IconPicker v-model="subForm.icon" />
           </el-form-item>
           <el-form-item label="标题" prop="title">
             <el-input v-model="subForm.title" />
@@ -511,7 +520,8 @@
 import { Search, Refresh } from '@element-plus/icons-vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import ImageInput from '~/components/admin/ImageInput.vue';
-import { getIconSvg } from '~/composables/lucideIcons';
+import IconPicker from '~/components/admin/IconPicker.vue';
+import { getIconByName, getIconSvg } from '~/composables/lucideIcons';
 import { pinyin } from 'pinyin-pro';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });

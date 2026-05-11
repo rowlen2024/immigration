@@ -98,7 +98,7 @@
           <RichEditor v-model="form.content" />
         </el-form-item>
         <el-form-item label="封面图片" prop="cover_image">
-          <MediaPicker v-model="form.cover_image" />
+          <ImageInput v-model="form.cover_image" placeholder="封面图片URL" />
         </el-form-item>
         <el-row :gutter="12">
           <el-col :span="12">
@@ -153,6 +153,7 @@ import { Search, Refresh } from '@element-plus/icons-vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { getIconSvg } from '~/composables/lucideIcons';
 import { pinyin } from 'pinyin-pro';
+import ImageInput from '~/components/admin/ImageInput.vue';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
 
@@ -194,6 +195,7 @@ const onSearch = () => {
 };
 
 const defaultForm = (): Partial<Page> => ({
+  id: undefined,
   title: '',
   slug: '',
   content: '',

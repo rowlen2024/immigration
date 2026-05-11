@@ -111,6 +111,7 @@ func (s *PageService) Create(page *model.Page) (*model.Page, error) {
 	if page.Slug == "" {
 		return nil, errors.New("page slug is required")
 	}
+	page.ID = 0
 	page.Content = sanitizer.Sanitize(page.Content)
 	if err := s.repo.Create(page); err != nil {
 		return nil, fmt.Errorf("failed to create page: %w", err)

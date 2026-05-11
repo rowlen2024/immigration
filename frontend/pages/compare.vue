@@ -52,8 +52,22 @@
             <tbody>
               <tr v-for="row in comparison.rows" :key="row.label">
                 <td class="row-label">{{ row.label }}</td>
-                <td class="col-a">{{ row.values[0] }}</td>
-                <td class="col-b">{{ row.values[1] }}</td>
+                <td class="col-a">
+                  <template v-if="row.label === '申请条件' && row.items?.[0]?.length">
+                    <div class="compare-requirements-grid">
+                      <span v-for="(item, k) in row.items[0]" :key="k">{{ item }}</span>
+                    </div>
+                  </template>
+                  <template v-else>{{ row.values[0] }}</template>
+                </td>
+                <td class="col-b">
+                  <template v-if="row.label === '申请条件' && row.items?.[1]?.length">
+                    <div class="compare-requirements-grid">
+                      <span v-for="(item, k) in row.items[1]" :key="k">{{ item }}</span>
+                    </div>
+                  </template>
+                  <template v-else>{{ row.values[1] }}</template>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -269,6 +283,12 @@ onMounted(() => {
 .col-a,
 .col-b {
   min-width: 200px;
+}
+
+.compare-requirements-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
 }
 
 .same-project-warning {

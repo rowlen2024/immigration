@@ -69,8 +69,9 @@ func (s *ProjectService) Compare(slugs []string) ([]model.Project, error) {
 
 // CompareRow represents a single comparison row.
 type CompareRow struct {
-	Label  string   `json:"label"`
-	Values []string `json:"values"`
+	Label  string     `json:"label"`
+	Values []string   `json:"values"`
+	Items  [][]string `json:"items,omitempty"`
 }
 
 // CompareResult holds the full comparison output.
@@ -104,7 +105,7 @@ func (s *ProjectService) CompareRows(slugs []string) (*CompareResult, error) {
 		{Label: "投资金额", Values: pluck(projects, func(p model.Project) string { return p.InvestmentAmount })},
 		{Label: "办理周期", Values: pluck(projects, func(p model.Project) string { return p.ProcessingPeriod })},
 		{Label: "适合人群", Values: pluck(projects, func(p model.Project) string { return p.TargetCrowd })},
-		{Label: "申请条件", Values: pluck(projects, func(p model.Project) string { return joinRequirements(p.Requirements) })},
+		{Label: "申请条件", Values: pluck(projects, func(p model.Project) string { return joinRequirements(p.Requirements) }), Items: pluckRequirements(projects)},
 		{Label: "费用总计", Values: pluck(projects, func(p model.Project) string { return p.CostsTotal })},
 		{Label: "流程步骤", Values: pluck(projects, func(p model.Project) string { return fmt.Sprintf("%d 个阶段", len(p.TimelinePhases)) })},
 	}
@@ -121,9 +122,14 @@ func pluck(projects []model.Project, fn func(model.Project) string) []string {
 }
 
 func joinRequirements(reqs []model.Requirement) string {
-	if len(reqs) == 0 {
+	labels := requirementLabels(reqs)
+	if len(labels) == 0 {
 		return ""
 	}
+	return strings.Join(labels, "；")
+}
+
+func requirementLabels(reqs []model.Requirement) []string {
 	labels := make([]string, len(reqs))
 	for i, r := range reqs {
 		prefix := ""
@@ -134,7 +140,15 @@ func joinRequirements(reqs []model.Requirement) string {
 		}
 		labels[i] = prefix + r.Label
 	}
-	return strings.Join(labels, "；")
+	return labels
+}
+
+func pluckRequirements(projects []model.Project) [][]string {
+	items := make([][]string, len(projects))
+	for i, p := range projects {
+		items[i] = requirementLabels(p.Requirements)
+	}
+	return items
 }
 
 // Create creates a new project.
