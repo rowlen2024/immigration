@@ -22,6 +22,7 @@ func (r *ProjectRepo) FindBySlug(slug string) (*model.Project, error) {
 		Preload("Cases").
 		Preload("News").
 		Preload("CompareConfig").
+		Preload("Advantages").
 		Where("slug = ?", slug).
 		First(&project).Error
 	if err != nil {
@@ -66,6 +67,7 @@ func (r *ProjectRepo) FindBySlugs(slugs []string) ([]model.Project, error) {
 		Preload("Milestones").
 		Preload("FAQs").
 		Preload("Cases").
+		Preload("Advantages").
 		Find(&projects).Error
 	if err != nil {
 		return nil, err
@@ -78,7 +80,7 @@ func (r *ProjectRepo) Create(project *model.Project) error {
 }
 
 func (r *ProjectRepo) Update(project *model.Project) error {
-	return r.db.Omit("Requirements", "CostItems", "TimelinePhases", "Milestones", "FAQs", "Cases").Save(project).Error
+	return r.db.Omit("Requirements", "CostItems", "TimelinePhases", "Milestones", "FAQs", "Cases", "Advantages").Save(project).Error
 }
 
 func (r *ProjectRepo) Delete(id uint64) error {

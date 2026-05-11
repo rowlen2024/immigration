@@ -175,3 +175,59 @@ func (s *TimelinePhaseService) Delete(projectID uint64, id uint64) error {
 	}
 	return nil
 }
+
+type ProjectAdvantageService struct {
+	repo repository.ProjectAdvantageRepository
+}
+
+func NewProjectAdvantageService(repo repository.ProjectAdvantageRepository) *ProjectAdvantageService {
+	return &ProjectAdvantageService{repo: repo}
+}
+
+func (s *ProjectAdvantageService) List(projectID uint64) ([]model.ProjectAdvantage, error) {
+	items, err := s.repo.FindByProjectID(projectID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list project advantages: %w", err)
+	}
+	return items, nil
+}
+
+func (s *ProjectAdvantageService) Create(projectID uint64, item *model.ProjectAdvantage) (*model.ProjectAdvantage, error) {
+	if item == nil {
+		return nil, errors.New("project advantage is nil")
+	}
+	if item.Title == "" {
+		return nil, errors.New("title is required")
+	}
+	item.ProjectID = projectID
+	if err := s.repo.Create(item); err != nil {
+		return nil, fmt.Errorf("failed to create project advantage: %w", err)
+	}
+	return item, nil
+}
+
+func (s *ProjectAdvantageService) Update(projectID uint64, id uint64, item *model.ProjectAdvantage) (*model.ProjectAdvantage, error) {
+	if item == nil {
+		return nil, errors.New("project advantage is nil")
+	}
+	if id == 0 {
+		return nil, errors.New("id is required")
+	}
+	item.ID = id
+	item.ProjectID = projectID
+	if err := s.repo.Update(item); err != nil {
+		return nil, fmt.Errorf("failed to update project advantage: %w", err)
+	}
+	return item, nil
+}
+
+func (s *ProjectAdvantageService) Delete(projectID uint64, id uint64) error {
+	if id == 0 {
+		return errors.New("id is required")
+	}
+	_ = projectID
+	if err := s.repo.Delete(id); err != nil {
+		return fmt.Errorf("failed to delete project advantage: %w", err)
+	}
+	return nil
+}

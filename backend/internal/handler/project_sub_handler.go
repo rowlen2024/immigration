@@ -239,3 +239,79 @@ func (h *Handler) DeleteTimelinePhase(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, dto.Success(nil))
 }
+	// Project Advantages
+
+	func (h *Handler) ListProjectAdvantages(c *gin.Context) {
+		projectID, err := parseIDParam(c, "id")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.Error(400, "invalid project id"))
+			return
+		}
+		items, err := h.svc.Advantage.List(projectID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+			return
+		}
+		c.JSON(http.StatusOK, dto.Success(items))
+	}
+
+	func (h *Handler) CreateProjectAdvantage(c *gin.Context) {
+		projectID, err := parseIDParam(c, "id")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.Error(400, "invalid project id"))
+			return
+		}
+		var item model.ProjectAdvantage
+		if err := c.ShouldBindJSON(&item); err != nil {
+			c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request"))
+			return
+		}
+		created, err := h.svc.Advantage.Create(projectID, &item)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+			return
+		}
+		c.JSON(http.StatusCreated, dto.Success(created))
+	}
+
+	func (h *Handler) UpdateProjectAdvantage(c *gin.Context) {
+		projectID, err := parseIDParam(c, "id")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.Error(400, "invalid project id"))
+			return
+		}
+		aid, err := parseIDParam(c, "aid")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.Error(400, "invalid advantage id"))
+			return
+		}
+		var item model.ProjectAdvantage
+		if err := c.ShouldBindJSON(&item); err != nil {
+			c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request"))
+			return
+		}
+		updated, err := h.svc.Advantage.Update(projectID, aid, &item)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+			return
+		}
+		c.JSON(http.StatusOK, dto.Success(updated))
+	}
+
+	func (h *Handler) DeleteProjectAdvantage(c *gin.Context) {
+		projectID, err := parseIDParam(c, "id")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.Error(400, "invalid project id"))
+			return
+		}
+		aid, err := parseIDParam(c, "aid")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.Error(400, "invalid advantage id"))
+			return
+		}
+		if err := h.svc.Advantage.Delete(projectID, aid); err != nil {
+			c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+			return
+		}
+		c.JSON(http.StatusOK, dto.Success(nil))
+	}

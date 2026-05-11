@@ -45,6 +45,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&model.CostItem{},
 		&model.TimelinePhase{},
 		&model.Milestone{},
+		&model.ProjectAdvantage{},
 		&model.FAQ{},
 		&model.Case{},
 		&model.Page{},

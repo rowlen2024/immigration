@@ -80,3 +80,28 @@ func (r *TimelinePhaseRepo) Update(item *model.TimelinePhase) error {
 func (r *TimelinePhaseRepo) Delete(id uint64) error {
 	return r.db.Delete(&model.TimelinePhase{}, id).Error
 }
+
+type ProjectAdvantageRepo struct {
+	db *gorm.DB
+}
+
+func (r *ProjectAdvantageRepo) FindByProjectID(projectID uint64) ([]model.ProjectAdvantage, error) {
+	var items []model.ProjectAdvantage
+	err := r.db.Where("project_id = ?", projectID).Order("sort_order asc").Find(&items).Error
+	if err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+func (r *ProjectAdvantageRepo) Create(item *model.ProjectAdvantage) error {
+	return r.db.Create(item).Error
+}
+
+func (r *ProjectAdvantageRepo) Update(item *model.ProjectAdvantage) error {
+	return r.db.Omit("created_at").Save(item).Error
+}
+
+func (r *ProjectAdvantageRepo) Delete(id uint64) error {
+	return r.db.Delete(&model.ProjectAdvantage{}, id).Error
+}

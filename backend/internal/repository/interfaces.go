@@ -120,3 +120,11 @@ type TimelinePhaseRepository interface {
 	Update(phase *model.TimelinePhase) error
 	Delete(id uint64) error
 }
+
+// ProjectAdvantageRepository defines the interface for project advantage data access.
+type ProjectAdvantageRepository interface {
+	FindByProjectID(projectID uint64) ([]model.ProjectAdvantage, error)
+	Create(adv *model.ProjectAdvantage) error
+	Update(adv *model.ProjectAdvantage) error
+	Delete(id uint64) error
+}

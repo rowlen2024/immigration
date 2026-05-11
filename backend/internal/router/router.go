@@ -72,6 +72,11 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 				projects.PUT("/:id/timeline-phases/:tid", middleware.RBAC("projects:write"), h.UpdateTimelinePhase)
 				projects.DELETE("/:id/timeline-phases/:tid", middleware.RBAC("projects:write"), h.DeleteTimelinePhase)
 
+				projects.GET("/:id/advantages", middleware.RBAC("admin:read"), h.ListProjectAdvantages)
+				projects.POST("/:id/advantages", middleware.RBAC("projects:write"), h.CreateProjectAdvantage)
+				projects.PUT("/:id/advantages/:aid", middleware.RBAC("projects:write"), h.UpdateProjectAdvantage)
+				projects.DELETE("/:id/advantages/:aid", middleware.RBAC("projects:write"), h.DeleteProjectAdvantage)
+
 				// Cases sub-resources
 				projects.GET("/:id/cases", middleware.RBAC("admin:read"), h.ListProjectCases)
 				projects.POST("/:id/cases", middleware.RBAC("projects:write"), h.CreateProjectCase)
