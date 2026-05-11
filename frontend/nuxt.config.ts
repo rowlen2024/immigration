@@ -18,15 +18,15 @@ export default defineNuxtConfig({
       '/uploads': 'http://localhost:8080',
     },
     routeRules: {
-      // Pre-rendered at build time — SSR during build, static HTML at runtime
-      '/': { ssr: true, prerender: true },
-      '/projects/eb5': { ssr: true, prerender: true },
-      '/projects/cies': { ssr: true, prerender: true },
-      '/projects/panama': { ssr: true, prerender: true },
-      '/cases': { ssr: true, prerender: true },
-      '/faq': { ssr: true, prerender: true },
-      '/contact': { ssr: true, prerender: true },
-      '/compare': { ssr: true, prerender: true },
+      // ISR — SSR on first request / after 5min TTL, cached static HTML otherwise
+      '/': { swr: 300 },
+      '/projects/eb5': { swr: 300 },
+      '/projects/cies': { swr: 300 },
+      '/projects/panama': { swr: 300 },
+      '/cases': { swr: 300 },
+      '/faq': { swr: 300 },
+      '/contact': { swr: 300 },
+      '/compare': { swr: 300 },
 
       // Admin — never SSR
       '/admin/**': { ssr: false },

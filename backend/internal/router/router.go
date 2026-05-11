@@ -13,6 +13,7 @@ import (
 
 func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	r := gin.Default()
+	r.MaxMultipartMemory = 50 << 20 // 50MB
 
 	h := handler.New(db, cfg)
 
