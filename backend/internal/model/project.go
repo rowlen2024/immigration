@@ -39,6 +39,7 @@ type Project struct {
 	CostItems      []CostItem      `gorm:"foreignKey:ProjectID" json:"cost_items,omitempty"`
 	TimelinePhases []TimelinePhase `gorm:"foreignKey:ProjectID" json:"timeline_phases,omitempty"`
 	Milestones     []Milestone     `gorm:"foreignKey:ProjectID" json:"milestones,omitempty"`
+	Advantages     []ProjectAdvantage `gorm:"foreignKey:ProjectID" json:"advantages,omitempty"`
 	FAQs           []FAQ           `gorm:"foreignKey:ProjectID" json:"faqs,omitempty"`
 	Cases          []Case          `gorm:"foreignKey:ProjectID" json:"cases,omitempty"`
 	News           []Page         `gorm:"many2many:project_news;" json:"news,omitempty"`
