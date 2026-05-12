@@ -143,7 +143,7 @@
               </el-col>
               <el-col :span="12">
                 <el-form-item label="投资价值" prop="investment_value">
-                  <el-input v-model="form.investment_value" />
+                  <el-input-number v-model="form.investment_value" :min="0" :precision="2" class="w-full" />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -534,7 +534,7 @@ interface Project {
   flag_emoji: string;
   tagline: string;
   investment_amount: string;
-  investment_value: string;
+  investment_value: number;
   processing_period: string;
   target_crowd: string;
   overview_title: string;
@@ -618,7 +618,7 @@ const defaultForm = (): Partial<Project> => ({
   flag_emoji: '',
   tagline: '',
   investment_amount: '',
-  investment_value: '',
+  investment_value: 0,
   processing_period: '',
   target_crowd: '',
   overview_title: '',
