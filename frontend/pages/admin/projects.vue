@@ -91,7 +91,7 @@
     <el-drawer
       v-model="drawerVisible"
       :title="editingId ? '编辑项目' : '新建项目'"
-      size="700px"
+      size="750px"
       destroy-on-close
       @opened="onDialogOpened"
     >
@@ -473,8 +473,8 @@
           <el-form-item label="处理周期" prop="processing_period">
             <el-input v-model="subForm.processing_period" />
           </el-form-item>
-          <el-form-item label="描述" prop="description">
-            <el-input v-model="subForm.description" type="textarea" :rows="3" />
+          <el-form-item label="内容" prop="content">
+            <RichEditor v-model="subForm.content" />
           </el-form-item>
           <el-form-item label="封面图片" prop="photo_url">
             <ImageInput v-model="subForm.photo_url" placeholder="图片 URL 或上传" />
@@ -521,6 +521,7 @@ import { Search, Refresh } from '@element-plus/icons-vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import ImageInput from '~/components/admin/ImageInput.vue';
 import IconPicker from '~/components/admin/IconPicker.vue';
+import RichEditor from '~/components/RichEditor.vue';
 import { getIconByName, getIconSvg } from '~/composables/lucideIcons';
 import { pinyin } from 'pinyin-pro';
 
@@ -558,7 +559,7 @@ interface CaseItem {
   country_from: string;
   investment_amount: string;
   processing_period: string;
-  description: string;
+  content: string;
   photo_url: string;
   sort_order: number;
 }
@@ -698,7 +699,7 @@ const defaultSubForm = (type: SubType): Record<string, any> => {
     case 'timelinePhase':
       return { phase_number: 1, title: '', description: '', duration: '', sort_order: 0 };
     case 'caseItem':
-      return { name: '', country_from: '', investment_amount: '', processing_period: '', description: '', photo_url: '', sort_order: 0 };
+      return { name: '', country_from: '', investment_amount: '', processing_period: '', content: '', photo_url: '', sort_order: 0 };
     case 'advantage':
       return { icon: '', icon_type: 'lucide', title: '', description: '', sort_order: 0 };
   }

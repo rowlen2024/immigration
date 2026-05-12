@@ -63,7 +63,7 @@
       <el-pagination v-model:current-page="page" :page-size="pageSize" :total="total" layout="total, prev, pager, next" @current-change="loadList" />
     </div>
 
-    <el-drawer v-model="drawerVisible" :title="editingId ? '编辑案例' : '新建案例'" size="560px" destroy-on-close>
+    <el-drawer v-model="drawerVisible" :title="editingId ? '编辑案例' : '新建案例'" size="900px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
         <el-form-item label="姓名" prop="name">
           <el-input v-model="form.name" />
@@ -88,8 +88,8 @@
         <el-form-item label="办理周期" prop="processing_period">
           <el-input v-model="form.processing_period" placeholder="如：28个月" />
         </el-form-item>
-        <el-form-item label="描述" prop="description">
-          <el-input v-model="form.description" type="textarea" :rows="4" />
+        <el-form-item label="内容" prop="content">
+          <RichEditor v-model="form.content" />
         </el-form-item>
         <el-form-item label="排序" prop="sort_order">
           <el-input-number v-model="form.sort_order" :min="0" />
@@ -108,6 +108,7 @@ import { Search, Refresh } from '@element-plus/icons-vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { getIconSvg } from '~/composables/lucideIcons';
 import ImageInput from '~/components/admin/ImageInput.vue';
+import RichEditor from '~/components/RichEditor.vue';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
 
@@ -118,7 +119,7 @@ interface CaseItem {
   project: string;
   project_id: string;
   photo_url: string;
-  description: string;
+  content: string;
   investment_amount: string;
   investment_value: number;
   processing_period: string;
@@ -153,7 +154,7 @@ const defaultForm = () => ({
   country_from: '',
   project_id: '',
   photo_url: '',
-  description: '',
+  content: '',
   investment_amount: '',
   investment_value: 0,
   processing_period: '',
@@ -207,7 +208,7 @@ const openEdit = (row: CaseItem) => {
     country_from: row.country_from,
     project_id: row.project_id,
     photo_url: row.photo_url,
-    description: row.description,
+    content: row.content,
     investment_amount: row.investment_amount,
     investment_value: row.investment_value,
     processing_period: row.processing_period,
