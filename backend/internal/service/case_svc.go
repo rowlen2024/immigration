@@ -6,19 +6,49 @@ import (
 
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
+
+	"github.com/google/uuid"
+	"github.com/microcosm-cc/bluemonday"
 )
 
-// CaseService handles business logic for immigration case studies.
+var caseContentSanitizer = func() *bluemonday.Policy {
+	p := bluemonday.NewPolicy()
+	p.AllowElements("h1", "h2", "h3", "h4", "h5", "h6", "p", "br", "hr",
+		"ul", "ol", "li", "blockquote", "pre", "code", "strong", "em", "u", "s",
+		"a", "img", "table", "thead", "tbody", "tr", "th", "td",
+		"div", "span", "iframe", "video", "source")
+	p.AllowAttrs("src", "alt", "title", "width", "height").OnElements("img")
+	p.AllowAttrs("href", "title", "target", "rel").OnElements("a")
+	p.AllowAttrs("src", "frameborder", "allowfullscreen").OnElements("iframe")
+	p.AllowAttrs("src", "controls", "width", "height").OnElements("video", "source")
+	p.AllowAttrs("style", "class").OnElements("span", "div", "td", "th")
+	p.AllowAttrs("class").OnElements("table", "thead", "tbody", "tr", "img", "a")
+	p.AllowStyles("color", "background-color", "text-align").OnElements("span", "td", "th")
+	p.AllowURLSchemes("http", "https", "mailto")
+	p.AllowRelativeURLs(true)
+	p.RequireNoFollowOnLinks(true)
+	return p
+}()
+
 type CaseService struct {
 	repo repository.CaseRepository
 }
 
-// NewCaseService creates a new CaseService with the given repository.
 func NewCaseService(repo repository.CaseRepository) *CaseService {
 	return &CaseService{repo: repo}
 }
 
-// List returns all cases.
+func (s *CaseService) GetBySlug(slug string) (*model.Case, error) {
+	if slug == "" {
+		return nil, errors.New("slug is required")
+	}
+	c, err := s.repo.FindBySlug(slug)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get case by slug: %w", err)
+	}
+	return c, nil
+}
+
 func (s *CaseService) List() ([]model.Case, error) {
 	cases, err := s.repo.FindAll("")
 	if err != nil {
@@ -27,7 +57,6 @@ func (s *CaseService) List() ([]model.Case, error) {
 	return cases, nil
 }
 
-// ListByProject returns cases for a specific project.
 func (s *CaseService) ListByProject(projectID uint64) ([]model.Case, error) {
 	cases, err := s.repo.FindByProjectID(projectID)
 	if err != nil {
@@ -36,7 +65,6 @@ func (s *CaseService) ListByProject(projectID uint64) ([]model.Case, error) {
 	return cases, nil
 }
 
-// AdminList returns paginated cases.
 func (s *CaseService) AdminList(page, perPage int, search string) ([]model.Case, int64, error) {
 	if page < 1 {
 		page = 1
@@ -62,7 +90,6 @@ func (s *CaseService) AdminList(page, perPage int, search string) ([]model.Case,
 	return cases[start:end], total, nil
 }
 
-// Create creates a new case study.
 func (s *CaseService) Create(c *model.Case) (*model.Case, error) {
 	if c == nil {
 		return nil, errors.New("case is nil")
@@ -70,13 +97,16 @@ func (s *CaseService) Create(c *model.Case) (*model.Case, error) {
 	if c.Name == "" {
 		return nil, errors.New("case name is required")
 	}
+	if c.Slug == "" {
+		c.Slug = uuid.New().String()
+	}
+	c.Content = caseContentSanitizer.Sanitize(c.Content)
 	if err := s.repo.Create(c); err != nil {
 		return nil, fmt.Errorf("failed to create case: %w", err)
 	}
 	return c, nil
 }
 
-// Update updates an existing case study.
 func (s *CaseService) Update(id uint64, c *model.Case) (*model.Case, error) {
 	if c == nil {
 		return nil, errors.New("case is nil")
@@ -85,13 +115,13 @@ func (s *CaseService) Update(id uint64, c *model.Case) (*model.Case, error) {
 		return nil, errors.New("case id is required")
 	}
 	c.ID = id
+	c.Content = caseContentSanitizer.Sanitize(c.Content)
 	if err := s.repo.Update(c); err != nil {
 		return nil, fmt.Errorf("failed to update case: %w", err)
 	}
 	return c, nil
 }
 
-// Delete removes a case study by ID.
 func (s *CaseService) Delete(id uint64) error {
 	if id == 0 {
 		return errors.New("case id is required")
@@ -102,7 +132,6 @@ func (s *CaseService) Delete(id uint64) error {
 	return nil
 }
 
-// HardDelete permanently removes a case study by ID.
 func (s *CaseService) HardDelete(id uint64) error {
 	if id == 0 {
 		return errors.New("case id is required")

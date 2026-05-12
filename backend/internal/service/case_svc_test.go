@@ -15,6 +15,7 @@ type mockCaseRepo struct {
 	updateFn          func(c *model.Case) error
 	deleteFn          func(id uint64) error
 	hardDeleteFn      func(id uint64) error
+	findBySlugFn      func(slug string) (*model.Case, error)
 }
 
 func (m *mockCaseRepo) FindByProjectID(projectID uint64) ([]model.Case, error) {
@@ -57,6 +58,13 @@ func (m *mockCaseRepo) HardDelete(id uint64) error {
 		return m.hardDeleteFn(id)
 	}
 	return nil
+}
+
+func (m *mockCaseRepo) FindBySlug(slug string) (*model.Case, error) {
+	if m.findBySlugFn != nil {
+		return m.findBySlugFn(slug)
+	}
+	return nil, nil
 }
 
 func TestCase_List(t *testing.T) {

@@ -88,6 +88,7 @@ type CaseRepository interface {
 	Update(c *model.Case) error
 	Delete(id uint64) error
 	HardDelete(id uint64) error
+	FindBySlug(slug string) (*model.Case, error)
 }
 
 // CompareConfigRepository defines the interface for compare config data access.

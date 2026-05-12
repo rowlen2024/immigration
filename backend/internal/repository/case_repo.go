@@ -23,11 +23,20 @@ func (r *CaseRepo) FindByProjectID(projectID uint64) ([]model.Case, error) {
 	return cases, nil
 }
 
+func (r *CaseRepo) FindBySlug(slug string) (*model.Case, error) {
+	var c model.Case
+	err := r.db.Preload("Project").Where("slug = ?", slug).First(&c).Error
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
+}
+
 func (r *CaseRepo) FindAll(search string) ([]model.Case, error) {
 	var cases []model.Case
 	q := r.db.Preload("Project").Order("sort_order asc")
 	if search != "" {
-		q = q.Where("name LIKE ? OR content LIKE ?", "%"+search+"%", "%"+search+"%")
+		q = q.Where("name LIKE ?", "%"+search+"%")
 	}
 	err := q.Find(&cases).Error
 	if err != nil {
