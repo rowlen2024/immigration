@@ -66,7 +66,7 @@ func (s *PageService) AdminList(page, perPage int, pageType, search, status stri
 	if page < 1 {
 		page = 1
 	}
-	if perPage < 1 || perPage > 100 {
+	if perPage < 1 {
 		perPage = 10
 	}
 

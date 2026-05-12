@@ -37,7 +37,7 @@ func (s *ProjectService) List(page, perPage int, search, status string) ([]model
 	if page < 1 {
 		page = 1
 	}
-	if perPage < 1 || perPage > 100 {
+	if perPage < 1 {
 		perPage = 10
 	}
 	projects, total, err := s.repo.FindAll(page, perPage, search, status)
