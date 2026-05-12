@@ -33,6 +33,7 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		api.GET("/faqs", h.ListFAQs)
 		api.GET("/pages", h.ListPages)
 		api.GET("/pages/*slug", h.GetPage)
+		api.GET("/cases/:slug", h.GetCase)
 		api.GET("/cases", h.ListCases)
 		api.GET("/home-config", h.GetHomeConfig)
 		api.GET("/navigation", h.GetNavigation)

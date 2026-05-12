@@ -9,6 +9,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func (h *Handler) GetCase(c *gin.Context) {
+	slug := c.Param("slug")
+	cs, err := h.svc.Case.GetBySlug(slug)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.Error(404, "case not found"))
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Success(cs))
+}
+
 func (h *Handler) ListCases(c *gin.Context) {
 	cases, err := h.svc.Case.List()
 	if err != nil {
