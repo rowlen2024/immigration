@@ -267,10 +267,12 @@ const rules = computed<FormRules>(() => ({
     : [],
   link: form.link_type === 'custom'
     ? [
-        { required: true, message: '请输入链接', trigger: 'blur' },
         {
           validator: (_rule: any, value: string, callback: any) => {
-            if (!value || !value.startsWith('/')) {
+            if (!value) {
+              // Link is optional for custom items
+              callback();
+            } else if (!value.startsWith('/')) {
               callback(new Error('链接必须以 / 开头'));
             } else if (value.includes('://')) {
               callback(new Error('仅支持内部链接'));
@@ -382,7 +384,7 @@ const handleSave = async () => {
       body.page_id = form.page_id;
       body.link = null;
     } else {
-      body.link = form.link;
+      body.link = form.link || null;
       body.project_id = null;
       body.page_id = null;
     }

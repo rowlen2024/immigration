@@ -1,7 +1,7 @@
 interface NavItem {
   id: number;
   label: string;
-  link: string;
+  link: string | null;
   children: NavItem[];
   status: boolean;
 }

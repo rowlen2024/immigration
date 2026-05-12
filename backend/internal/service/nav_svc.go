@@ -140,11 +140,19 @@ func (s *NavService) validateNav(nav *model.Navigation) error {
 		}
 		nav.Link = nil // generated dynamically
 	case "custom":
-		if nav.Link == nil || strings.TrimSpace(*nav.Link) == "" {
-			return fmt.Errorf("自定义链接不能为空")
-		}
-		if !isValidInternalURL(*nav.Link) {
-			return fmt.Errorf("链接必须为内部路由（以/开头）")
+		// Link is optional for custom items (category headers).
+		// When provided, it must be an internal URL starting with "/".
+		if nav.Link != nil && *nav.Link != "" {
+			trimmed := strings.TrimSpace(*nav.Link)
+			if trimmed == "" {
+				nav.Link = nil
+			} else if !isValidInternalURL(trimmed) {
+				return fmt.Errorf("链接必须为内部路由（以/开头）")
+			} else {
+				nav.Link = &trimmed
+			}
+		} else {
+			nav.Link = nil
 		}
 	default:
 		return fmt.Errorf("不支持的链接类型: %s", nav.LinkType)
