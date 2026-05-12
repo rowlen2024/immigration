@@ -71,14 +71,14 @@
         <section id="cases" v-if="project.cases.length > 0" class="detail-section">
           <h2 class="detail-section-title">成功案例</h2>
           <div class="case-grid">
-            <div v-for="c in project.cases" :key="c.name" class="case-card">
+            <NuxtLink v-for="c in project.cases" :key="c.name" :to="'/case/' + c.slug" class="case-card">
               <img v-if="c.photo" :src="c.photo" :alt="c.name" class="case-photo" />
               <div class="case-body">
                 <h4 class="case-name">{{ c.name }}</h4>
                 <p class="case-meta">{{ c.country }} | {{ c.amount }} | {{ c.period }}</p>
-                <p v-if="c.description" class="case-desc">{{ c.description }}</p>
+                <p v-if="c.content" class="case-desc">{{ stripHtml(c.content) }}</p>
               </div>
-            </div>
+            </NuxtLink>
           </div>
         </section>
 
@@ -113,7 +113,7 @@
                 <tr v-for="row in compareData.rows" :key="row.label">
                   <td class="compare-label">{{ row.label }}</td>
                   <td v-for="(val, j) in row.values" :key="j" class="compare-value">
-                    <template v-if="row.label === '申请条件' && row.items?.[j]?.length">
+                    <template v-if="row.items?.[j]?.length">
                       <div class="compare-requirements-grid">
                         <span v-for="(item, k) in row.items[j]" :key="k">{{ item }}</span>
                       </div>
@@ -144,6 +144,11 @@
 <script setup lang="ts">
 import { getIconByName, getIconSvg } from '~/composables/lucideIcons';
 
+function stripHtml(html: string): string {
+  if (!html) return '';
+  return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').slice(0, 80);
+}
+
 const route = useRoute();
 const slug = route.params.slug as string;
 
@@ -151,7 +156,7 @@ interface ApiRequirement { label: string; is_required: boolean; }
 interface ApiCostItem { name: string; amount: string; note: string; }
 interface ApiTimelinePhase { phase_number: number; title: string; description: string; duration: string; }
 interface ApiFAQ { question: string; answer: string; }
-interface ApiCase { name: string; country_from: string; investment_amount: string; processing_period: string; description: string; photo_url: string; }
+interface ApiCase { slug: string; name: string; country_from: string; investment_amount: string; processing_period: string; content: string; photo_url: string; }
 interface ApiNewsPage { id: number; title: string; slug: string; cover_image: string; created_at: string; }
 interface ApiCompareConfig { compare_with: string[]; compare_fields: string[]; }
 
@@ -203,11 +208,12 @@ const project = computed(() => {
     })),
     faqs: (p?.faqs || []).map((f) => ({ question: f.question, answer: f.answer })),
     cases: (p?.cases || []).map((c) => ({
+      slug: c.slug,
       name: c.name,
       country: c.country_from,
       amount: c.investment_amount,
       period: c.processing_period,
-      description: c.description,
+      content: c.content,
       photo: c.photo_url,
     })),
     news: (p?.news || []).map((n) => ({
@@ -245,13 +251,24 @@ const compareSlugs = computed(() => {
   return cfg.compare_with.join(',');
 });
 
+const compareQuery = computed(() => {
+  const slugs = compareSlugs.value;
+  if (!slugs) return {};
+  const params: Record<string, string> = { slugs };
+  const fields = project.value.compare_config?.compare_fields;
+  if (fields && fields.length > 0) {
+    params.fields = fields.join(',');
+  }
+  return params;
+});
+
 const {
   data: compareRaw,
   pending: comparePending,
   error: compareErrorRaw,
-} = useFetch<{ data: CompareTableData }>(
-  () => `/api/v1/projects/compare?slugs=${compareSlugs.value}`,
-);
+} = useFetch<{ data: CompareTableData }>('/api/v1/projects/compare', {
+  query: compareQuery,
+});
 
 const compareData = computed<CompareTableData | null>(() => {
   const raw = compareRaw.value as any;

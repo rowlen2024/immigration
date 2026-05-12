@@ -131,7 +131,7 @@
           </div>
         </div>
         <div v-else class="cases-grid">
-          <div v-for="item in featuredCases" :key="item.id" class="case-card reveal">
+          <NuxtLink v-for="item in featuredCases" :key="item.id" :to="'/case/' + item.slug" class="case-card reveal">
             <div class="case-image">
               <img
                 :src="item.photo_url || ''"
@@ -145,9 +145,9 @@
                 <span v-if="item.project?.name" class="case-project">{{ item.project.name }}</span>
               </div>
               <h3 class="case-name">{{ item.name }}</h3>
-              <p class="case-desc">{{ item.description }}</p>
+              <p class="case-desc">{{ stripHtml(item.content) }}</p>
             </div>
-          </div>
+          </NuxtLink>
         </div>
 
         <div v-if="!pending.cases && featuredCases.length === 0" class="empty-state">
@@ -259,10 +259,11 @@ const { data: projectsData, pending: pendingProjects, error: errorProjectsRaw } 
 
 interface CaseItem {
   id: number;
+  slug: string;
   name: string;
   country_from: string;
   photo_url: string;
-  description: string;
+  content: string;
   project?: { name: string };
 }
 
@@ -330,6 +331,11 @@ const caseShowcaseConfig = computed(() => {
 
 const caseTitle = computed(() => caseShowcaseConfig.value?.section_title || '成功案例');
 const caseSubtitle = computed(() => caseShowcaseConfig.value?.section_subtitle || '');
+
+function stripHtml(html: string): string {
+  if (!html) return '';
+  return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').slice(0, 80);
+}
 
 const featuredCases = computed<CaseItem[]>(() => {
   const apiData = casesData.value as { data?: CaseItem[] } | null;
