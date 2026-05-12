@@ -173,8 +173,8 @@ const rules: FormRules = {
 const loadProjects = async () => {
   try {
     const api = useApi();
-    const data = await api<{ id: string; name: string }[]>('/admin/projects?all=true');
-    projects.value = data ?? [];
+    const data = await api<{ items: { id: string; name: string }[] }>('/admin/projects?all=true');
+    projects.value = data?.items ?? [];
   } catch {
     projects.value = [];
   }

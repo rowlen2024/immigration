@@ -21,7 +21,7 @@ export default defineNuxtConfig({
       // ISR — SSR on first request / after 5min TTL, cached static HTML otherwise
       '/': { swr: 300 },
       '/projects/*': { swr: 300 },
-      // '/pages/*': { swr: 300 },
+      '/pages/*': { swr: 300 },
       // '/projects/cies': { swr: 300 },
       // '/projects/panama': { swr: 300 },
       '/cases': { swr: 300 },

@@ -309,12 +309,12 @@ const loadTree = async () => {
 const loadOptions = async () => {
   try {
     const api = useApi();
-    const [projData, pageData] = await Promise.all([
-      api<any[]>('/admin/projects?all=true'),
-      api<any[]>('/admin/pages?all=true'),
+    const [projRes, pageRes] = await Promise.all([
+      api<{ items: ProjectBrief[] }>('/admin/projects?all=true'),
+      api<{ items: PageBrief[] }>('/admin/pages?all=true'),
     ]);
-    projects.value = (projData || []) as ProjectBrief[];
-    pages.value = (pageData || []) as PageBrief[];
+    projects.value = (projRes as any)?.items || [];
+    pages.value = (pageRes as any)?.items || [];
   } catch {
     // non-critical; dropdowns will be empty
   }
