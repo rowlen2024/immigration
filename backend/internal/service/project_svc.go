@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"mygo-immigration/backend/internal/config"
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
 )
@@ -86,8 +87,31 @@ type CompareProject struct {
 	Slug  string `json:"slug"`
 }
 
+// fieldBuilder maps a compare field key to its label and value extraction function.
+type fieldBuilder struct {
+	Label   string
+	Extract func(model.Project) string
+	ItemsFn func([]model.Project) [][]string
+}
+
+// compareFieldBuilders maps each compare field key to its builder.
+var compareFieldBuilders = map[string]fieldBuilder{
+	"investment_amount":  {Label: "投资金额", Extract: func(p model.Project) string { return p.InvestmentAmount }},
+	"processing_period":  {Label: "办理周期", Extract: func(p model.Project) string { return p.ProcessingPeriod }},
+	"target_crowd":       {Label: "适合人群", Extract: func(p model.Project) string { return p.TargetCrowd }},
+	"country":            {Label: "国家", Extract: func(p model.Project) string { return p.Country }},
+	"costs_total":        {Label: "费用总计", Extract: func(p model.Project) string { return p.CostsTotal }},
+	"requirements_count": {Label: "申请条件", Extract: func(p model.Project) string { return joinRequirements(p.Requirements) }, ItemsFn: pluckRequirements},
+	"timeline_steps":     {Label: "流程步骤数", Extract: func(p model.Project) string { return fmt.Sprintf("%d 个阶段", len(p.TimelinePhases)) }},
+	"overview_text":      {Label: "项目介绍", Extract: func(p model.Project) string { return p.OverviewText }},
+	"tagline":            {Label: "标语", Extract: func(p model.Project) string { return p.Tagline }},
+	"policy_title":       {Label: "政策标题", Extract: func(p model.Project) string { return p.PolicyTitle }},
+}
+
 // CompareRows returns formatted comparison rows for N projects.
-func (s *ProjectService) CompareRows(slugs []string) (*CompareResult, error) {
+// If fields is empty, all default fields from config.CompareFields are returned.
+// Otherwise, only the requested field keys are included (unknown keys are skipped).
+func (s *ProjectService) CompareRows(slugs []string, fields []string) (*CompareResult, error) {
 	projects, err := s.Compare(slugs)
 	if err != nil {
 		return nil, err
@@ -101,13 +125,30 @@ func (s *ProjectService) CompareRows(slugs []string) (*CompareResult, error) {
 		projInfo[i] = CompareProject{Title: p.Name, Slug: p.Slug}
 	}
 
-	rows := []CompareRow{
-		{Label: "投资金额", Values: pluck(projects, func(p model.Project) string { return p.InvestmentAmount })},
-		{Label: "办理周期", Values: pluck(projects, func(p model.Project) string { return p.ProcessingPeriod })},
-		{Label: "适合人群", Values: pluck(projects, func(p model.Project) string { return p.TargetCrowd })},
-		{Label: "申请条件", Values: pluck(projects, func(p model.Project) string { return joinRequirements(p.Requirements) }), Items: pluckRequirements(projects)},
-		{Label: "费用总计", Values: pluck(projects, func(p model.Project) string { return p.CostsTotal })},
-		{Label: "流程步骤", Values: pluck(projects, func(p model.Project) string { return fmt.Sprintf("%d 个阶段", len(p.TimelinePhases)) })},
+	// Determine which field keys to use
+	selectedKeys := fields
+	if len(selectedKeys) == 0 {
+		selectedKeys = make([]string, len(config.CompareFields))
+		for i, f := range config.CompareFields {
+			selectedKeys[i] = f.Key
+		}
+	}
+
+	// Build rows for selected keys, skipping unknown keys
+	rows := make([]CompareRow, 0, len(selectedKeys))
+	for _, key := range selectedKeys {
+		builder, ok := compareFieldBuilders[key]
+		if !ok {
+			continue
+		}
+		row := CompareRow{
+			Label:  builder.Label,
+			Values: pluck(projects, builder.Extract),
+		}
+		if builder.ItemsFn != nil {
+			row.Items = builder.ItemsFn(projects)
+		}
+		rows = append(rows, row)
 	}
 
 	return &CompareResult{Projects: projInfo, Rows: rows}, nil

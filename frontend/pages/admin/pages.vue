@@ -33,7 +33,7 @@
           <template #default="{ row }">
             <div>
               <div class="row-title">{{ row.title }}</div>
-              <div class="row-meta">/{{ row.slug }}</div>
+              <div class="row-meta">/pages/{{ row.slug }}</div>
             </div>
           </template>
         </el-table-column>

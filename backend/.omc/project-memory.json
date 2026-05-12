@@ -18,8 +18,8 @@
     "runtime": null
   },
   "build": {
-    "buildCommand": "go build ./... && go test ./... 2>&1 | tail -10",
-    "testCommand": "cd D:/mygo/src/web/immigration/backend && go test ./... -count=1 2>&1",
+    "buildCommand": "cd \"/d/mygo/src/web/immigration/backend\" && go build ./... 2>&1 && echo \"BUILD OK\" && go test ./... 2>&1",
+    "testCommand": "cd \"/d/mygo/src/web/immigration/backend\" && go build ./... 2>&1 && echo \"BUILD OK\" && go test ./... 2>&1",
     "lintCommand": null,
     "devCommand": null,
     "scripts": {}
@@ -103,6 +103,12 @@
       "type": "file"
     },
     {
+      "path": "internal\\service\\project_svc.go",
+      "accessCount": 19,
+      "lastAccessed": 1778590363413,
+      "type": "file"
+    },
+    {
       "path": "internal\\service\\page_svc_test.go",
       "accessCount": 16,
       "lastAccessed": 1778394374868,
@@ -133,15 +139,15 @@
       "type": "file"
     },
     {
-      "path": "internal\\database\\mysql.go",
-      "accessCount": 9,
-      "lastAccessed": 1777814141838,
+      "path": "internal\\handler\\project_handler.go",
+      "accessCount": 10,
+      "lastAccessed": 1778589684321,
       "type": "file"
     },
     {
-      "path": "internal\\handler\\project_handler.go",
+      "path": "internal\\database\\mysql.go",
       "accessCount": 9,
-      "lastAccessed": 1777961780178,
+      "lastAccessed": 1777814141838,
       "type": "file"
     },
     {
@@ -166,12 +172,6 @@
       "path": "internal\\handler\\user_handler.go",
       "accessCount": 7,
       "lastAccessed": 1777817319269,
-      "type": "file"
-    },
-    {
-      "path": "internal\\service\\project_svc.go",
-      "accessCount": 7,
-      "lastAccessed": 1777877960821,
       "type": "file"
     },
     {

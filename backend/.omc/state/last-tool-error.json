@@ -1,7 +1,7 @@
 {
   "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"cd \\\"D:\\\\mygo\\\\src\\\\immigration\\\\frontend\\\" && npx nuxi typecheck 2>&1\",\"timeout\":60000,\"description\":\"Frontend typecheck\"}",
-  "error": "Exit code 1\nnpm warn exec The following package was not found and will be installed: nuxi@3.35.1\n\n\u001b[41m\u001b[30m ERROR \u001b[39m\u001b[49m Cannot resolve module \"@nuxt/kit\" (from: D:\\mygo\\src\\immigration\\frontend\\)\n\n    \u001b[90mat \u001b[39mresolveModuleURL (\u001b[36m/C:/Users/ASUS/AppData/Local/npm-cache/_npx/a95e0f536cf9a537/node_modules/nuxi/dist/kit-Bx45zdA5.mjs:906:33\u001b[39m)\n    \u001b[90mat \u001b[39mresolveModulePath (\u001b[36m/C:/Users/ASUS/AppData/Local/npm-cache/_npx/a95e0f536cf9a537/node_modules/nuxi/dist/kit-Bx45zdA5.mjs:9...",
-  "timestamp": "2026-05-11T02:58:24.223Z",
+  "tool_input_preview": "{\"command\":\"cd \\\"/d/mygo/src/web/immigration/frontend\\\" && npx nuxi typecheck 2>&1\",\"timeout\":120000,\"description\":\"Run frontend typecheck\"}",
+  "error": "Exit code 1\napp.vue(8,48): error TS2552: Cannot find name 'useSiteConfig'. Did you mean 'siteConfig'?\r\napp.vue(9,15): error TS2304: Cannot find name 'useRoute'.\r\napp.vue(11,1): error TS2304: Cannot find name 'onMounted'.\r\napp.vue(13,22): error TS2304: Cannot find name 'computed'.\r\napp.vue(16,1): error TS2304: Cannot find name 'useHead'.\r\napp.vue(50,1): error TS2304: Cannot find name 'useHead'.\r\napp.vue(64,1): error TS2304: Cannot find name 'useHead'.\r\napp.vue(111,1): error TS2304: Cannot find na...",
+  "timestamp": "2026-05-12T12:17:29.529Z",
   "retry_count": 1
 }

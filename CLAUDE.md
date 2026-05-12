@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # MyGo 移民 (MyGo Immigration)
 
 投资移民服务全栈 Web 应用 — Go 后端 + Nuxt 3 前端 + MySQL 数据库。
@@ -54,6 +58,9 @@ immigration/
 - **Service**: 业务逻辑，通过 `Service` 结构体聚合
 - **Handler**: 通过 `Handler` 结构体注入 Service，处理 HTTP 请求
 - **DTO**: `request.go` / `response.go` — 统一响应格式 `{code, message, data}`
+- **组合模式**: `service.go` 和 `repository.go` 分别定义 `Service` 和 `Repository` 组合结构体，聚合所有子模块。`service.New()` 使用直接结构体字面量注入依赖，而非各子模块的 `New*Service()` 构造函数（那些构造函数缺少跨模块依赖注入）
+- **无事务支持**: 服务层无法传递 GORM 事务，所有 repository 方法使用自己的 `db *gorm.DB`，多步操作无法保证原子性
+- **分页注意**: `CaseService.AdminList()` 和 `PageService.AdminList()` 是内存分页（先查全表再切片），`ProjectService.List()` 是 SQL 分页
 
 ## API 路由 (所有前缀 `/api/v1`)
 
@@ -85,6 +92,10 @@ immigration/
 
 三种角色 RBAC：`admin`（全部权限）、`editor`（读+内容写+leads读）、`viewer`（只读）
 
+**关键：路由注册顺序** — `/projects/compare` 必须在 `/projects/:slug` 之前注册，否则 `:slug` 会捕获 "compare"。同理 `/:slug` 类路由应在所有字面量路由之后注册。
+
+**Admin 子资源路由** 统一使用 `/admin/projects/:id/<资源名>` 模式，包含 requirements、cost-items、timeline-phases、advantages、cases、news、compare-config，各有独立的 CRUD 端点。
+
 ## 前端架构
 
 - **SSR 关闭** (SPA)，开发端口 3000，API 代理到 `localhost:8080`
@@ -98,12 +109,37 @@ immigration/
 - **动态页面**：`[...slug].vue` 匹配所有 CMS 自定义页面路径
 - **富文本编辑器**：`components/RichEditor.vue` — 基于 Tiptap v2，支持表格/图片/视频/代码块/文字样式/源码切换，图片上传复用 `/api/v1/admin/media/upload`
   - 后端对应 bluemonday 自定义策略（`page_svc.go`），除标准元素外额外允许 table/iframe/video/span style
+  - **bluemonday 策略重复**: `page_svc.go` 和 `case_svc.go` 有相同的 sanitizer 策略定义，修改时需同步两处
+- **API 调用两种路径**:
+  - `useApi()` 自动解包 `{data}` 信封并附加 token，用于所有 admin 页面
+  - 公众页面（`projects/[slug].vue`、`[...slug].vue`、`compare.vue`）使用 `useFetch` / `$fetch` 直接调用，**需手动处理信封**：通过 `transform` 回调或访问 `.data` 属性
+- **对比系统**: `/compare`（下拉选择器）和 `/compare/[a]-vs-[b]`（URL 直达，含硬编码降级数据）两种方式并存，修改对比逻辑时需同步两处
+- **项目详情的页内对比**: `projects/[slug].vue` 在 compare_config 存在时单独请求 `/api/v1/projects/compare` 内嵌展示对比表
+- **`?all=true` 参数**: 管理端的项目列表支持此参数以跳过默认过滤，用于下拉选择等场景
 
 ## 数据库
 
 - Docker Compose 启动 `mygo-mysql`（端口 3307），MySQL 首次初始化时自动按序执行 `database/migrations/` 下的 SQL 脚本
 - 13 组迁移脚本 (000001–000013)：覆盖 users, projects/requirements/cost_items/timeline_phases/milestones, faqs, cases, pages, leads, media/home_configs, seed_data, navigations
 - 启动时 GORM AutoMigrate 同步所有模型（代码中的 `database.AutoMigrate()` 包含全部 14 个模型，其中 operation_log 仅由 AutoMigrate 创建）
+
+## 配置与启动
+
+- 自定义 `.env` 解析器（`config/config.go`），不依赖第三方库，`bufio.Scanner` 逐行读取
+- **查找顺序**: 先在 cwd 找 `.env`，找不到则查 `../.env`（适配从子目录运行的情况）
+- **不覆盖已有环境变量**: `os.Getenv(key) == ""` 时才设置，系统环境变量优先
+- 默认值: 端口 8080, DB `mygo:mygo123@/mygo_immigration`, JWT secret `change-me-in-production`, CORS origin `http://localhost:3000`
+- **启动顺序**: `config.Load()` → `database.InitMySQL()` → `database.RunMigrations()` → `database.AutoMigrate()`
+- **迁移系统**: SQL 文件按文件名排序执行，有自定义分号分隔器（尊重字符串字面量内的分号）
+- `CompareFields` 硬编码在 `compare_fields.go`，共 10 个对比维度
+- Nuxt 配置中有**双重代理**: `nitro.devProxy`（SSR 构建时）和 `vite.server.proxy`（开发 HMR 时），都代理 `/api` 和 `/uploads` 到 `localhost:8080`
+
+## 导航约束
+
+- 最大深度 3 层，创建/更新时服务层校验
+- 防循环引用：不能将节点设为自身的后代
+- 防自引用：父节点不能是自己
+- 链接自动生成：project 类型 → `/projects/<slug>`，page 类型 → `/pages/<slug>`（`nav_svc.go` 的 `fillLink()` 方法）
 
 ## 常用命令
 
@@ -138,5 +174,12 @@ cd frontend && npx nuxi typecheck                     # 前端类型检查
 - 所有 GORM 模型使用软删除 (`gorm.DeletedAt`)
 - **API 信封处理**：后端响应 `{code, message, data}`，`useApi()` 自动解包返回 `data`；若用 `useFetch` / `$fetch` 直接调用，需手动提取 `.data`
   - 分页接口返回 `{items, total, page, perPage}`（在 `data` 内）
-- **导航链接生成**：page 类型导航的链接为 `/<slug>`（非 `/pages/<slug>`），在 `nav_svc.go` 的 `fillLink()`/`fillLinks()` 中生成
 - 新建 `.go` / `.vue` 文件时的命名规范：Go 用 snake_case 文件名，Vue 用 PascalCase 组件名或 kebab-case 路由页名
+
+## 工作流规则
+
+1. **中文沟通**: 所有对话使用中文。
+2. **禁止自动 Git**: 改完代码后不执行 git add/commit/push，除非用户明确要求。
+3. **变更前影响检查**: 修改任何公共接口（函数签名、API 路由、DTO 结构体、Vue composable/props/emits）时，必须先用 Grep 搜索所有引用点，列出影响报告并等待用户确认后，才能开始改代码。
+4. **防止回退**: 新增功能时不得破坏已有功能。改动完成后必须确认相关已有功能不受影响。
+5. **编译验证**: 每次后端改动完成后运行 `go build ./...` 验证编译通过。

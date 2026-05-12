@@ -51,7 +51,12 @@ func (h *Handler) CompareProjects(c *gin.Context) {
 
 	slugs := strings.Split(slugsParam, ",")
 
-	result, err := h.svc.Project.CompareRows(slugs)
+	var fields []string
+	if fieldsParam := c.Query("fields"); fieldsParam != "" {
+		fields = strings.Split(fieldsParam, ",")
+	}
+
+	result, err := h.svc.Project.CompareRows(slugs, fields)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
 		return

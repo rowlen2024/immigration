@@ -53,7 +53,7 @@
               <tr v-for="row in comparison.rows" :key="row.label">
                 <td class="row-label">{{ row.label }}</td>
                 <td class="col-a">
-                  <template v-if="row.label === '申请条件' && row.items?.[0]?.length">
+                  <template v-if="row.items?.[0]?.length">
                     <div class="compare-requirements-grid">
                       <span v-for="(item, k) in row.items[0]" :key="k">{{ item }}</span>
                     </div>
@@ -61,7 +61,7 @@
                   <template v-else>{{ row.values[0] }}</template>
                 </td>
                 <td class="col-b">
-                  <template v-if="row.label === '申请条件' && row.items?.[1]?.length">
+                  <template v-if="row.items?.[1]?.length">
                     <div class="compare-requirements-grid">
                       <span v-for="(item, k) in row.items[1]" :key="k">{{ item }}</span>
                     </div>

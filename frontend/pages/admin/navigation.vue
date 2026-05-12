@@ -114,7 +114,7 @@
             <el-option
               v-for="p in pages"
               :key="p.id"
-              :label="`${p.title} (/${p.slug})`"
+              :label="`${p.title} (/pages/${p.slug})`"
               :value="p.id"
             />
           </el-select>
