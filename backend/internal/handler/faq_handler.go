@@ -11,6 +11,8 @@ import (
 )
 
 func (h *Handler) ListFAQs(c *gin.Context) {
+	page, perPage := parsePagination(c)
+
 	var projectID *uint64
 	if v := c.Query("project_id"); v != "" {
 		id, err := strconv.ParseUint(v, 10, 64)
@@ -27,13 +29,13 @@ func (h *Handler) ListFAQs(c *gin.Context) {
 		}
 	}
 
-	faqs, err := h.svc.FAQ.List(projectID, isGlobal)
+	faqs, total, err := h.svc.FAQ.List(projectID, isGlobal, page, perPage)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.Success(faqs))
+	c.JSON(http.StatusOK, dto.SuccessPaginated(faqs, page, perPage, total))
 }
 
 func (h *Handler) AdminListFAQs(c *gin.Context) {

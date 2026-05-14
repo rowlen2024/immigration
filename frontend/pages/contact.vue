@@ -101,26 +101,46 @@
             <h3 class="info-title">联系方式</h3>
             <ul class="info-list">
               <li class="info-item">
-                <span class="info-label">电话</span>
+                <span class="info-label">客服电话</span>
                 <a v-if="siteConfig?.contact_phone" :href="`tel:${siteConfig.contact_phone}`" class="info-value">{{ siteConfig.contact_phone }}</a>
                 <span v-else class="info-value">400-xxx-xxxx</span>
               </li>
+              <li v-if="siteConfig?.contact_phone_2" class="info-item">
+                <span class="info-label">联系电话</span>
+                <a :href="`tel:${siteConfig.contact_phone_2}`" class="info-value">{{ siteConfig.contact_phone_2 }}</a>
+              </li>
+              <!--
               <li class="info-item">
                 <span class="info-label">邮箱</span>
                 <a v-if="siteConfig?.contact_email" :href="`mailto:${siteConfig.contact_email}`" class="info-value">{{ siteConfig.contact_email }}</a>
                 <span v-else class="info-value">info@mygo-immigration.com</span>
               </li>
+              -->
               <li class="info-item">
                 <span class="info-label">地址</span>
                 <span class="info-value">{{ siteConfig?.contact_address || '上海市浦东新区陆家嘴金融中心' }}</span>
               </li>
-              <li class="info-item">
+              <li v-if="siteConfig?.contact_wechat" class="info-item">
                 <span class="info-label">微信</span>
-                <span class="info-value">{{ siteConfig?.contact_wechat || 'MyGo_Immigration' }}</span>
+                <span class="info-value">
+                  <img :src="siteConfig.contact_wechat" alt="微信" class="contact-qr-img" />
+                </span>
+              </li>
+              <li v-if="siteConfig?.contact_wechat_mp" class="info-item">
+                <span class="info-label">微信公众号</span>
+                <span class="info-value">
+                  <img :src="siteConfig.contact_wechat_mp" alt="微信公众号" class="contact-qr-img" />
+                </span>
+              </li>
+              <li v-if="siteConfig?.contact_wechat_video" class="info-item">
+                <span class="info-label">企业视频号</span>
+                <span class="info-value">
+                  <img :src="siteConfig.contact_wechat_video" alt="企业视频号" class="contact-qr-img" />
+                </span>
               </li>
             </ul>
           </div>
-
+          <!--
           <div class="info-section">
             <h3 class="info-title">服务时间</h3>
             <div class="info-value">
@@ -129,15 +149,7 @@
               <p>周日及法定节假日：休息</p>
             </div>
           </div>
-
-          <div class="info-section">
-            <h3 class="info-title">常见需求</h3>
-            <ul class="info-quick-links">
-              <li v-for="link in quickLinks" :key="link.label">
-                <NuxtLink :to="link.link">{{ link.label }}</NuxtLink>
-              </li>
-            </ul>
-          </div>
+        -->
         </div>
       </div>
     </div>
@@ -154,13 +166,7 @@ interface ProjectOption {
   name: string;
 }
 
-interface QuickLink {
-  label: string;
-  link: string;
-}
-
 const projectOptions = ref<ProjectOption[]>([]);
-const quickLinks = ref<QuickLink[]>([]);
 
 interface ContactForm {
   name: string;
@@ -191,26 +197,6 @@ const fetchProjects = async () => {
       projectOptions.value = data.items;
     }
   } catch { /* keep empty, dropdown falls back to base options */ }
-};
-
-const fetchQuickLinks = async () => {
-  try {
-    const api = useApi();
-    const navItems = await api<QuickLink[]>('/navigation?position=header');
-    if (navItems && Array.isArray(navItems)) {
-      // Flatten: take top-level items that have children, grab their children
-      const links: QuickLink[] = [];
-      for (const item of navItems) {
-        const children = (item as any).children as QuickLink[] | undefined;
-        if (children?.length) {
-          links.push(...children);
-        } else if ((item as any).link) {
-          links.push({ label: (item as any).label, link: (item as any).link });
-        }
-      }
-      quickLinks.value = links;
-    }
-  } catch { /* keep empty, sidebar hides empty list naturally */ }
 };
 
 const validate = (): boolean => {
@@ -279,7 +265,6 @@ const resetForm = () => {
 onMounted(() => {
   fetchSiteConfig();
   fetchProjects();
-  fetchQuickLinks();
 });
 </script>
 
@@ -454,7 +439,8 @@ onMounted(() => {
   font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
-  min-width: 48px;
+  width: 80px;
+  flex-shrink: 0;
 }
 
 .info-value {
@@ -471,20 +457,11 @@ onMounted(() => {
   color: var(--accent-dark);
 }
 
-.info-quick-links {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.info-quick-links a {
-  font-size: 14px;
-  color: var(--primary);
-  transition: color 0.2s ease;
-}
-
-.info-quick-links a:hover {
-  color: var(--accent-dark);
+.contact-qr-img {
+  width: 120px;
+  height: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
 }
 
 @media (max-width: 1023px) {

@@ -18,8 +18,8 @@
     "runtime": null
   },
   "build": {
-    "buildCommand": "cd \"/d/mygo/src/web/immigration/backend\" && go build ./... 2>&1 && echo \"BUILD OK\" && go test ./... 2>&1",
-    "testCommand": "cd \"/d/mygo/src/web/immigration/backend\" && go build ./... 2>&1 && echo \"BUILD OK\" && go test ./... 2>&1",
+    "buildCommand": "go build ./...",
+    "testCommand": "go build ./... && go test ./internal/... -run TestFAQ 2>&1 | tail -5",
     "lintCommand": null,
     "devCommand": null,
     "scripts": {}
@@ -92,8 +92,8 @@
   "hotPaths": [
     {
       "path": "",
-      "accessCount": 29,
-      "lastAccessed": 1778394468720,
+      "accessCount": 30,
+      "lastAccessed": 1778764000682,
       "type": "directory"
     },
     {
@@ -109,6 +109,12 @@
       "type": "file"
     },
     {
+      "path": "internal\\router\\router.go",
+      "accessCount": 17,
+      "lastAccessed": 1778763892394,
+      "type": "file"
+    },
+    {
       "path": "internal\\service\\page_svc_test.go",
       "accessCount": 16,
       "lastAccessed": 1778394374868,
@@ -121,12 +127,6 @@
       "type": "file"
     },
     {
-      "path": "internal\\router\\router.go",
-      "accessCount": 15,
-      "lastAccessed": 1777881465738,
-      "type": "file"
-    },
-    {
       "path": "internal\\handler\\page_handler.go",
       "accessCount": 12,
       "lastAccessed": 1778394661584,
@@ -134,8 +134,8 @@
     },
     {
       "path": "internal\\repository\\interfaces.go",
-      "accessCount": 10,
-      "lastAccessed": 1778394058006,
+      "accessCount": 11,
+      "lastAccessed": 1778763884593,
       "type": "file"
     },
     {
@@ -169,6 +169,12 @@
       "type": "file"
     },
     {
+      "path": "internal\\dto\\response.go",
+      "accessCount": 8,
+      "lastAccessed": 1778764765367,
+      "type": "file"
+    },
+    {
       "path": "internal\\handler\\user_handler.go",
       "accessCount": 7,
       "lastAccessed": 1777817319269,
@@ -181,16 +187,16 @@
       "type": "file"
     },
     {
-      "path": "internal\\dto\\response.go",
-      "accessCount": 7,
-      "lastAccessed": 1778414145366,
-      "type": "file"
-    },
-    {
       "path": "internal\\repository\\project_repo.go",
       "accessCount": 7,
       "lastAccessed": 1778414289713,
       "type": "file"
+    },
+    {
+      "path": "internal\\repository",
+      "accessCount": 7,
+      "lastAccessed": 1778763849353,
+      "type": "directory"
     },
     {
       "path": "internal\\service\\home_config_svc.go",
@@ -211,15 +217,15 @@
       "type": "file"
     },
     {
-      "path": "internal\\repository",
-      "accessCount": 6,
-      "lastAccessed": 1778394048315,
-      "type": "directory"
-    },
-    {
       "path": "internal\\handler\\page_handler_test.go",
       "accessCount": 6,
       "lastAccessed": 1778394620073,
+      "type": "file"
+    },
+    {
+      "path": "internal\\handler\\faq_handler.go",
+      "accessCount": 6,
+      "lastAccessed": 1778764350240,
       "type": "file"
     },
     {
@@ -283,12 +289,6 @@
       "type": "file"
     },
     {
-      "path": "internal\\handler\\faq_handler.go",
-      "accessCount": 3,
-      "lastAccessed": 1777817404460,
-      "type": "file"
-    },
-    {
       "path": "internal\\handler\\lead_handler.go",
       "accessCount": 3,
       "lastAccessed": 1777817404515,
@@ -325,6 +325,12 @@
       "type": "file"
     },
     {
+      "path": "internal\\service",
+      "accessCount": 3,
+      "lastAccessed": 1778763905967,
+      "type": "directory"
+    },
+    {
       "path": "internal",
       "accessCount": 2,
       "lastAccessed": 1777814103983,
@@ -347,12 +353,6 @@
       "accessCount": 2,
       "lastAccessed": 1777860473826,
       "type": "file"
-    },
-    {
-      "path": "internal\\service",
-      "accessCount": 2,
-      "lastAccessed": 1777907840605,
-      "type": "directory"
     },
     {
       "path": "internal\\handler\\health_handler.go",

@@ -109,9 +109,12 @@ type SiteConfig struct {
 	OrganizationURL         string   `json:"organization_url"`
 	SameAs                  []string `json:"same_as"`
 	ContactPhone            string   `json:"contact_phone"`
+	ContactPhone2           string   `json:"contact_phone_2"`
 	ContactEmail            string   `json:"contact_email"`
 	ContactAddress          string   `json:"contact_address"`
 	ContactWechat           string   `json:"contact_wechat"`
+	ContactWechatMP         string   `json:"contact_wechat_mp"`
+	ContactWechatVideo      string   `json:"contact_wechat_video"`
 	GATrackingID            string   `json:"ga_tracking_id"`
 	BaiduTongjiID           string   `json:"baidu_tongji_id"`
 	CustomHeadCode          string   `json:"custom_head_code"`

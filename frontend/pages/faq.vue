@@ -11,7 +11,7 @@
         <button
           class="filter-btn"
           :class="{ active: activeFilter === 'all' }"
-          @click="activeFilter = 'all'"
+          @click="changeFilter('all')"
         >
           全部
         </button>
@@ -20,7 +20,7 @@
           :key="filter.slug"
           class="filter-btn"
           :class="{ active: activeFilter === filter.slug }"
-          @click="activeFilter = filter.slug"
+          @click="changeFilter(filter.slug)"
         >
           {{ filter.label }}
         </button>
@@ -30,12 +30,19 @@
       <div v-if="pending" class="loading-state">加载中...</div>
       <div v-else-if="error" class="error-state">加载常见问题失败，请稍后重试</div>
       <div v-else class="faq-list">
-        <ProjectFAQAccordion :items="filteredFaqs" />
+        <ProjectFAQAccordion :items="items" />
       </div>
 
-      <div v-if="!pending && filteredFaqs.length === 0" class="empty-state">
+      <div v-if="!pending && items.length === 0" class="empty-state">
         暂无该分类的常见问题
       </div>
+
+      <Pagination
+        :page="page"
+        :per-page="perPage"
+        :total="totalItems"
+        @change="changePage"
+      />
 
       <!-- CTA -->
       <section class="faq-cta">
@@ -53,6 +60,8 @@ useSeo({
   description: '北极星移民常见问题解答，涵盖美国EB-5、香港投资移民、巴拿马购房移民等投资移民相关问题。',
 });
 
+const page = ref(1);
+const perPage = 5;
 const activeFilter = ref('all');
 
 interface FaqItem {
@@ -66,35 +75,58 @@ interface FaqItem {
   sort_order: number;
 }
 
-const { data, pending, error } = await useFetch<{ data: FaqItem[] }>('/api/v1/faqs');
+const items = ref<FaqItem[]>([]);
+const totalItems = ref(0);
+const pending = ref(true);
+const error = ref<string | null>(null);
 
-const allFaqs = computed<FaqItem[]>(() => {
-  return (data.value as { data?: FaqItem[] })?.data ?? [];
-});
-
-// Dynamically extract project filters from actual FAQ data.
-const projectFilters = computed(() => {
-  const seen = new Set<string>();
-  const result: { slug: string; label: string }[] = [];
-  for (const faq of allFaqs.value) {
-    if (faq.project_slug && !seen.has(faq.project_slug)) {
-      seen.add(faq.project_slug);
-      result.push({ slug: faq.project_slug, label: faq.project_name || faq.project_slug });
+const fetchFaqs = async () => {
+  pending.value = true;
+  error.value = null;
+  try {
+    const params = new URLSearchParams({
+      page: String(page.value),
+      per_page: String(perPage),
+    });
+    if (activeFilter.value !== 'all') {
+      const filter = projectFilters.value.find(f => f.slug === activeFilter.value);
+      if (filter) {
+        params.set('project_id', String(filter.id));
+      }
     }
+    const res = await $fetch<any>(`/api/v1/faqs?${params.toString()}`);
+    items.value = res?.data ?? [];
+    totalItems.value = res?.pagination?.total ?? 0;
+  } catch {
+    error.value = '加载常见问题失败，请稍后重试';
+  } finally {
+    pending.value = false;
   }
-  return result;
-});
+};
 
-const filteredFaqs = computed(() => {
-  if (activeFilter.value === 'all') {
-    return allFaqs.value;
-  }
-  return allFaqs.value.filter((faq) => faq.project_slug === activeFilter.value);
-});
+// Fetch project list for filter buttons.
+const projectFilters = ref<{ id: number; slug: string; label: string }[]>([]);
+const fetchProjects = async () => {
+  try {
+    const res = await $fetch<any>('/api/v1/projects?per_page=100');
+    const list = res?.data ?? [];
+    projectFilters.value = list.map((p: any) => ({ id: p.id, slug: p.slug, label: p.name }));
+  } catch { /* keep filters empty if projects API fails */ }
+};
+
+const changeFilter = (slug: string) => {
+  activeFilter.value = slug;
+  page.value = 1;
+};
+
+const changePage = (p: number) => {
+  page.value = p;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 // FAQPage structured data
 useHead(() => {
-  if (allFaqs.value.length === 0) return {};
+  if (items.value.length === 0) return {};
   return {
     script: [
       {
@@ -102,7 +134,7 @@ useHead(() => {
         innerHTML: JSON.stringify({
           '@context': 'https://schema.org',
           '@type': 'FAQPage',
-          mainEntity: allFaqs.value.map((faq) => ({
+          mainEntity: items.value.map((faq) => ({
             '@type': 'Question',
             name: faq.question,
             acceptedAnswer: {
@@ -114,6 +146,15 @@ useHead(() => {
       },
     ],
   };
+});
+
+watch([activeFilter, page], () => {
+  fetchFaqs();
+});
+
+onMounted(() => {
+  fetchFaqs();
+  fetchProjects();
 });
 </script>
 

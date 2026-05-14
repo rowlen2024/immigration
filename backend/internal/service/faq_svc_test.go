@@ -68,7 +68,7 @@ func TestFAQ_List(t *testing.T) {
 
 	svc := NewFAQService(repo)
 
-	faqs, err := svc.List(nil, nil)
+	faqs, _, err := svc.List(nil, nil, 1, 10)
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -86,7 +86,7 @@ func TestFAQ_List_Error(t *testing.T) {
 
 	svc := NewFAQService(repo)
 
-	_, err := svc.List(nil, nil)
+	_, _, err := svc.List(nil, nil, 1, 10)
 	if err == nil {
 		t.Fatal("expected error from repo")
 	}
@@ -411,7 +411,7 @@ func TestFAQ_List_Empty(t *testing.T) {
 
 	svc := NewFAQService(repo)
 
-	faqs, err := svc.List(nil, nil)
+	faqs, _, err := svc.List(nil, nil, 1, 10)
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -438,7 +438,7 @@ func TestFAQ_List_WithProjectData(t *testing.T) {
 
 	svc := NewFAQService(repo)
 
-	faqs, err := svc.List(&pid, nil)
+	faqs, _, err := svc.List(&pid, nil, 1, 10)
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}

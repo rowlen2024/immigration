@@ -98,9 +98,12 @@ interface SiteConfig {
   organization_url: string;
   same_as: string[];
   contact_phone: string;
+  contact_phone_2: string;
   contact_email: string;
   contact_address: string;
   contact_wechat: string;
+  contact_wechat_mp: string;
+  contact_wechat_video: string;
   ga_tracking_id: string;
   baidu_tongji_id: string;
   custom_head_code: string;
@@ -125,9 +128,12 @@ const defaultForm = (): SiteConfig => ({
   organization_url: '',
   same_as: [],
   contact_phone: '',
+  contact_phone_2: '',
   contact_email: '',
   contact_address: '',
   contact_wechat: '',
+  contact_wechat_mp: '',
+  contact_wechat_video: '',
   ga_tracking_id: '',
   baidu_tongji_id: '',
   custom_head_code: '',
@@ -152,9 +158,12 @@ const tips: Record<string, string> = {
   organization_url: '声明机构的官方网址，用于多平台交叉验证网站真实性',
   same_as: '与官网关联的社交媒体链接（LinkedIn、公众号、小红书等）。AI 搜索引擎通过双向链接验证实体可信度',
   contact_phone: '网站底部和结构化数据中展示的客服电话',
+  contact_phone_2: '网站底部和结构化数据中展示的联系电话',
   contact_email: '网站底部和结构化数据中展示的客服邮箱',
   contact_address: '公司办公地址，显示在网站底部',
-  contact_wechat: '企业微信号，显示在网站底部联系方式区域',
+  contact_wechat: '微信二维码图片，显示在联系我们页面',
+  contact_wechat_mp: '微信公众号二维码图片，显示在联系我们页面',
+  contact_wechat_video: '企业视频号二维码图片，显示在联系我们页面',
   ga_tracking_id: 'Google Analytics 4 衡量 ID（格式：G-XXXXXXXX），用于网站流量分析',
   baidu_tongji_id: '百度统计站点 ID，用于中国国内流量分析',
   custom_head_code: '插入到每个页面 &lt;head&gt; 标签内的自定义代码（meta 验证标签、第三方脚本等）',
@@ -217,9 +226,12 @@ const groups: GroupDef[] = [
     key: 'contact', label: '联系方式',
     fields: [
       { key: 'contact_phone', label: '客服电话', placeholder: '400-xxx-xxxx', tip: tips.contact_phone },
+      { key: 'contact_phone_2', label: '联系电话', placeholder: '400-xxx-xxxx', tip: tips.contact_phone_2 },
       { key: 'contact_email', label: '客服邮箱', placeholder: 'info@example.com', tip: tips.contact_email },
       { key: 'contact_address', label: '公司地址', tip: tips.contact_address },
-      { key: 'contact_wechat', label: '企业微信', tip: tips.contact_wechat },
+      { key: 'contact_wechat', label: '微信', image: true, tip: tips.contact_wechat },
+      { key: 'contact_wechat_mp', label: '微信公众号', image: true, tip: tips.contact_wechat_mp },
+      { key: 'contact_wechat_video', label: '企业视频号', image: true, tip: tips.contact_wechat_video },
     ],
   },
   {

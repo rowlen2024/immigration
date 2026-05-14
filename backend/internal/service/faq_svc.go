@@ -20,18 +20,9 @@ func NewFAQService(repo repository.FAQRepository) *FAQService {
 	return &FAQService{repo: repo}
 }
 
-// List returns FAQs, optionally filtered by project or global flag.
-func (s *FAQService) List(projectID *uint64, isGlobal *bool) ([]dto.FAQResponse, error) {
-	results, _, err := s.repo.FindAll(repository.FAQQueryParams{
-		ProjectID: projectID,
-		IsGlobal:  isGlobal,
-		Page:      1,
-		PerPage:   1000,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list faqs: %w", err)
-	}
-	return toFAQResponses(results), nil
+// List returns paginated FAQs, optionally filtered by project or global flag.
+func (s *FAQService) List(projectID *uint64, isGlobal *bool, page, perPage int) ([]dto.FAQResponse, int64, error) {
+	return s.AdminList(projectID, "", page, perPage)
 }
 
 // AdminList returns paginated FAQs with optional project filter and search.

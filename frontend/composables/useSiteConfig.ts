@@ -13,9 +13,12 @@ interface SiteConfig {
   organization_url: string;
   same_as: string[];
   contact_phone: string;
+  contact_phone_2: string;
   contact_email: string;
   contact_address: string;
   contact_wechat: string;
+  contact_wechat_mp: string;
+  contact_wechat_video: string;
   ga_tracking_id: string;
   baidu_tongji_id: string;
   custom_head_code: string;

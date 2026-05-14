@@ -126,7 +126,12 @@
         </ul>
       </nav>
 
-      <NuxtLink to="/contact" class="header-cta">免费咨询</NuxtLink>
+      <span class="header-cta">
+        <svg class="header-cta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+        </svg>
+        全国咨询热线：{{ siteConfig?.contact_phone || '400-963-6933' }}
+      </span>
 
       <button
         class="hamburger"
@@ -395,22 +400,32 @@ a.nav-link {
 /* ==================== CTA Button ==================== */
 
 .header-cta {
-  padding: 9px 22px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  color: var(--bg-white);
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 20px;
+  border: 1.5px solid rgba(200, 150, 62, 0.5);
   border-radius: 6px;
-  font-size: 14px;
+  color: var(--accent);
+  font-size: 13px;
   font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(200, 150, 62, 0.2);
-  transition: all 0.2s ease;
+  text-decoration: none;
   white-space: nowrap;
+  transition: all 0.2s ease;
+  letter-spacing: 0.3px;
+}
+
+.header-cta-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
 }
 
 .header-cta:hover {
-  box-shadow: 0 4px 16px rgba(200, 150, 62, 0.35);
-  transform: translateY(-1px);
+  background: var(--accent);
+  color: var(--bg-white);
+  border-color: var(--accent);
+  box-shadow: 0 2px 12px rgba(200, 150, 62, 0.3);
 }
 
 /* ==================== Hamburger ==================== */
@@ -602,7 +617,14 @@ a.nav-link {
   }
 
   .header-cta {
-    display: none;
+    font-size: 11px;
+    padding: 6px 14px;
+    gap: 5px;
+  }
+
+  .header-cta-icon {
+    width: 12px;
+    height: 12px;
   }
 }
 </style>
