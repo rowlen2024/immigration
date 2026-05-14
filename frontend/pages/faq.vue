@@ -61,7 +61,7 @@ useSeo({
 });
 
 const page = ref(1);
-const perPage = 5;
+const perPage = 10;
 const activeFilter = ref('all');
 
 interface FaqItem {
