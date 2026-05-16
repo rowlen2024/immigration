@@ -47,6 +47,7 @@ type FAQRepository interface {
 
 // PageRepository defines the interface for page data access.
 type PageRepository interface {
+	FindByID(id uint64) (*model.Page, error)
 	FindBySlug(slug string) (*model.Page, error)
 	FindAll(pageType, search, status string) ([]model.Page, error)
 	FindAllPublished() ([]model.Page, error)

@@ -35,6 +35,7 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		api.GET("/pages/*slug", h.GetPage)
 		api.GET("/cases/:slug", h.GetCase)
 		api.GET("/cases", h.ListCases)
+		api.GET("/lawyers", h.ListLawyers)
 		api.GET("/home-config", h.GetHomeConfig)
 		api.GET("/navigation", h.GetNavigation)
 		api.GET("/search", h.Search)
@@ -100,6 +101,7 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			admin.DELETE("/faqs/:id", middleware.RBAC("content:write"), h.DeleteFAQ)
 
 			admin.GET("/pages", middleware.RBAC("admin:read"), h.AdminListPages)
+			admin.GET("/pages/preview", middleware.RBAC("admin:read"), h.PreviewPage)
 			admin.POST("/pages", middleware.RBAC("content:write"), h.CreatePage)
 			admin.PUT("/pages/:id", middleware.RBAC("content:write"), h.UpdatePage)
 			admin.DELETE("/pages/:id", middleware.RBAC("content:write"), h.DeletePage)
@@ -108,6 +110,12 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			admin.POST("/cases", middleware.RBAC("content:write"), h.CreateCase)
 			admin.PUT("/cases/:id", middleware.RBAC("content:write"), h.UpdateCase)
 			admin.DELETE("/cases/:id", middleware.RBAC("content:write"), h.DeleteCase)
+
+			admin.GET("/lawyers", middleware.RBAC("admin:read"), h.AdminListLawyers)
+			admin.GET("/lawyers/:id", middleware.RBAC("admin:read"), h.AdminGetLawyer)
+			admin.POST("/lawyers", middleware.RBAC("content:write"), h.CreateLawyer)
+			admin.PUT("/lawyers/:id", middleware.RBAC("content:write"), h.UpdateLawyer)
+			admin.DELETE("/lawyers/:id", middleware.RBAC("content:write"), h.DeleteLawyer)
 
 			admin.GET("/compare-fields", middleware.RBAC("admin:read"), h.ListCompareFields)
 			admin.GET("/leads", middleware.RBAC("leads:read"), h.AdminListLeads)

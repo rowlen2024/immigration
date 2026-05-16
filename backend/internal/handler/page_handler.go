@@ -36,6 +36,22 @@ func (h *Handler) GetPage(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.Success(page))
 }
 
+func (h *Handler) PreviewPage(c *gin.Context) {
+	slug := c.Query("slug")
+	if slug == "" {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "slug is required"))
+		return
+	}
+
+	page, err := h.svc.Page.GetBySlugPreview(slug)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.Error(404, "page not found"))
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Success(page))
+}
+
 func (h *Handler) AdminListPages(c *gin.Context) {
 	pageType := c.Query("page_type")
 	search := c.Query("search")

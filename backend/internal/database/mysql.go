@@ -48,6 +48,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&model.ProjectAdvantage{},
 		&model.FAQ{},
 		&model.Case{},
+		&model.Lawyer{},
 		&model.Page{},
 		&model.Lead{},
 		&model.Media{},

@@ -79,7 +79,7 @@ const collectAncestors = (
   return null;
 };
 
-const buildBreadcrumb = (path: string, label?: string): BreadcrumbItem[] => {
+const buildBreadcrumb = (path: string, label?: string, parentCrumb?: BreadcrumbItem): BreadcrumbItem[] => {
   const cleanPath = path.replace(/#.*$/, '');
 
   const node = findNode(navItems.value, cleanPath);
@@ -103,7 +103,7 @@ const buildBreadcrumb = (path: string, label?: string): BreadcrumbItem[] => {
   while (segments.length > 0) {
     segments.pop();
     const parentPath = '/' + segments.join('/');
-    const parentResult = buildBreadcrumb(parentPath);
+    const parentResult = buildBreadcrumb(parentPath, undefined, parentCrumb);
     if (parentResult.length > 0) {
       const lastSegment = path.split('/').filter(Boolean).pop() || '';
       parentResult.push({ label: label || lastSegment });
@@ -112,6 +112,8 @@ const buildBreadcrumb = (path: string, label?: string): BreadcrumbItem[] => {
   }
 
   const lastSeg = path.split('/').filter(Boolean).pop() || '';
+  if (!lastSeg) return [];
+  if (parentCrumb) return [parentCrumb];
   return [{ label: label || lastSeg }];
 };
 
@@ -139,8 +141,8 @@ export const useNavigation = () => {
     fetchNav();
   }
 
-  const getBreadcrumb = (path: string, label?: string): BreadcrumbItem[] => {
-    return buildBreadcrumb(path, label);
+  const getBreadcrumb = (path: string, label?: string, parentCrumb?: BreadcrumbItem): BreadcrumbItem[] => {
+    return buildBreadcrumb(path, label, parentCrumb);
   };
 
   return { navItems, fetchNav, getBreadcrumb };

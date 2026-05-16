@@ -389,6 +389,21 @@
   background: var(--color-danger-soft);
 }
 
+.table-actions .action-btn.success {
+  color: #67c23a;
+}
+.table-actions .action-btn.success:hover {
+  color: #fff;
+  background: #67c23a;
+}
+.table-actions .action-btn.warning {
+  color: #e6a23c;
+}
+.table-actions .action-btn.warning:hover {
+  color: #fff;
+  background: #e6a23c;
+}
+
 .action-btn:disabled {
   color: var(--color-text-muted);
   opacity: 0.4;

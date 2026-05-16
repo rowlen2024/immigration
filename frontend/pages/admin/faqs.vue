@@ -29,7 +29,7 @@
             :value="String(p.id)"
           />
         </el-select>
-      <el-button :icon="Refresh" circle @click="loadList" :loading="loading" style="margin-left:auto;" />
+      <el-button :icon="Refresh" circle @click="searchQuery='';projectFilter=null;loadList()" :loading="loading" />
       </div>
     </div>
 

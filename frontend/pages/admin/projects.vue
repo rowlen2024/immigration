@@ -26,7 +26,7 @@
         <el-option label="已发布" value="1" />
         <el-option label="草稿" value="0" />
       </el-select>
-      <el-button :icon="Refresh" circle @click="loadList" :loading="loading" style="margin-left:auto;" />
+      <el-button :icon="Refresh" circle @click="searchQuery='';statusFilter='';loadList()" :loading="loading" />
     </div>
 
     <!-- Table -->
@@ -414,7 +414,8 @@
     <el-dialog
       v-model="subDialogVisible"
       :title="subDialogTitle"
-      width="500px"
+      :width="subType === 'caseItem' ? '860px' : '500px'"
+      :top="subType === 'caseItem' ? '3vh' : '15vh'"
       destroy-on-close
     >
       <el-form ref="subFormRef" :model="subForm" label-position="top">

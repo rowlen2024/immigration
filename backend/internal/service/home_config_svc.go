@@ -23,6 +23,12 @@ type HeroSlide struct {
 	Link        string `json:"link"`
 }
 
+// TrustItem represents a single trust stat in the hero section.
+type TrustItem struct {
+	Number string `json:"number"`
+	Label  string `json:"label"`
+}
+
 // AdvantageItem represents an advantage card on the homepage.
 type AdvantageItem struct {
 	Icon        string `json:"icon"`
@@ -59,6 +65,7 @@ type HomeConfigData struct {
 	AdvantageSection  *AdvantageSectionConfig  `json:"advantage_section"`
 	ProjectShowcase *ProjectShowcaseConfig   `json:"project_showcase"`
 	CaseShowcase    *CaseShowcaseConfig      `json:"case_showcase"`
+	TrustItems      []TrustItem              `json:"hero_trust"`
 }
 
 // Get returns the homepage configuration with parsed hero_slides and advantage_items.
@@ -88,6 +95,9 @@ func (s *HomeConfigService) Get() (*HomeConfigData, error) {
 		if err := json.Unmarshal(caseCfg.ConfigValue, &csc); err == nil {
 			data.CaseShowcase = &csc
 		}
+	}
+	if trustCfg, err := s.repo.FindByKey("hero_trust"); err == nil {
+		json.Unmarshal(trustCfg.ConfigValue, &data.TrustItems)
 	}
 
 	return data, nil

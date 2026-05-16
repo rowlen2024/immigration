@@ -13,12 +13,20 @@
 <script setup lang="ts">
 const props = defineProps<{
   label?: string;
+  parentLabel?: string;
+  parentLink?: string;
 }>();
 
 const route = useRoute();
 const { getBreadcrumb } = useNavigation();
 
-const crumbs = computed(() => getBreadcrumb(route.path, props.label));
+const parentCrumb = computed(() =>
+  props.parentLabel
+    ? { label: props.parentLabel, link: props.parentLink || undefined }
+    : undefined,
+);
+
+const crumbs = computed(() => getBreadcrumb(route.path, props.label, parentCrumb.value));
 </script>
 
 <style scoped>

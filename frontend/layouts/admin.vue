@@ -152,6 +152,7 @@ const navGroups: NavGroup[] = [
   { to: '/admin/projects', label: '项目管理', icon: getIconSvg('folder', 20) },
   { to: '/admin/faqs', label: 'FAQ 管理', icon: getIconSvg('help-circle', 20) },
   { to: '/admin/cases', label: '案例管理', icon: getIconSvg('users', 20) },
+  { to: '/admin/lawyers', label: '律师团队', icon: getIconSvg('briefcase', 20) },
   { to: '/admin/leads', label: '咨询管理', icon: getIconSvg('message-circle', 20) },
   {
     label: '系统设置',

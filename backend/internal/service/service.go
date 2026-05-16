@@ -16,6 +16,7 @@ type Service struct {
 	Page          *PageService
 	Case          *CaseService
 	Lead          *LeadService
+	Lawyer        *LawyerService
 	HomeConfig    *HomeConfigService
 	Media         *MediaService
 	Nav           *NavService
@@ -37,6 +38,7 @@ func New(repo *repository.Repository, cfg *config.Config) *Service {
 		Page:          &PageService{repo: repo.Page, navRepo: repo.Nav},
 		Case:          &CaseService{repo: repo.Case},
 		Lead:          &LeadService{repo: repo.Lead},
+		Lawyer:        &LawyerService{repo: repo.Lawyer},
 		HomeConfig:    &HomeConfigService{repo: repo.HomeConfig},
 		Media:         &MediaService{repo: repo.Media},
 		Nav:           &NavService{repo: repo.Nav, projectRepo: repo.Project, pageRepo: repo.Page},
@@ -45,7 +47,7 @@ func New(repo *repository.Repository, cfg *config.Config) *Service {
 		CostItem:      &CostItemService{repo: repo.CostItem},
 		TimelinePhase: &TimelinePhaseService{repo: repo.TimelinePhase},
 		CompareConfig: &CompareConfigService{repo: repo.CompareConfig},
-			Advantage:     &ProjectAdvantageService{repo: repo.ProjectAdvantage},
+		Advantage:     &ProjectAdvantageService{repo: repo.ProjectAdvantage},
 	}
 }
 

@@ -2,7 +2,6 @@
   <div>
     <div class="admin-page-header">
       <h2 class="admin-page-title">咨询管理</h2>
-      <el-button :icon="Refresh" circle @click="loadList" :loading="loading" />
     </div>
 
     <div class="admin-toolbar">
@@ -13,6 +12,7 @@
         <el-option label="已认证" value="qualified" />
         <el-option label="已关闭" value="closed" />
       </el-select>
+      <el-button :icon="Refresh" circle @click="statusFilter='';loadList()" :loading="loading" />
     </div>
 
     <div class="admin-table-wrap">

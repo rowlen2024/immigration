@@ -27,22 +27,6 @@
                 免费咨询
               </NuxtLink>
             </div>
-            <div class="hero-trust">
-              <div class="trust-item">
-                <span class="trust-number">3,000+</span>
-                <span class="trust-label">服务家庭</span>
-              </div>
-              <div class="trust-divider"></div>
-              <div class="trust-item">
-                <span class="trust-number">98%+</span>
-                <span class="trust-label">I-829获批率</span>
-              </div>
-              <div class="trust-divider"></div>
-              <div class="trust-item">
-                <span class="trust-number">20年+</span>
-                <span class="trust-label">行业经验</span>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -63,6 +47,19 @@
             :aria-label="'Go to slide ' + (index + 1)"
           ></button>
         </div>
+      </div>
+    </section>
+
+    <!-- Trust Bar Section -->
+    <section v-if="trustItems.length > 0" ref="trustBarRef" class="trust-bar-section">
+      <div class="trust-bar">
+        <template v-for="(item, index) in trustItems" :key="index">
+          <div class="trust-bar-item">
+            <span class="trust-bar-number" :data-target="parseTrustNumber(item.number)">{{ animatedNumbers[index] ?? formatTrustNumber(item.number) }}</span>
+            <span class="trust-bar-label">{{ item.label }}</span>
+          </div>
+          <div v-if="index < trustItems.length - 1" class="trust-bar-divider"></div>
+        </template>
       </div>
     </section>
 
@@ -87,11 +84,6 @@
           <div v-for="(project, idx) in projectCards" :key="project.slug" class="project-card reveal">
             <div class="card-image" :class="`card-image--${idx % 3}`">
               <div class="card-image-glow"></div>
-              <div class="card-image-flag">
-                <span v-if="idx === 0">&#127482;&#127480;</span>
-                <span v-else-if="idx === 1">&#127469;&#127472;</span>
-                <span v-else>&#127477;&#127462;</span>
-              </div>
               <img v-if="project.image" :src="project.image" :alt="project.title" loading="lazy" />
             </div>
             <div class="card-body">
@@ -152,6 +144,33 @@
 
         <div v-if="!pending.cases && featuredCases.length === 0" class="empty-state">
           暂无成功案例
+        </div>
+      </div>
+    </section>
+
+    <!-- Lawyer Team Section -->
+    <section v-if="lawyers.length > 0" class="section lawyer-section">
+      <div class="container">
+        <div class="section-header">
+          <h2>专业律师团队</h2>
+          <p>资深移民律师，为您保驾护航</p>
+        </div>
+        <div class="lawyer-grid">
+          <div v-for="lawyer in lawyers" :key="lawyer.id" class="lawyer-card reveal">
+            <div class="lawyer-photo">
+              <img v-if="lawyer.photo_url" :src="lawyer.photo_url" :alt="lawyer.name" loading="lazy" />
+              <div v-else class="lawyer-photo-placeholder"></div>
+            </div>
+            <div class="lawyer-body">
+              <div class="lawyer-header-info">
+                <h3 class="lawyer-name">{{ lawyer.name }}</h3>
+                <p class="lawyer-title">{{ lawyer.title }}</p>
+              </div>
+              <ul class="lawyer-tags">
+                <li v-for="tag in lawyer.tags" :key="tag">{{ tag }}</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -273,6 +292,23 @@ const { data: casesData, pending: pendingCases, error: errorCasesRaw } = await u
   onResponseError() {},
 });
 
+interface LawyerItem {
+  id: number;
+  photo_url: string;
+  name: string;
+  title: string;
+  tags: string[];
+}
+
+const { data: lawyersData } = await useFetch<{ data?: LawyerItem[] }>('/api/v1/lawyers', {
+  onResponseError() {},
+});
+
+const lawyers = computed<LawyerItem[]>(() => {
+  const raw = lawyersData.value as { data?: LawyerItem[] } | null;
+  return raw?.data ?? [];
+});
+
 const pending = computed(() => ({
   projects: pendingProjects.value,
   cases: pendingCases.value,
@@ -368,6 +404,62 @@ const advantageSection = computed(() => {
   }
   return null;
 });
+
+const trustItems = computed(() => {
+  if (homeConfig.value) {
+    const config = homeConfig.value as unknown as Record<string, unknown>;
+    const data = config.data as Record<string, unknown> | undefined;
+    if (data && Array.isArray(data.hero_trust)) {
+      return data.hero_trust as Array<{ number: string; label: string }>;
+    }
+  }
+  return [];
+});
+
+const trustBarRef = ref<HTMLElement | null>(null);
+const animatedNumbers = ref<string[]>([]);
+let trustAnimating = false;
+
+function parseTrustNumber(raw: string): number {
+  const match = raw.replace(/,/g, '').match(/([\d.]+)/);
+  return match ? parseInt(match[1], 10) : 0;
+}
+
+function formatTrustNumber(raw: string): string {
+  return raw;
+}
+
+function startTrustCountUp(items: Array<{ number: string }>) {
+  if (trustAnimating) return;
+  trustAnimating = true;
+
+  const targets = items.map((item) => parseTrustNumber(item.number));
+  const suffixes = items.map((item) => {
+    const num = parseTrustNumber(item.number);
+    const raw = item.number.replace(/,/g, '');
+    return raw.replace(String(num), '').replace(/^\d+/, '');
+  });
+
+  const duration = 800;
+  const start = performance.now();
+
+  function step(timestamp: number) {
+    const elapsed = timestamp - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+
+    animatedNumbers.value = targets.map((t, i) => {
+      const val = Math.floor(eased * t);
+      return val.toLocaleString() + suffixes[i];
+    });
+
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    }
+  }
+
+  requestAnimationFrame(step);
+}
 
 const advantageTitle = computed(() => advantageSection.value?.section_title || '为什么选择北极星移民');
 const advantageSubtitle = computed(() => advantageSection.value?.section_subtitle || '专业服务，值得信赖');
@@ -511,9 +603,29 @@ onMounted(() => {
   document.querySelectorAll('.reveal').forEach((el) => revealObserver!.observe(el));
 });
 
+// Trust bar count-up observer
+let trustObserver: IntersectionObserver | null = null;
+
+watch([trustBarRef, trustItems], ([el, items]) => {
+  if (el && items.length > 0 && !trustAnimating) {
+    trustObserver?.disconnect();
+    trustObserver = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          startTrustCountUp(items);
+          trustObserver?.disconnect();
+        }
+      },
+      { threshold: 0.3 }
+    );
+    trustObserver.observe(el as HTMLElement);
+  }
+});
+
 onUnmounted(() => {
   if (autoTimer) clearInterval(autoTimer);
   if (revealObserver) revealObserver.disconnect();
+  if (trustObserver) trustObserver.disconnect();
 });
 </script>
 
@@ -662,35 +774,65 @@ onUnmounted(() => {
   border-color: rgba(255, 255, 255, 0.35);
 }
 
-.hero-trust {
-  display: flex;
-  gap: 32px;
-  align-items: center;
+/* Trust Bar Section */
+.trust-bar-section {
+  background: linear-gradient(135deg, #0F1E3D 0%, #15294D 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-.trust-item {
+.trust-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 64px;
+  padding: 36px 40px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.trust-bar-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
 }
 
-.trust-number {
-  font-size: 26px;
+.trust-bar-number {
+  font-size: 36px;
   font-weight: 700;
   color: var(--accent);
   letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
 }
 
-.trust-label {
-  font-size: 12px;
+.trust-bar-label {
+  font-size: 13px;
   color: rgba(255, 255, 255, 0.45);
   letter-spacing: 1px;
 }
 
-.trust-divider {
+.trust-bar-divider {
   width: 1px;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.1);
+  height: 40px;
+  background: rgba(255, 255, 255, 0.10);
+}
+
+@media (max-width: 767px) {
+  .trust-bar {
+    flex-direction: column;
+    gap: 20px;
+    padding: 28px 20px;
+  }
+
+  .trust-bar-divider {
+    width: 60px;
+    height: 1px;
+  }
+
+  .trust-bar-number {
+    font-size: 30px;
+  }
 }
 
 .carousel-arrow {
@@ -786,15 +928,6 @@ onUnmounted(() => {
   .btn-hero-secondary {
     width: 100%;
     justify-content: center;
-  }
-
-  .hero-trust {
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-
-  .trust-number {
-    font-size: 22px;
   }
 
   .carousel-dot {
@@ -1335,6 +1468,121 @@ onUnmounted(() => {
   .cases-grid,
   .advantages-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Lawyer Section */
+.lawyer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.lawyer-card {
+  display: flex;
+  gap: 24px;
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+}
+
+.lawyer-card:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.10);
+  transform: translateY(-3px);
+  border-color: rgba(200, 150, 62, 0.15);
+}
+
+.lawyer-photo {
+  width: 140px;
+  height: 160px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0F1E3D, #1A3A5C);
+}
+
+.lawyer-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.lawyer-photo-placeholder {
+  width: 100%;
+  height: 100%;
+}
+
+.lawyer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.lawyer-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.lawyer-name {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.lawyer-title {
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 500;
+  margin: 0;
+}
+
+.lawyer-tags {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lawyer-tags li {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lawyer-tags li::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+@media (max-width: 767px) {
+  .lawyer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lawyer-card {
+    flex-direction: column;
+  }
+
+  .lawyer-photo {
+    width: 100%;
+    height: 220px;
   }
 }
 </style>

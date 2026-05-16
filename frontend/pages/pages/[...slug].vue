@@ -58,6 +58,7 @@ interface CmsPage {
   meta_description?: string;
 }
 
+
 const { data, pending, error: fetchError } = await useFetch(
   () => `/api/v1/pages/${slug.value}`,
   {

@@ -52,6 +52,18 @@ func (s *PageService) GetBySlug(slug string) (*model.Page, error) {
 	return page, nil
 }
 
+// GetBySlugPreview returns a page by slug regardless of status.
+func (s *PageService) GetBySlugPreview(slug string) (*model.Page, error) {
+	if slug == "" {
+		return nil, errors.New("slug is required")
+	}
+	page, err := s.repo.FindBySlug(slug)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get page by slug: %w", err)
+	}
+	return page, nil
+}
+
 // List returns all published pages.
 func (s *PageService) List() ([]model.Page, error) {
 	pages, err := s.repo.FindAllPublished()

@@ -2,53 +2,75 @@
   <div>
     <div class="admin-page-header">
       <h2 class="admin-page-title">媒体库</h2>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <el-button :icon="Refresh" circle @click="loadList" :loading="loading" />
-        <el-upload
-          :action="uploadUrl"
-          :headers="uploadHeaders"
-          accept=".jpg,.jpeg,.png,.webp"
-          :show-file-list="false"
-          :on-success="handleUploadSuccess"
-          :on-error="handleUploadError"
-        >
-          <el-button type="primary">
-            <span v-html="getIconSvg('upload', 16)" style="margin-right:6px;vertical-align:middle"></span>
-            上传图片
-          </el-button>
-        </el-upload>
-      </div>
+      <el-upload
+        :action="uploadUrl"
+        :headers="uploadHeaders"
+        accept=".jpg,.jpeg,.png,.webp"
+        :show-file-list="false"
+        :on-success="handleUploadSuccess"
+        :on-error="handleUploadError"
+      >
+        <el-button type="primary">
+          <span v-html="getIconSvg('upload', 16)" style="margin-right:6px;vertical-align:middle"></span>
+          上传图片
+        </el-button>
+      </el-upload>
     </div>
 
-    <div v-if="loading" class="admin-loading-state">
-      <p>加载中...</p>
+    <div class="admin-toolbar">
+      <el-input
+        v-model="searchQuery"
+        placeholder="搜索文件名..."
+        :prefix-icon="Search"
+        clearable
+        class="admin-search-input"
+        @input="onSearch"
+      />
+      <el-button :icon="Refresh" circle @click="searchQuery='';loadList()" :loading="loading" />
     </div>
 
-    <div v-else-if="list.length === 0" class="admin-empty-state">
-      暂无媒体文件
-    </div>
-
-    <div v-else class="admin-media-grid">
-      <div v-for="item in list" :key="item.id" class="admin-media-card">
-        <div class="admin-media-preview" @click="openPreview(item.url)">
-          <img :src="item.url" :alt="item.filename" />
-        </div>
-        <div class="admin-media-info">
-          <div class="admin-media-filename" :title="item.filename">{{ item.original_name || item.filename }}</div>
-          <div class="admin-media-url" :title="item.url">{{ item.url }}</div>
-          <div class="admin-media-size">{{ formatSize(item.size_bytes) }}</div>
-          <el-popconfirm
-            title="确定删除该文件？"
-            confirm-button-text="删除"
-            cancel-button-text="取消"
-            @confirm="handleDelete(item.id)"
-          >
-            <template #reference>
-              <el-button size="small" type="danger" class="delete-btn">删除</el-button>
-            </template>
-          </el-popconfirm>
-        </div>
-      </div>
+    <div class="admin-table-wrap">
+      <el-table :data="list" v-loading="loading">
+        <el-table-column label="缩略图" width="80">
+          <template #default="{ row }">
+            <img
+              :src="row.url"
+              :alt="row.filename"
+              class="media-thumb"
+              @click="openPreview(row.url)"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column prop="original_name" label="文件名" min-width="180">
+          <template #default="{ row }">
+            <div class="row-title">{{ row.original_name || row.filename }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="URL" min-width="240">
+          <template #default="{ row }">
+            <div class="media-url-cell" :title="row.url">{{ row.url }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="大小" width="100">
+          <template #default="{ row }">
+            {{ formatSize(row.size_bytes) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="90">
+          <template #default="{ row }">
+            <el-popconfirm
+              title="确定删除该文件？"
+              confirm-button-text="删除"
+              cancel-button-text="取消"
+              @confirm="handleDelete(row.id)"
+            >
+              <template #reference>
+                <el-button size="small" type="danger">删除</el-button>
+              </template>
+            </el-popconfirm>
+          </template>
+        </el-table-column>
+      </el-table>
     </div>
 
     <div class="admin-pagination-wrap" v-if="total > pageSize">
@@ -61,7 +83,6 @@
       />
     </div>
 
-    <!-- Image preview overlay -->
     <div v-if="previewImage" class="preview-overlay" @click.self="closePreview">
       <div class="preview-container">
         <img :src="previewImage" alt="预览" />
@@ -73,7 +94,7 @@
 
 <script setup lang="ts">
 import { ElMessage } from 'element-plus';
-import { Refresh } from '@element-plus/icons-vue';
+import { Refresh, Search } from '@element-plus/icons-vue';
 import { getIconSvg } from '~/composables/lucideIcons';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
@@ -88,9 +109,11 @@ interface MediaItem {
 
 const list = ref<MediaItem[]>([]);
 const loading = ref(false);
+const searchQuery = ref('');
 const page = ref(1);
 const pageSize = ref(12);
 const total = ref(0);
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 const previewImage = ref<string | null>(null);
 
@@ -116,12 +139,24 @@ const closePreview = () => {
   previewImage.value = null;
 };
 
+const onSearch = () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    page.value = 1;
+    loadList();
+  }, 300);
+};
+
 const loadList = async () => {
   loading.value = true;
   try {
     const api = useApi();
+    const params = new URLSearchParams();
+    params.set('page', String(page.value));
+    params.set('per_page', String(pageSize.value));
+    if (searchQuery.value) params.set('search', searchQuery.value);
     const data = await api<{ items: MediaItem[]; total: number }>(
-      `/admin/media?page=${page.value}&per_page=${pageSize.value}`
+      `/admin/media?${params.toString()}`
     );
     list.value = data.items ?? [];
     total.value = data.total ?? 0;
@@ -157,12 +192,22 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.delete-btn {
-  width: 100%;
+.media-thumb {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
 }
 
-.admin-media-preview {
-  cursor: pointer;
+.media-url-cell {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--color-text-muted);
 }
 
 .preview-overlay {

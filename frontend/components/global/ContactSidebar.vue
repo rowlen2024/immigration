@@ -16,7 +16,7 @@
     <!-- 客服电话 -->
     <div v-if="siteConfig?.contact_phone" class="cs-item">
       <span class="cs-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
       </span>
       <span class="cs-label">客服电话</span>
       <div class="cs-tooltip">
@@ -83,12 +83,24 @@ const hasContent = computed(() => {
   return !!(c?.contact_phone || c?.contact_phone_2 || c?.contact_wechat || c?.contact_wechat_mp || c?.contact_wechat_video);
 });
 
-function copy(text: string) {
-  navigator.clipboard?.writeText(text).then(() => {
-    copied.value = text;
-    if (copyTimer) clearTimeout(copyTimer);
-    copyTimer = setTimeout(() => { copied.value = null; }, 1500);
-  });
+async function copy(text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    ta.style.top = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  copied.value = text;
+  if (copyTimer) clearTimeout(copyTimer);
+  copyTimer = setTimeout(() => { copied.value = null; }, 1500);
 }
 
 function scrollToTop() {

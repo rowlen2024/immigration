@@ -24,7 +24,7 @@
         <el-option label="默认" value="default" />
         <el-option label="新闻" value="news" />
       </el-select>
-      <el-button :icon="Refresh" circle @click="loadList" :loading="loading" style="margin-left:auto;" />
+      <el-button :icon="Refresh" circle @click="searchQuery='';statusFilter='';pageTypeFilter='';loadList()" :loading="loading" />
     </div>
 
     <div class="admin-table-wrap">
@@ -50,9 +50,15 @@
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="140" fixed="right">
+        <el-table-column label="操作" width="230" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
+              <button class="action-btn" @click="handlePreview(row)">预览</button>
+              <button
+                class="action-btn"
+                :class="row.status === 'published' ? 'warning' : 'success'"
+                @click="handleToggleStatus(row)"
+              >{{ row.status === 'published' ? '下架' : '发布' }}</button>
               <button class="action-btn" @click="openEdit(row)">编辑</button>
               <el-popconfirm title="确定删除该页面？" confirm-button-text="删除" cancel-button-text="取消" @confirm="handleDelete(row.id)">
                 <template #reference>
@@ -266,6 +272,25 @@ const handleSave = async () => {
     ElMessage.error(editingId.value ? '更新页面失败' : '创建页面失败');
   } finally {
     saving.value = false;
+  }
+};
+
+const handlePreview = (row: Page) => {
+  window.open(`/preview/page/${row.slug}`, '_blank');
+};
+
+const handleToggleStatus = async (row: Page) => {
+  const newStatus = row.status === 'published' ? 'draft' : 'published';
+  try {
+    const api = useApi();
+    await api(`/admin/pages/${row.id}`, {
+      method: 'PUT',
+      body: { ...row, status: newStatus },
+    });
+    row.status = newStatus;
+    ElMessage.success(newStatus === 'published' ? '已发布' : '已下架');
+  } catch {
+    ElMessage.error('操作失败');
   }
 };
 

@@ -1,13 +1,15 @@
 <template>
   <div class="icon-picker">
     <div class="icon-picker__trigger" @click="dialogVisible = true">
-      <div v-if="modelValue" class="icon-picker__preview">
-        <span
-          v-html="selectedIconSvg"
-          class="icon-picker__svg"
-        ></span>
-      </div>
-      <span v-else class="icon-picker__placeholder">选择图标</span>
+      <span v-if="modelValue" class="icon-picker__selected">
+        <span v-html="selectedIconSvg" class="icon-picker__svg"></span>
+        <span class="icon-picker__name">{{ modelValue }}</span>
+      </span>
+      <span v-else class="icon-picker__placeholder">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-picker__search-icon"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        点击选择图标
+      </span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-picker__chevron"><polyline points="6 9 12 15 18 9"/></svg>
     </div>
 
     <el-dialog
@@ -81,36 +83,57 @@ function select(name: string) {
 
 <style scoped>
 .icon-picker__trigger {
-  width: 44px;
-  height: 44px;
-  border: 2px dashed #dcdfe6;
-  border-radius: 50%;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--el-border-color, #dcdfe6);
+  border-radius: var(--el-border-radius-base, 4px);
+  background: var(--el-fill-color-blank, #fff);
   cursor: pointer;
   transition: border-color 0.2s;
+  box-sizing: border-box;
 }
 .icon-picker__trigger:hover {
-  border-color: #c8963e;
+  border-color: var(--el-color-primary, #c8963e);
 }
-.icon-picker__preview {
-  width: 36px;
-  height: 36px;
-  background: rgba(26, 58, 92, 0.08);
-  border-radius: 50%;
+.icon-picker__selected {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
+  flex: 1;
 }
 .icon-picker__svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   color: #c8963e;
+  flex-shrink: 0;
+}
+.icon-picker__name {
+  font-size: 13px;
+  color: #303133;
 }
 .icon-picker__placeholder {
-  font-size: 11px;
+  font-size: 13px;
   color: #c0c4cc;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+.icon-picker__search-icon {
+  color: #c0c4cc;
+  flex-shrink: 0;
+}
+.icon-picker__chevron {
+  color: #c0c4cc;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+.icon-picker__trigger:hover .icon-picker__chevron {
+  color: var(--el-color-primary, #c8963e);
 }
 .icon-picker__dialog {
   max-height: 460px;

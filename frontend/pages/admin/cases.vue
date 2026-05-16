@@ -14,7 +14,7 @@
         class="admin-search-input"
         @input="onSearch"
       />
-      <el-button :icon="Refresh" circle @click="loadList" :loading="loading" style="margin-left:auto;" />
+      <el-button :icon="Refresh" circle @click="searchQuery='';loadList()" :loading="loading" />
     </div>
 
     <div class="admin-table-wrap">

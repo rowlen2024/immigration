@@ -107,10 +107,64 @@
       "status": "completed",
       "completed_at": "2026-05-14T13:06:14.531Z",
       "duration_ms": 135612
+    },
+    {
+      "agent_id": "ac61b722bf1e52166",
+      "agent_type": "general-purpose",
+      "started_at": "2026-05-16T04:31:42.435Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-05-16T04:33:03.643Z",
+      "duration_ms": 81208
+    },
+    {
+      "agent_id": "a8f9704fbab5d50c5",
+      "agent_type": "general-purpose",
+      "started_at": "2026-05-16T04:33:32.925Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-05-16T04:34:46.787Z",
+      "duration_ms": 73862
+    },
+    {
+      "agent_id": "a51bb2e97fe9bbe51",
+      "agent_type": "general-purpose",
+      "started_at": "2026-05-16T04:35:37.737Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-05-16T04:40:50.197Z",
+      "duration_ms": 312460
+    },
+    {
+      "agent_id": "a8e2d6a2d340ac172",
+      "agent_type": "general-purpose",
+      "started_at": "2026-05-16T04:41:44.283Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-05-16T04:43:53.426Z",
+      "duration_ms": 129143
+    },
+    {
+      "agent_id": "a6fd486ee917357ef",
+      "agent_type": "general-purpose",
+      "started_at": "2026-05-16T04:46:17.616Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-05-16T04:48:41.315Z",
+      "duration_ms": 143699
+    },
+    {
+      "agent_id": "ab594a5b38ac371ed",
+      "agent_type": "general-purpose",
+      "started_at": "2026-05-16T04:46:17.651Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-05-16T04:48:38.068Z",
+      "duration_ms": 140417
     }
   ],
-  "total_spawned": 12,
-  "total_completed": 12,
+  "total_spawned": 17,
+  "total_completed": 18,
   "total_failed": 0,
-  "last_updated": "2026-05-14T15:26:00.182Z"
+  "last_updated": "2026-05-16T09:08:31.723Z"
 }

@@ -180,6 +180,34 @@
           </div>
         </el-card>
       </el-tab-pane>
+      <el-tab-pane label="信任数据" name="trust">
+        <el-card class="config-card">
+          <template #header>
+            <h3 class="admin-card-title">信任数据</h3>
+          </template>
+          <div v-if="trustItems.length === 0" class="admin-empty-hint">暂无信任数据，点击"新增条目"添加。</div>
+          <div v-else class="config-list">
+            <div v-for="(item, i) in trustItems" :key="i" class="config-item">
+              <div class="config-item-info">
+                <strong>{{ item.number }}</strong>
+                <span class="config-item-desc">{{ item.label }}</span>
+              </div>
+              <div class="config-item-actions">
+                <button class="action-btn" :disabled="i === 0" @click="moveTrust(i, -1)">↑</button>
+                <button class="action-btn" :disabled="i === trustItems.length - 1" @click="moveTrust(i, 1)">↓</button>
+                <button class="action-btn" @click="openEditTrust(i)">编辑</button>
+                <button class="action-btn danger" @click="removeTrust(i)">删除</button>
+              </div>
+            </div>
+          </div>
+          <div class="config-list-actions">
+            <el-button type="primary" size="small" @click="openAddTrust">新增条目</el-button>
+          </div>
+          <div class="card-footer">
+            <el-button type="primary" :loading="trustSaving" @click="saveTrust">保存</el-button>
+          </div>
+        </el-card>
+      </el-tab-pane>
     </el-tabs>
 
     <!-- Slide Edit Drawer -->
@@ -238,6 +266,27 @@
       <template #footer>
         <el-button @click="advDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="saveAdv">确定</el-button>
+      </template>
+    </el-drawer>
+
+    <!-- Trust Edit Drawer -->
+    <el-drawer
+      v-model="trustDialogVisible"
+      :title="trustEditIndex >= 0 ? '编辑信任数据' : '新增信任数据'"
+      size="500px"
+      destroy-on-close
+    >
+      <el-form label-position="top">
+        <el-form-item label="数值" required>
+          <el-input v-model="trustForm.number" placeholder="如：3,000+" />
+        </el-form-item>
+        <el-form-item label="标签" required>
+          <el-input v-model="trustForm.label" placeholder="如：服务家庭" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="trustDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveTrustItem">确定</el-button>
       </template>
     </el-drawer>
   </div>
@@ -308,6 +357,17 @@ interface CaseOption {
   name: string;
 }
 
+interface TrustItem {
+  number: string;
+  label: string;
+}
+
+const trustItems = ref<TrustItem[]>([]);
+const trustDialogVisible = ref(false);
+const trustForm = ref<TrustItem>({ number: '', label: '' });
+const trustEditIndex = ref(-1);
+const trustSaving = ref(false);
+
 const allCases = ref<CaseOption[]>([]);
 const caseSaving = ref(false);
 
@@ -324,6 +384,7 @@ const load = async () => {
         advantage_section: { section_title: string; section_subtitle: string; image: string } | null;
         project_showcase: ProjectShowcase | null;
         case_showcase: CaseShowcase | null;
+        hero_trust: TrustItem[] | null;
       }>('/admin/home-config'),
       api<{ items: ProjectOption[] }>('/projects'),
       api<{ items: CaseOption[] } | CaseOption[]>('/cases'),
@@ -341,6 +402,7 @@ const load = async () => {
       if (config.case_showcase) {
         caseShowcase.value = config.case_showcase;
       }
+      trustItems.value = config.hero_trust || [];
     }
 
     if (projects?.items) {
@@ -582,6 +644,61 @@ async function saveAdvantages() {
     ElMessage.error('保存失败');
   } finally {
     advSaving.value = false;
+  }
+}
+
+// --- Trust Items ---
+function openAddTrust() {
+  trustEditIndex.value = -1;
+  trustForm.value = { number: '', label: '' };
+  trustDialogVisible.value = true;
+}
+
+function openEditTrust(index: number) {
+  trustEditIndex.value = index;
+  trustForm.value = { ...trustItems.value[index] };
+  trustDialogVisible.value = true;
+}
+
+function removeTrust(index: number) {
+  trustItems.value.splice(index, 1);
+}
+
+function moveTrust(index: number, direction: -1 | 1) {
+  const target = index + direction;
+  if (target < 0 || target >= trustItems.value.length) return;
+  const items = [...trustItems.value];
+  [items[index], items[target]] = [items[target], items[index]];
+  trustItems.value = items;
+}
+
+async function saveTrustItem() {
+  if (!trustForm.value.number.trim() || !trustForm.value.label.trim()) {
+    ElMessage.warning('请填写数值和标签');
+    return;
+  }
+  if (trustEditIndex.value >= 0) {
+    trustItems.value[trustEditIndex.value] = { ...trustForm.value };
+  } else {
+    trustItems.value.push({ ...trustForm.value });
+  }
+  trustDialogVisible.value = false;
+  await saveTrust();
+}
+
+async function saveTrust() {
+  trustSaving.value = true;
+  try {
+    const api = useApi();
+    await api('/admin/home-config', {
+      method: 'PUT',
+      body: { hero_trust: trustItems.value },
+    });
+    ElMessage.success('信任数据已保存');
+  } catch {
+    ElMessage.error('保存失败');
+  } finally {
+    trustSaving.value = false;
   }
 }
 

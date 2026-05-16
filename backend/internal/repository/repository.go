@@ -11,6 +11,7 @@ type Repository struct {
 	Case          *CaseRepo
 	Page          *PageRepo
 	Lead          *LeadRepo
+	Lawyer        *LawyerRepo
 	HomeConfig    *HomeConfigRepo
 	Media         *MediaRepo
 	Nav           *NavRepo
@@ -29,6 +30,7 @@ func New(db *gorm.DB) *Repository {
 		Case:          &CaseRepo{db: db},
 		Page:          &PageRepo{db: db},
 		Lead:          &LeadRepo{db: db},
+		Lawyer:        &LawyerRepo{db: db},
 		HomeConfig:    &HomeConfigRepo{db: db},
 		Media:         &MediaRepo{db: db},
 		Nav:           &NavRepo{db: db},

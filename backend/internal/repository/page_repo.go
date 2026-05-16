@@ -11,6 +11,15 @@ type PageRepo struct {
 	db *gorm.DB
 }
 
+func (r *PageRepo) FindByID(id uint64) (*model.Page, error) {
+	var page model.Page
+	err := r.db.First(&page, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &page, nil
+}
+
 func (r *PageRepo) FindBySlug(slug string) (*model.Page, error) {
 	var page model.Page
 	err := r.db.Where("slug = ?", slug).First(&page).Error

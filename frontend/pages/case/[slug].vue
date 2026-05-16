@@ -1,7 +1,7 @@
 <template>
   <div class="case-detail-page">
     <div class="container">
-      <ProjectBreadcrumb />
+      <ProjectBreadcrumb :label="item?.name" parentLabel="成功案例" parentLink="/cases" />
 
       <div v-if="pending" class="loading-state">加载中...</div>
       <div v-else-if="error" class="error-state">{{ error }}</div>

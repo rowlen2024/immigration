@@ -2,16 +2,43 @@
   <div>
     <div class="admin-page-header">
       <h2 class="admin-page-title">导航管理</h2>
-      <div v-if="!isViewer" style="display:flex;align-items:center;gap:8px;">
-        <el-button :icon="Refresh" circle @click="loadTree" :loading="loading" />
-        <el-button type="primary" @click="openCreate()">新建导航</el-button>
-      </div>
+      <el-button v-if="!isViewer" type="primary" @click="openCreate()">新建导航</el-button>
+    </div>
+
+    <div class="admin-toolbar">
+      <el-input
+        v-model="searchQuery"
+        placeholder="搜索名称..."
+        :prefix-icon="Search"
+        clearable
+        class="admin-search-input"
+      />
+      <el-select v-model="typeFilter" placeholder="类型筛选" clearable class="admin-filter-select">
+        <el-option label="全部" value="" />
+        <el-option label="项目" value="project" />
+        <el-option label="页面" value="page" />
+        <el-option label="自定义" value="custom" />
+      </el-select>
+      <el-select v-model="positionFilter" placeholder="显示位置" clearable class="admin-filter-select">
+        <el-option label="全部" value="" />
+        <el-option label="仅头部" value="header" />
+        <el-option label="仅页脚" value="footer" />
+        <el-option label="头部+页脚" value="both" />
+      </el-select>
+      <el-button :icon="Refresh" circle @click="searchQuery='';typeFilter='';positionFilter='';loadTree()" :loading="loading" />
     </div>
 
     <div class="admin-table-wrap">
+      <div class="nav-tree-header">
+        <span class="nav-th nav-th-name">名称</span>
+        <span class="nav-th nav-th-link">链接</span>
+        <span class="nav-th nav-th-type">类型</span>
+        <span class="nav-th nav-th-pos">显示位置</span>
+        <span v-if="!isViewer" class="nav-th nav-th-actions">操作</span>
+      </div>
       <el-tree
         v-loading="loading"
-        :data="treeData"
+        :data="filteredTreeData"
         node-key="id"
         default-expand-all
         :props="{ children: 'children', label: 'label' }"
@@ -24,21 +51,25 @@
               <span v-if="!data.status" class="status-pill draft">已隐藏</span>
             </div>
             <span class="row-meta">{{ data.link }}</span>
-            <el-tag
-              :type="linkTypeTag(data.link_type)"
-              size="small"
-              effect="plain"
-            >
-              {{ linkTypeLabel(data.link_type) }}
-            </el-tag>
-            <el-tag
-              v-if="data.display_position && data.display_position !== 'header'"
-              :type="data.display_position === 'both' ? 'success' : 'warning'"
-              size="small"
-              effect="plain"
-            >
-              {{ data.display_position === 'both' ? '头部+页脚' : '仅页脚' }}
-            </el-tag>
+            <span class="row-type">
+              <el-tag
+                :type="linkTypeTag(data.link_type)"
+                size="small"
+                effect="plain"
+              >
+                {{ linkTypeLabel(data.link_type) }}
+              </el-tag>
+            </span>
+            <span class="row-pos">
+              <el-tag
+                v-if="data.display_position && data.display_position !== 'header'"
+                :type="data.display_position === 'both' ? 'success' : 'warning'"
+                size="small"
+                effect="plain"
+              >
+                {{ data.display_position === 'both' ? '头部+页脚' : '仅页脚' }}
+              </el-tag>
+            </span>
             <span v-if="!isViewer" class="tree-node-actions">
               <el-tooltip content="添加子级" placement="top">
                 <button class="action-btn" @click.stop="openCreate(data.id)" v-html="getIconSvg('plus', 16)"></button>
@@ -167,7 +198,7 @@
 
 <script setup lang="ts">
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
-import { Refresh } from '@element-plus/icons-vue';
+import { Refresh, Search } from '@element-plus/icons-vue';
 import { getIconSvg } from '~/composables/lucideIcons';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
@@ -206,6 +237,9 @@ const projects = ref<ProjectBrief[]>([]);
 const pages = ref<PageBrief[]>([]);
 const loading = ref(false);
 const saving = ref(false);
+const searchQuery = ref('');
+const typeFilter = ref('');
+const positionFilter = ref('');
 
 const dialogVisible = ref(false);
 const editingId = ref<number | null>(null);
@@ -292,6 +326,28 @@ const parentOptions = computed(() => {
       .filter((item) => item.id !== editingId.value)
       .map((item) => ({ ...item, children: filterOut(item.children || []) }));
   return filterOut(treeData.value);
+});
+
+const filterTree = (items: NavItem[]): NavItem[] => {
+  if (!items) return [];
+  return items.reduce((acc: NavItem[], item) => {
+    const matchName = !searchQuery.value || item.label.toLowerCase().includes(searchQuery.value.toLowerCase());
+    const matchType = !typeFilter.value || item.link_type === typeFilter.value;
+    const matchPos = !positionFilter.value || item.display_position === positionFilter.value;
+    const matches = matchName && matchType && matchPos;
+    const filteredChildren = filterTree(item.children || []);
+    if (matches || filteredChildren.length > 0) {
+      acc.push({ ...item, children: filteredChildren });
+    }
+    return acc;
+  }, []);
+};
+
+const filteredTreeData = computed(() => {
+  if (!searchQuery.value && !typeFilter.value && !positionFilter.value) {
+    return treeData.value;
+  }
+  return filterTree(treeData.value);
 });
 
 const loadTree = async () => {
@@ -420,6 +476,24 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.nav-tree-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px 10px 40px;
+  border-bottom: 2px solid var(--border-color);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--bg-gray-50, #fafafa);
+}
+
+.nav-th-name { min-width: 160px; }
+.nav-th-link { flex: 1; }
+.nav-th-type { width: 70px; }
+.nav-th-pos { width: 90px; }
+.nav-th-actions { width: 110px; text-align: right; }
+
 .nav-tree {
   background: transparent;
 }
@@ -457,10 +531,23 @@ onMounted(() => {
   flex: 1;
 }
 
+.row-type {
+  width: 70px;
+  display: flex;
+  justify-content: center;
+}
+
+.row-pos {
+  width: 90px;
+  display: flex;
+  justify-content: center;
+}
+
 .tree-node-actions {
   display: flex;
   gap: 2px;
-  margin-left: auto;
+  width: 110px;
+  justify-content: flex-end;
   align-items: center;
 }
 
