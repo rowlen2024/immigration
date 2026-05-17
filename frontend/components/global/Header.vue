@@ -3,10 +3,13 @@
     <div class="header-gold-line"></div>
     <div class="header-container">
       <NuxtLink to="/" class="header-logo">
-        <span class="logo-shield">
-          <span class="logo-shield-inner">M</span>
-        </span>
-        <span class="logo-text">{{ siteConfig?.site_name || '北极星移民' }}</span>
+        <img v-if="siteConfig?.site_logo" :src="siteConfig.site_logo" :alt="siteConfig?.site_name || '北极星移民'" class="logo-img" />
+        <template v-else>
+          <span class="logo-shield">
+            <span class="logo-shield-inner">M</span>
+          </span>
+          <span class="logo-text">{{ siteConfig?.site_name || '北极星移民' }}</span>
+        </template>
       </NuxtLink>
 
       <nav class="header-nav" :class="{ 'nav-open': mobileMenuOpen }">
@@ -337,6 +340,11 @@ watch(mobileMenuOpen, (val) => {
   color: var(--bg-white);
   letter-spacing: 2px;
   line-height: 1.2;
+}
+
+.logo-img {
+  height: 32px;
+  width: auto;
 }
 
 /* ==================== Nav ==================== */
