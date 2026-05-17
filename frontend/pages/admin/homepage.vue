@@ -180,6 +180,56 @@
           </div>
         </el-card>
       </el-tab-pane>
+
+      <el-tab-pane label="评价展示区" name="testimonials">
+        <el-card class="config-card">
+          <template #header><h3 class="admin-card-title">评价展示区</h3></template>
+          <el-form label-width="100px">
+            <el-form-item label="区域标题">
+              <el-input v-model="testimonialShowcase.section_title" placeholder="客户评价" />
+            </el-form-item>
+            <el-form-item label="区域副标题">
+              <el-input v-model="testimonialShowcase.section_subtitle" placeholder="来自真实客户的评价" />
+            </el-form-item>
+            <el-form-item label="精选评价">
+              <div class="featured-area">
+                <div v-if="testimonialShowcase.featured_testimonial_ids.length === 0" class="admin-empty-hint">
+                  未选择精选评价，首页将展示全部评价。
+                </div>
+                <div v-else class="config-list">
+                  <div v-for="(id, i) in testimonialShowcase.featured_testimonial_ids" :key="id" class="config-item">
+                    <span class="config-item-name">{{ getTestimonialTitle(id) }}</span>
+                    <div class="config-item-actions">
+                      <button class="action-btn" :disabled="i === 0" @click="moveTestimonialFeatured(i, -1)">↑</button>
+                      <button class="action-btn" :disabled="i === testimonialShowcase.featured_testimonial_ids.length - 1" @click="moveTestimonialFeatured(i, 1)">↓</button>
+                      <button class="action-btn danger" @click="removeTestimonialFeatured(i)">移除</button>
+                    </div>
+                  </div>
+                </div>
+                <el-select
+                  v-if="availableTestimonials.length > 0"
+                  value=""
+                  placeholder="添加评价..."
+                  clearable
+                  @change="(val: number | string) => { if (val) addTestimonialFeatured(val as number) }"
+                  class="add-project-select"
+                >
+                  <el-option
+                    v-for="t in availableTestimonials"
+                    :key="t.id"
+                    :label="t.nickname"
+                    :value="t.id"
+                  />
+                </el-select>
+              </div>
+            </el-form-item>
+          </el-form>
+          <div class="card-footer">
+            <el-button type="primary" :loading="testimonialSaving" @click="saveTestimonialShowcase">保存</el-button>
+          </div>
+        </el-card>
+      </el-tab-pane>
+
       <el-tab-pane label="信任数据" name="trust">
         <el-card class="config-card">
           <template #header>
@@ -357,6 +407,17 @@ interface CaseOption {
   name: string;
 }
 
+interface TestimonialShowcase {
+  section_title: string;
+  section_subtitle: string;
+  featured_testimonial_ids: number[];
+}
+
+interface TestimonialOption {
+  id: number;
+  nickname: string;
+}
+
 interface TrustItem {
   number: string;
   label: string;
@@ -371,23 +432,33 @@ const trustSaving = ref(false);
 const allCases = ref<CaseOption[]>([]);
 const caseSaving = ref(false);
 
+const testimonialShowcase = ref<TestimonialShowcase>({
+  section_title: '',
+  section_subtitle: '',
+  featured_testimonial_ids: [],
+});
+const allTestimonials = ref<TestimonialOption[]>([]);
+const testimonialSaving = ref(false);
+
 const loading = ref(true);
 
 const load = async () => {
   loading.value = true;
   try {
     const api = useApi();
-    const [config, projects, casesData] = await Promise.all([
+    const [config, projects, casesData, testimonialsData] = await Promise.all([
       api<{
         hero_slides: HeroSlide[];
         advantage_items: AdvantageItem[];
         advantage_section: { section_title: string; section_subtitle: string; image: string } | null;
         project_showcase: ProjectShowcase | null;
         case_showcase: CaseShowcase | null;
+        testimonial_showcase: TestimonialShowcase | null;
         hero_trust: TrustItem[] | null;
       }>('/admin/home-config'),
       api<{ items: ProjectOption[] }>('/projects'),
       api<{ items: CaseOption[] } | CaseOption[]>('/cases'),
+      api<TestimonialOption[]>('/testimonials'),
     ]);
 
     if (config) {
@@ -401,6 +472,9 @@ const load = async () => {
       }
       if (config.case_showcase) {
         caseShowcase.value = config.case_showcase;
+      }
+      if (config.testimonial_showcase) {
+        testimonialShowcase.value = config.testimonial_showcase;
       }
       trustItems.value = config.hero_trust || [];
     }
@@ -424,6 +498,11 @@ const load = async () => {
           return true;
         });
       }
+    }
+
+    if (testimonialsData) {
+      const items = Array.isArray(testimonialsData) ? testimonialsData : [];
+      allTestimonials.value = items;
     }
   } finally {
     loading.value = false;
@@ -547,6 +626,50 @@ async function saveCaseShowcase() {
     ElMessage.error('保存失败');
   } finally {
     caseSaving.value = false;
+  }
+}
+
+// --- Testimonial Showcase ---
+const availableTestimonials = computed(() => {
+  const featured = new Set(testimonialShowcase.value.featured_testimonial_ids);
+  return allTestimonials.value.filter((t) => !featured.has(t.id));
+});
+
+function getTestimonialTitle(id: number): string {
+  return allTestimonials.value.find((t) => t.id === id)?.nickname || String(id);
+}
+
+function moveTestimonialFeatured(index: number, direction: -1 | 1) {
+  const target = index + direction;
+  if (target < 0 || target >= testimonialShowcase.value.featured_testimonial_ids.length) return;
+  const ids = [...testimonialShowcase.value.featured_testimonial_ids];
+  [ids[index], ids[target]] = [ids[target], ids[index]];
+  testimonialShowcase.value.featured_testimonial_ids = ids;
+}
+
+function removeTestimonialFeatured(index: number) {
+  testimonialShowcase.value.featured_testimonial_ids.splice(index, 1);
+}
+
+function addTestimonialFeatured(id: number) {
+  if (!testimonialShowcase.value.featured_testimonial_ids.includes(id)) {
+    testimonialShowcase.value.featured_testimonial_ids.push(id);
+  }
+}
+
+async function saveTestimonialShowcase() {
+  testimonialSaving.value = true;
+  try {
+    const api = useApi();
+    await api('/admin/home-config', {
+      method: 'PUT',
+      body: { testimonial_showcase: testimonialShowcase.value },
+    });
+    ElMessage.success('评价展示区已保存');
+  } catch {
+    ElMessage.error('保存失败');
+  } finally {
+    testimonialSaving.value = false;
   }
 }
 

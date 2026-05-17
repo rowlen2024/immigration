@@ -82,6 +82,36 @@
           </div>
         </section>
 
+        <section id="testimonials" v-if="project.testimonials.length > 0" class="detail-section">
+          <h2 class="detail-section-title">客户评价</h2>
+          <div class="testimonial-carousel">
+            <div class="carousel-viewport" ref="carouselViewport">
+              <div class="carousel-track" :style="{ transform: `translateX(${detailCarouselOffset}px)`, gap: `${detailCardGap}px` }">
+                <div v-for="t in project.testimonials" :key="t.id" class="testimonial-card" :style="{ flex: `0 0 ${detailCardWidth}px`, width: `${detailCardWidth}px` }">
+                  <div class="tm-header">
+                    <div class="tm-avatar">
+                      <img v-if="t.avatar_url" :src="t.avatar_url" :alt="t.nickname" />
+                      <svg v-else width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 22c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+                    </div>
+                    <div class="tm-meta">
+                      <span class="tm-name">{{ t.nickname }}</span>
+                      <el-rate v-model="t.rating" disabled size="small" />
+                    </div>
+                  </div>
+                  <p class="tm-desc">
+                    <span class="tm-quote tm-quote--l">"</span>
+                    {{ t.content }}
+                    <span class="tm-quote tm-quote--r">"</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="carousel-dots" v-if="detailCarouselMaxPage > 0">
+              <button v-for="p in detailCarouselMaxPage + 1" :key="p" class="carousel-dot" :class="{ active: detailCarouselPage === p - 1 }" @click="detailCarouselPage = p - 1"></button>
+            </div>
+          </div>
+        </section>
+
         <section id="news" v-if="project.news.length > 0" class="detail-section">
           <h2 class="detail-section-title">最新资讯</h2>
           <div class="news-list">
@@ -157,6 +187,7 @@ interface ApiCostItem { name: string; amount: string; note: string; }
 interface ApiTimelinePhase { phase_number: number; title: string; description: string; duration: string; }
 interface ApiFAQ { question: string; answer: string; }
 interface ApiCase { slug: string; name: string; country_from: string; investment_amount: string; processing_period: string; content: string; photo_url: string; }
+interface ApiTestimonial { id: number; avatar_url: string; nickname: string; rating: number; content: string; }
 interface ApiNewsPage { id: number; title: string; slug: string; cover_image: string; created_at: string; }
 interface ApiCompareConfig { compare_with: string[]; compare_fields: string[]; }
 
@@ -181,6 +212,7 @@ interface ApiProject {
   timeline_phases: ApiTimelinePhase[];
   faqs: ApiFAQ[];
   cases: ApiCase[];
+  testimonials: ApiTestimonial[];
   news: ApiNewsPage[];
   compare_config: ApiCompareConfig | null;
   advantages: ApiAdvantage[];
@@ -215,6 +247,13 @@ const project = computed(() => {
       period: c.processing_period,
       content: c.content,
       photo: c.photo_url,
+    })),
+    testimonials: (p?.testimonials || []).map((t) => ({
+      id: t.id,
+      avatar_url: t.avatar_url,
+      nickname: t.nickname,
+      rating: t.rating,
+      content: t.content,
     })),
     news: (p?.news || []).map((n) => ({
       id: n.id,
@@ -319,6 +358,7 @@ const tabs = computed<TabItem[]>(() => {
   if (timelinePhases.value.length > 0) items.push({ id: 'timeline', label: '申请流程' });
   if (advantages.value.length > 0) items.push({ id: 'advantages', label: '项目优势' });
   if (project.value.cases.length > 0) items.push({ id: 'cases', label: '成功案例' });
+  if (project.value.testimonials.length > 0) items.push({ id: 'testimonials', label: '客户评价' });
   if (project.value.news.length > 0) items.push({ id: 'news', label: '最新资讯' });
   if (project.value.compare_config && project.value.compare_config.compare_with.length >= 2) items.push({ id: 'compare', label: '项目对比' });
   if (faqs.value.length > 0) items.push({ id: 'faqs', label: '常见问题' });
@@ -338,7 +378,70 @@ function scrollToSection(id: string) {
 
 let observer: IntersectionObserver | null = null;
 
+// testimonial carousel
+const carouselViewport = ref<HTMLElement | null>(null);
+const detailCarouselPage = ref(0);
+const detailViewportWidth = ref(0);
+let detailAutoTimer: ReturnType<typeof setInterval> | null = null;
+
+const detailCardGap = computed(() => {
+  if (detailViewportWidth.value < 640) return 16;
+  if (detailViewportWidth.value < 1024) return 32;
+  return 48;
+});
+
+const detailCardsPerView = computed(() => {
+  if (detailViewportWidth.value < 640) return 1;
+  if (detailViewportWidth.value < 1024) return 2;
+  return 3;
+});
+
+const detailCardWidth = computed(() => {
+  if (detailViewportWidth.value === 0) return 300;
+  const perView = detailCardsPerView.value;
+  return (detailViewportWidth.value - detailCardGap.value * (perView - 1)) / perView;
+});
+
+const detailCarouselMaxPage = computed(() => {
+  const total = project.value.testimonials.length;
+  return Math.max(0, total - detailCardsPerView.value);
+});
+
+const detailCarouselOffset = computed(() => {
+  return -(detailCarouselPage.value * (detailCardWidth.value + detailCardGap.value));
+});
+
+function updateDetailViewportWidth() {
+  if (carouselViewport.value) {
+    detailViewportWidth.value = carouselViewport.value.clientWidth;
+  }
+}
+
+function detailNext() {
+  if (detailCarouselPage.value < detailCarouselMaxPage.value) detailCarouselPage.value++;
+}
+
+function startDetailAutoPlay() {
+  stopDetailAutoPlay();
+  if (project.value.testimonials.length <= 3) return;
+  detailAutoTimer = setInterval(() => {
+    if (detailCarouselPage.value >= detailCarouselMaxPage.value) {
+      detailCarouselPage.value = 0;
+    } else {
+      detailCarouselPage.value++;
+    }
+  }, 5000);
+}
+
+function stopDetailAutoPlay() {
+  if (detailAutoTimer) { clearInterval(detailAutoTimer); detailAutoTimer = null; }
+}
+
 onMounted(() => {
+  updateDetailViewportWidth();
+  window.addEventListener('resize', updateDetailViewportWidth);
+  nextTick(() => { updateDetailViewportWidth(); startDetailAutoPlay(); });
+
   observer = new IntersectionObserver(
     (entries) => {
       for (const entry of entries) {
@@ -358,6 +461,8 @@ onMounted(() => {
 onUnmounted(() => {
   observer?.disconnect();
   observer = null;
+  stopDetailAutoPlay();
+  window.removeEventListener('resize', updateDetailViewportWidth);
 });
 </script>
 
@@ -536,6 +641,103 @@ onUnmounted(() => {
   font-size: 14px;
   color: var(--text-secondary);
   line-height: 1.6;
+}
+
+.testimonial-carousel { position: relative; }
+
+.carousel-viewport {
+  overflow: hidden;
+  margin: 0 -12px;
+  padding: 12px 12px;
+}
+
+.carousel-track {
+  display: flex;
+  transition: transform 0.5s ease;
+}
+
+.testimonial-card {
+  background: var(--bg-white);
+  border-radius: 12px;
+  padding: 28px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.05);
+}
+
+.tm-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tm-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8ecf4;
+}
+
+.tm-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tm-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tm-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tm-desc {
+  font-size: 14px;
+  line-height: 1.9;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.tm-quote {
+  color: #c8ccd4;
+  font-size: 18px;
+  font-family: Georgia, serif;
+  line-height: 0;
+}
+
+.tm-quote--l { margin-right: 2px; }
+.tm-quote--r { margin-left: 2px; }
+
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 28px;
+}
+
+.carousel-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  border: none;
+  background: #d9d9d9;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s;
+}
+
+.carousel-dot.active {
+  background: var(--primary);
+  width: 24px;
 }
 
 .news-list {

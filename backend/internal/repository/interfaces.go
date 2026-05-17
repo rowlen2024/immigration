@@ -130,3 +130,12 @@ type ProjectAdvantageRepository interface {
 	Update(adv *model.ProjectAdvantage) error
 	Delete(id uint64) error
 }
+
+// TestimonialRepository defines the interface for testimonial data access.
+type TestimonialRepository interface {
+	FindByProjectID(projectID uint64) ([]model.Testimonial, error)
+	FindAll() ([]model.Testimonial, error)
+	Create(t *model.Testimonial) error
+	Update(t *model.Testimonial) error
+	HardDelete(id uint64) error
+}

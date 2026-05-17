@@ -58,14 +58,22 @@ type CaseShowcaseConfig struct {
 	FeaturedCaseIDs []uint64 `json:"featured_case_ids"`
 }
 
+// TestimonialShowcaseConfig holds the testimonial showcase section settings.
+type TestimonialShowcaseConfig struct {
+	SectionTitle           string   `json:"section_title"`
+	SectionSubtitle        string   `json:"section_subtitle"`
+	FeaturedTestimonialIDs []uint64 `json:"featured_testimonial_ids"`
+}
+
 // HomeConfigData holds the parsed homepage configuration data.
 type HomeConfigData struct {
-	HeroSlides      []HeroSlide              `json:"hero_slides"`
-	AdvantageItems  []AdvantageItem          `json:"advantage_items"`
-	AdvantageSection  *AdvantageSectionConfig  `json:"advantage_section"`
-	ProjectShowcase *ProjectShowcaseConfig   `json:"project_showcase"`
-	CaseShowcase    *CaseShowcaseConfig      `json:"case_showcase"`
-	TrustItems      []TrustItem              `json:"hero_trust"`
+	HeroSlides         []HeroSlide                `json:"hero_slides"`
+	AdvantageItems     []AdvantageItem            `json:"advantage_items"`
+	AdvantageSection   *AdvantageSectionConfig    `json:"advantage_section"`
+	ProjectShowcase    *ProjectShowcaseConfig     `json:"project_showcase"`
+	CaseShowcase       *CaseShowcaseConfig        `json:"case_showcase"`
+	TestimonialShowcase *TestimonialShowcaseConfig `json:"testimonial_showcase"`
+	TrustItems         []TrustItem                `json:"hero_trust"`
 }
 
 // Get returns the homepage configuration with parsed hero_slides and advantage_items.
@@ -94,6 +102,12 @@ func (s *HomeConfigService) Get() (*HomeConfigData, error) {
 		var csc CaseShowcaseConfig
 		if err := json.Unmarshal(caseCfg.ConfigValue, &csc); err == nil {
 			data.CaseShowcase = &csc
+		}
+	}
+	if testimonialCfg, err := s.repo.FindByKey("testimonial_showcase"); err == nil {
+		var tsc TestimonialShowcaseConfig
+		if err := json.Unmarshal(testimonialCfg.ConfigValue, &tsc); err == nil {
+			data.TestimonialShowcase = &tsc
 		}
 	}
 	if trustCfg, err := s.repo.FindByKey("hero_trust"); err == nil {

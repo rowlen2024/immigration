@@ -1,0 +1,14 @@
+CREATE TABLE IF NOT EXISTS `testimonials` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `project_id` BIGINT UNSIGNED NULL,
+    `avatar_url` VARCHAR(512) NOT NULL DEFAULT '',
+    `nickname` VARCHAR(64) NOT NULL DEFAULT '',
+    `rating` TINYINT UNSIGNED NOT NULL DEFAULT 5,
+    `content` TEXT NOT NULL,
+    `sort_order` INT NOT NULL DEFAULT 0,
+    `deleted_at` DATETIME NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_testimonials_project` (`project_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

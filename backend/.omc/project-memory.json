@@ -18,7 +18,7 @@
     "runtime": null
   },
   "build": {
-    "buildCommand": "cd /d/mygo/src/web/immigration/backend && go build ./... 2>&1",
+    "buildCommand": "go build ./... 2>&1",
     "testCommand": "go build ./... && go test ./internal/... -run TestFAQ 2>&1 | tail -5",
     "lintCommand": null,
     "devCommand": null,
@@ -110,8 +110,8 @@
     },
     {
       "path": "internal\\service\\project_svc.go",
-      "accessCount": 19,
-      "lastAccessed": 1778590363413,
+      "accessCount": 20,
+      "lastAccessed": 1778989639363,
       "type": "file"
     },
     {
@@ -152,8 +152,14 @@
     },
     {
       "path": "internal\\handler\\project_handler.go",
-      "accessCount": 10,
-      "lastAccessed": 1778589684321,
+      "accessCount": 11,
+      "lastAccessed": 1778989624735,
+      "type": "file"
+    },
+    {
+      "path": "internal\\repository\\project_repo.go",
+      "accessCount": 11,
+      "lastAccessed": 1778989669862,
       "type": "file"
     },
     {
@@ -205,12 +211,6 @@
       "type": "file"
     },
     {
-      "path": "internal\\repository\\project_repo.go",
-      "accessCount": 7,
-      "lastAccessed": 1778414289713,
-      "type": "file"
-    },
-    {
       "path": "internal\\service\\home_config_svc.go",
       "accessCount": 6,
       "lastAccessed": 1777881442343,
@@ -233,6 +233,12 @@
       "accessCount": 6,
       "lastAccessed": 1778764350240,
       "type": "file"
+    },
+    {
+      "path": "internal\\service",
+      "accessCount": 6,
+      "lastAccessed": 1778989632319,
+      "type": "directory"
     },
     {
       "path": "internal\\service\\user_svc.go",
@@ -269,12 +275,6 @@
       "accessCount": 5,
       "lastAccessed": 1777961780163,
       "type": "file"
-    },
-    {
-      "path": "internal\\service",
-      "accessCount": 5,
-      "lastAccessed": 1778906526369,
-      "type": "directory"
     },
     {
       "path": "internal\\handler\\home_handler.go",

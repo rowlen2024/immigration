@@ -35,6 +35,7 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		api.GET("/pages/*slug", h.GetPage)
 		api.GET("/cases/:slug", h.GetCase)
 		api.GET("/cases", h.ListCases)
+		api.GET("/testimonials", h.ListAllTestimonials)
 		api.GET("/lawyers", h.ListLawyers)
 		api.GET("/home-config", h.GetHomeConfig)
 		api.GET("/navigation", h.GetNavigation)
@@ -84,6 +85,12 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 				projects.POST("/:id/cases", middleware.RBAC("projects:write"), h.CreateProjectCase)
 				projects.PUT("/:id/cases/:cid", middleware.RBAC("projects:write"), h.UpdateProjectCase)
 				projects.DELETE("/:id/cases/:cid", middleware.RBAC("projects:write"), h.DeleteProjectCase)
+
+				// Testimonials sub-resources
+				projects.GET("/:id/testimonials", middleware.RBAC("admin:read"), h.ListProjectTestimonials)
+				projects.POST("/:id/testimonials", middleware.RBAC("projects:write"), h.CreateProjectTestimonial)
+				projects.PUT("/:id/testimonials/:tid", middleware.RBAC("projects:write"), h.UpdateProjectTestimonial)
+				projects.DELETE("/:id/testimonials/:tid", middleware.RBAC("projects:write"), h.DeleteProjectTestimonial)
 
 				// News sub-resources
 				projects.GET("/:id/news", middleware.RBAC("admin:read"), h.ListProjectNews)

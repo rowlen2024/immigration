@@ -148,6 +148,52 @@
       </div>
     </section>
 
+    <!-- Testimonials Section -->
+    <section v-if="featuredTestimonials.length > 0" class="section testimonial-section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="decorate-on">{{ testimonialTitle }}<i class="decorate"></i></h2>
+          <p v-if="testimonialSubtitle">{{ testimonialSubtitle }}</p>
+        </div>
+
+        <div class="testimonial-carousel">
+          <div class="carousel-viewport" ref="carouselViewport">
+            <div
+              class="carousel-track"
+              :style="{ transform: `translateX(${carouselOffset}px)`, gap: `${cardGap}px` }"
+            >
+              <div
+                v-for="item in featuredTestimonials"
+                :key="item.id"
+                class="testimonial-card"
+                :style="{ flex: `0 0 ${cardWidth}px`, width: `${cardWidth}px` }"
+              >
+                <div class="tm-header">
+                  <div class="tm-avatar">
+                    <img v-if="item.avatar_url" :src="item.avatar_url" :alt="item.nickname" />
+                    <svg v-else width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 22c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+                  </div>
+                  <div class="tm-meta">
+                    <span class="tm-name">{{ item.nickname }}</span>
+                    <el-rate v-model="item.rating" disabled size="small" />
+                  </div>
+                </div>
+                <p class="tm-desc">
+                  <span class="tm-quote tm-quote--l">"</span>
+                  {{ item.content }}
+                  <span class="tm-quote tm-quote--r">"</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="carousel-dots" v-if="carouselMaxPage > 0">
+          <button v-for="p in carouselMaxPage + 1" :key="p" class="carousel-dot" :class="{ active: carouselPage === p - 1 }" @click="carouselPage = p - 1"></button>
+        </div>
+      </div>
+    </section>
+
     <!-- Lawyer Team Section -->
     <section v-if="lawyers.length > 0" class="section lawyer-section">
       <div class="container">
@@ -300,6 +346,18 @@ interface LawyerItem {
   tags: string[];
 }
 
+interface TestimonialItem {
+  id: number;
+  nickname: string;
+  avatar_url: string;
+  rating: number;
+  content: string;
+}
+
+const { data: testimonialsData } = await useFetch<{ data?: TestimonialItem[] }>('/api/v1/testimonials', {
+  onResponseError() {},
+});
+
 const { data: lawyersData } = await useFetch<{ data?: LawyerItem[] }>('/api/v1/lawyers', {
   onResponseError() {},
 });
@@ -393,6 +451,112 @@ const featuredCases = computed<CaseItem[]>(() => {
 
   return all;
 });
+
+const testimonialShowcaseConfig = computed(() => {
+  if (homeConfig.value) {
+    const config = homeConfig.value as unknown as Record<string, unknown>;
+    const data = config.data as Record<string, unknown> | undefined;
+    if (data && data.testimonial_showcase) {
+      return data.testimonial_showcase as {
+        section_title?: string;
+        section_subtitle?: string;
+        featured_testimonial_ids?: number[];
+      };
+    }
+  }
+  return null;
+});
+
+const testimonialTitle = computed(() => testimonialShowcaseConfig.value?.section_title || '客户评价');
+const testimonialSubtitle = computed(() => testimonialShowcaseConfig.value?.section_subtitle || '');
+
+const featuredTestimonials = computed<TestimonialItem[]>(() => {
+  const apiData = testimonialsData.value as { data?: TestimonialItem[] } | null;
+  const all = apiData?.data ?? [];
+  if (all.length === 0) return [];
+
+  const featured = testimonialShowcaseConfig.value?.featured_testimonial_ids;
+  if (featured && featured.length > 0) {
+    const orderMap = new Map(featured.map((id: number, i: number) => [id, i]));
+    return all
+      .filter((t) => orderMap.has(t.id))
+      .sort((a, b) => {
+        const ai = orderMap.get(a.id);
+        const bi = orderMap.get(b.id);
+        if (ai !== undefined && bi !== undefined) return ai - bi;
+        return 0;
+      });
+  }
+
+  return all;
+});
+
+// Testimonial carousel
+const carouselViewport = ref<HTMLElement | null>(null);
+const carouselPage = ref(0);
+const viewportWidth = ref(0);
+let testimonialAutoTimer: ReturnType<typeof setInterval> | null = null;
+
+const cardGap = computed(() => {
+  if (viewportWidth.value < 640) return 16;
+  if (viewportWidth.value < 1024) return 32;
+  return 48;
+});
+
+const cardWidth = computed(() => {
+  if (viewportWidth.value === 0) return 300;
+  const perView = viewportWidth.value < 640 ? 1 : viewportWidth.value < 1024 ? 2 : 3;
+  return (viewportWidth.value - cardGap.value * (perView - 1)) / perView;
+});
+
+const carouselCardsPerView = computed(() => {
+  if (viewportWidth.value < 640) return 1;
+  if (viewportWidth.value < 1024) return 2;
+  return 3;
+});
+
+const carouselMaxPage = computed(() => {
+  const total = featuredTestimonials.value.length;
+  const perView = carouselCardsPerView.value;
+  return Math.max(0, total - perView);
+});
+
+const carouselOffset = computed(() => {
+  return -(carouselPage.value * (cardWidth.value + cardGap.value));
+});
+
+function updateViewportWidth() {
+  if (carouselViewport.value) {
+    viewportWidth.value = carouselViewport.value.clientWidth;
+  }
+}
+
+function testimonialPrev() {
+  if (carouselPage.value > 0) carouselPage.value--;
+}
+
+function testimonialNext() {
+  if (carouselPage.value < carouselMaxPage.value) carouselPage.value++;
+}
+
+function startTestimonialAutoPlay() {
+  stopTestimonialAutoPlay();
+  if (featuredTestimonials.value.length <= 3) return;
+  testimonialAutoTimer = setInterval(() => {
+    if (carouselPage.value >= carouselMaxPage.value) {
+      carouselPage.value = 0;
+    } else {
+      carouselPage.value++;
+    }
+  }, 5000);
+}
+
+function stopTestimonialAutoPlay() {
+  if (testimonialAutoTimer) {
+    clearInterval(testimonialAutoTimer);
+    testimonialAutoTimer = null;
+  }
+}
 
 const advantageSection = computed(() => {
   if (homeConfig.value) {
@@ -588,6 +752,15 @@ onMounted(() => {
     currentSlide.value = (currentSlide.value + 1) % heroSlides.value.length;
   }, 5000);
 
+  if (featuredTestimonials.value.length > 0) {
+    updateViewportWidth();
+    window.addEventListener('resize', updateViewportWidth);
+    nextTick(() => {
+      updateViewportWidth();
+      startTestimonialAutoPlay();
+    });
+  }
+
   revealObserver = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -626,6 +799,8 @@ onUnmounted(() => {
   if (autoTimer) clearInterval(autoTimer);
   if (revealObserver) revealObserver.disconnect();
   if (trustObserver) trustObserver.disconnect();
+  stopTestimonialAutoPlay();
+  window.removeEventListener('resize', updateViewportWidth);
 });
 </script>
 
@@ -1306,6 +1481,125 @@ onUnmounted(() => {
   font-size: 15px;
 }
 
+/* Testimonial Section */
+/* Testimonial Carousel */
+.testimonial-section {
+  background: var(--bg-white);
+}
+
+.section-header .decorate-on {
+  position: relative;
+  display: inline-block;
+}
+
+.section-header .decorate {
+  display: block;
+  width: 48px;
+  height: 3px;
+  background: var(--primary);
+  margin: 10px auto 0;
+  border-radius: 2px;
+}
+
+.testimonial-carousel {
+  position: relative;
+}
+
+.carousel-viewport {
+  overflow: hidden;
+  margin: 0 -12px;
+  padding: 12px 12px;
+}
+
+.carousel-track {
+  display: flex;
+  transition: transform 0.5s ease;
+}
+
+.testimonial-card {
+  background: var(--bg-white);
+  border-radius: 12px;
+  padding: 28px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.05);
+}
+
+.tm-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tm-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8ecf4;
+}
+
+.tm-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tm-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tm-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tm-desc {
+  font-size: 14px;
+  line-height: 1.9;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.tm-quote {
+  color: #c8ccd4;
+  font-size: 18px;
+  font-family: Georgia, serif;
+  line-height: 0;
+}
+
+.tm-quote--l { margin-right: 2px; }
+.tm-quote--r { margin-left: 2px; }
+
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 32px;
+}
+
+.carousel-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  border: none;
+  background: #d9d9d9;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s;
+}
+
+.carousel-dot.active {
+  background: var(--primary);
+  width: 24px;
+}
+
 /* CTA Section */
 .cta-section {
   padding: 72px 0;
@@ -1438,6 +1732,8 @@ onUnmounted(() => {
     grid-template-columns: repeat(2, 1fr);
   }
 
+
+
   .advantages-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1469,6 +1765,10 @@ onUnmounted(() => {
   .advantages-grid {
     grid-template-columns: 1fr;
   }
+
+
+  .carousel-viewport { margin: 0 -6px; padding: 6px; }
+  .carousel-viewport { margin: 0 -8px; padding: 8px; }
 }
 
 /* Lawyer Section */

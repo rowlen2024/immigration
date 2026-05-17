@@ -54,6 +54,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&model.Media{},
 		&model.Navigation{},
 		&model.HomeConfig{},
+		&model.Testimonial{},
 		&model.OperationLog{},
 	)
 }

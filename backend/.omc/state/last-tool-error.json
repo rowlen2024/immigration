@@ -1,7 +1,7 @@
 {
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"cd D:\\\\mygo\\\\src\\\\web\\\\immigration\\\\frontend && npx nuxi typecheck 2>&1 | tail -20\",\"timeout\":120000,\"description\":\"Run Nuxt type check to verify changes compile\"}",
-  "error": "Exit code 1\n/usr/bin/bash: line 1: cd: D:mygosrcwebimmigrationfrontend: No such file or directory",
-  "timestamp": "2026-05-16T04:47:40.087Z",
+  "tool_name": "Read",
+  "tool_input_preview": "{\"file_path\":\"D:\\\\mygo\\\\src\\\\web\\\\immigration\\\\c.html\"}",
+  "error": "File content (32614 tokens) exceeds maximum allowed tokens (25000). Use offset and limit parameters to read specific portions of the file, or search for specific content instead of reading the whole file.",
+  "timestamp": "2026-05-17T03:05:45.036Z",
   "retry_count": 1
 }

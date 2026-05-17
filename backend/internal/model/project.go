@@ -42,6 +42,7 @@ type Project struct {
 	Advantages     []ProjectAdvantage `gorm:"foreignKey:ProjectID" json:"advantages,omitempty"`
 	FAQs           []FAQ           `gorm:"foreignKey:ProjectID" json:"faqs,omitempty"`
 	Cases          []Case          `gorm:"foreignKey:ProjectID" json:"cases,omitempty"`
+	Testimonials   []Testimonial   `gorm:"foreignKey:ProjectID" json:"testimonials,omitempty"`
 	News           []Page         `gorm:"many2many:project_news;" json:"news,omitempty"`
 	CompareConfig  *CompareConfig `gorm:"foreignKey:ProjectID" json:"compare_config,omitempty"`
 }

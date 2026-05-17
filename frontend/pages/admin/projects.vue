@@ -346,6 +346,40 @@
           </el-table>
         </el-tab-pane>
 
+        <el-tab-pane label="客户评价" name="testimonials">
+          <div style="margin-bottom: 12px">
+            <el-button type="primary" size="small" @click="openSubDialog('testimonial')">添加评价</el-button>
+          </div>
+          <el-table :data="subData.testimonials" border size="small" max-height="360">
+            <el-table-column label="头像" width="64">
+              <template #default="{ row }">
+                <img v-if="row.avatar_url" :src="row.avatar_url" class="thumb-preview" />
+                <span v-else style="color:#c0c4cc">—</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="nickname" label="昵称" width="120" />
+            <el-table-column label="星级" width="140">
+              <template #default="{ row }">
+                <el-rate v-model="row.rating" disabled show-score size="small" />
+              </template>
+            </el-table-column>
+            <el-table-column prop="content" label="评价内容" min-width="200" show-overflow-tooltip />
+            <el-table-column prop="sort_order" label="排序" width="60" />
+            <el-table-column label="操作" width="120" fixed="right">
+              <template #default="{ row: r }">
+                <div class="table-actions">
+                  <button class="action-btn" @click="openSubDialog('testimonial', r)">编辑</button>
+                  <el-popconfirm title="确定删除？" @confirm="deleteSubItem('testimonial', r.id)">
+                    <template #reference>
+                      <button class="action-btn danger">删除</button>
+                    </template>
+                  </el-popconfirm>
+                </div>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
+
         <el-tab-pane label="资讯" name="news">
           <div style="margin-bottom: 12px">
             <el-button type="primary" size="small" @click="openNewsDialog">添加资讯</el-button>
@@ -493,6 +527,23 @@
           </el-form-item>
           <el-form-item label="描述" prop="description">
             <el-input v-model="subForm.description" type="textarea" :rows="3" />
+          </el-form-item>
+          <el-form-item label="排序" prop="sort_order">
+            <el-input-number v-model="subForm.sort_order" :min="0" />
+          </el-form-item>
+        </template>
+        <template v-else-if="subType === 'testimonial'">
+          <el-form-item label="头像" prop="avatar_url">
+            <ImageInput v-model="subForm.avatar_url" placeholder="图片 URL 或上传" />
+          </el-form-item>
+          <el-form-item label="昵称" prop="nickname">
+            <el-input v-model="subForm.nickname" />
+          </el-form-item>
+          <el-form-item label="星级评分" prop="rating">
+            <el-rate v-model="subForm.rating" show-score />
+          </el-form-item>
+          <el-form-item label="评价内容" prop="content">
+            <el-input v-model="subForm.content" type="textarea" :rows="4" />
           </el-form-item>
           <el-form-item label="排序" prop="sort_order">
             <el-input-number v-model="subForm.sort_order" :min="0" />
@@ -646,13 +697,14 @@ const rules: FormRules = {
   country: [{ required: true, message: '请输入国家', trigger: 'blur' }],
 };
 
-type SubType = 'requirement' | 'costItem' | 'timelinePhase' | 'caseItem' | 'advantage';
+type SubType = 'requirement' | 'costItem' | 'timelinePhase' | 'caseItem' | 'advantage' | 'testimonial';
 const subTypeLabels: Record<SubType, string> = {
   requirement: '申请条件',
   costItem: '费用明细',
   timelinePhase: '申请流程',
   caseItem: '成功案例',
   advantage: '项目优势',
+  testimonial: '客户评价',
 };
 
 interface SubState {
@@ -661,6 +713,7 @@ interface SubState {
   timelinePhases: any[];
   cases: any[];
   advantages: any[];
+  testimonials: any[];
 }
 
 const subData = reactive<SubState>({
@@ -669,6 +722,7 @@ const subData = reactive<SubState>({
   timelinePhases: [],
   cases: [],
   advantages: [],
+  testimonials: [],
 });
 
 const subDialogVisible = ref(false);
@@ -703,6 +757,8 @@ const defaultSubForm = (type: SubType): Record<string, any> => {
       return { name: '', country_from: '', investment_amount: '', processing_period: '', content: '', photo_url: '', sort_order: 0 };
     case 'advantage':
       return { icon: '', icon_type: 'lucide', title: '', description: '', sort_order: 0 };
+    case 'testimonial':
+      return { avatar_url: '', nickname: '', rating: 5, content: '', sort_order: 0 };
   }
 };
 
@@ -753,18 +809,20 @@ const loadSubData = async () => {
   if (!editingId.value) return;
   const api = useApi();
   try {
-    const [reqs, costs, phases, cases, advs] = await Promise.all([
+    const [reqs, costs, phases, cases, advs, testimonials] = await Promise.all([
       api<any[]>(`/admin/projects/${editingId.value}/requirements`),
       api<any[]>(`/admin/projects/${editingId.value}/cost-items`),
       api<any[]>(`/admin/projects/${editingId.value}/timeline-phases`),
       api<CaseItem[]>(`/admin/projects/${editingId.value}/cases`),
       api<any[]>(`/admin/projects/${editingId.value}/advantages`),
+      api<any[]>(`/admin/projects/${editingId.value}/testimonials`),
     ]);
     subData.requirements = reqs ?? [];
     subData.costItems = costs ?? [];
     subData.timelinePhases = phases ?? [];
     subData.cases = cases ?? [];
     subData.advantages = advs ?? [];
+    subData.testimonials = testimonials ?? [];
   } catch {
     // best-effort sub-data load
   }
@@ -776,6 +834,7 @@ const resetSubData = () => {
   subData.timelinePhases = [];
   subData.cases = [];
   subData.advantages = [];
+  subData.testimonials = [];
 };
 
 const handleSave = async () => {
@@ -852,6 +911,7 @@ const handleSubSave = async () => {
     else if (subType.value === 'costItem') endpoint += '/cost-items';
     else if (subType.value === 'caseItem') endpoint += '/cases';
     else if (subType.value === 'advantage') endpoint += '/advantages';
+    else if (subType.value === 'testimonial') endpoint += '/testimonials';
     else endpoint += '/timeline-phases';
 
     if (subEditingId.value) {
@@ -878,6 +938,7 @@ const deleteSubItem = async (type: SubType, id: number) => {
     else if (type === 'costItem') endpoint += `/cost-items/${id}`;
     else if (type === 'caseItem') endpoint += `/cases/${id}`;
     else if (type === 'advantage') endpoint += `/advantages/${id}`;
+    else if (type === 'testimonial') endpoint += `/testimonials/${id}`;
     else endpoint += `/timeline-phases/${id}`;
     await api(endpoint, { method: 'DELETE' });
     loadSubData();
@@ -993,5 +1054,12 @@ onMounted(() => {
   font-size: 12px;
   color: var(--color-text-muted);
   margin-top: 2px;
+}
+
+.thumb-preview {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 50%;
 }
 </style>

@@ -166,6 +166,7 @@ const form = reactive(defaultForm());
 const rules: FormRules = {
   name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
   country_from: [{ required: true, message: '请输入来源国家', trigger: 'blur' }],
+  project_id: [{ required: true, message: '请选择项目', trigger: 'blur' }],
 };
 
 const loadProjects = async () => {

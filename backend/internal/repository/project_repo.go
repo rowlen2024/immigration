@@ -23,6 +23,7 @@ func (r *ProjectRepo) FindBySlug(slug string) (*model.Project, error) {
 		Preload("News").
 		Preload("CompareConfig").
 		Preload("Advantages").
+		Preload("Testimonials").
 		Where("slug = ?", slug).
 		First(&project).Error
 	if err != nil {
