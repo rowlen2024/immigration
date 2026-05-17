@@ -18,7 +18,7 @@
     "runtime": null
   },
   "build": {
-    "buildCommand": "go build ./... 2>&1",
+    "buildCommand": "cd \"D:\\mygo\\src\\web\\immigration\\backend\" && go build ./... 2>&1",
     "testCommand": "go build ./... && go test ./internal/... -run TestFAQ 2>&1 | tail -5",
     "lintCommand": null,
     "devCommand": null,

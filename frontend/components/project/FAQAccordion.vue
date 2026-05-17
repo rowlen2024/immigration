@@ -12,7 +12,12 @@
         :aria-expanded="activeIndex === index"
       >
         <span>{{ faq.question }}</span>
-        <span class="faq-icon">{{ activeIndex === index ? '−' : '+' }}</span>
+        <span class="faq-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </span>
       </button>
       <div class="faq-answer-wrapper" :ref="(el) => setAnswerRef(el as HTMLElement, index)">
         <div class="faq-answer">
@@ -42,19 +47,25 @@ const setAnswerRef = (el: HTMLElement | null, index: number) => {
 
 const toggle = (index: number) => {
   if (activeIndex.value === index) {
+    // 收起当前
     const wrapper = answerRefs.value[index];
     if (wrapper) {
       wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
-      requestAnimationFrame(() => {
-        wrapper.style.maxHeight = '0px';
-      });
+      wrapper.offsetHeight;
+      wrapper.style.maxHeight = '0px';
     }
     activeIndex.value = null;
   } else {
-    const prev = activeIndex.value !== null ? answerRefs.value[activeIndex.value] : null;
-    if (prev) {
-      prev.style.maxHeight = '0px';
+    // 收起上一个
+    if (activeIndex.value !== null) {
+      const prev = answerRefs.value[activeIndex.value];
+      if (prev) {
+        prev.style.maxHeight = prev.scrollHeight + 'px';
+        prev.offsetHeight;
+        prev.style.maxHeight = '0px';
+      }
     }
+    // 展开当前
     activeIndex.value = index;
     const wrapper = answerRefs.value[index];
     if (wrapper) {
@@ -66,11 +77,11 @@ const toggle = (index: number) => {
 
 <style scoped>
 .faq-accordion {
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--color-border);
 }
 
 .faq-item {
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .faq-question {
@@ -83,38 +94,41 @@ const toggle = (index: number) => {
   border: none;
   cursor: pointer;
   font-family: var(--font-sans);
-  font-size: 16px;
+  font-size: var(--text-base);
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--color-text);
   text-align: left;
   gap: 16px;
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
 .faq-question:hover {
-  color: var(--primary);
+  color: var(--color-primary);
 }
 
 .faq-icon {
   flex-shrink: 0;
-  font-size: 20px;
-  color: var(--accent);
-  transition: transform 0.3s ease;
+  display: flex;
+  align-items: center;
+  color: var(--color-accent);
+  transition: transform var(--duration-normal) var(--ease-out);
 }
 
 .faq-item.active .faq-icon {
-  color: var(--primary);
+  transform: rotate(45deg);
+  color: var(--color-primary);
 }
 
 .faq-answer-wrapper {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.3s ease;
+  transition: max-height 400ms var(--ease-out);
 }
 
 .faq-answer {
   padding-bottom: 20px;
   font-size: 15px;
-  color: var(--text-secondary);
+  color: var(--color-text-secondary);
   line-height: 1.8;
 }
 </style>

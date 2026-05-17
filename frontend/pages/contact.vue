@@ -318,20 +318,22 @@ onMounted(() => {
   padding: 12px 16px;
   font-size: 15px;
   font-family: var(--font-sans);
-  border: 2px solid var(--border-color);
+  border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
   background-color: var(--bg-white);
-  color: var(--text-primary);
-  transition: border-color 0.3s ease;
+  color: var(--color-text);
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
   outline: none;
 }
 
 .form-input:focus {
-  border-color: var(--accent);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
 }
 
 .form-input.input-error {
-  border-color: #c62828;
+  border-color: var(--color-danger);
 }
 
 .form-textarea {

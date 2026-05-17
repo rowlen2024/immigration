@@ -160,15 +160,15 @@ onMounted(() => {
 
 <style scoped>
 .page-title {
-  font-size: 36px;
+  font-size: var(--text-3xl);
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--color-text);
   margin-bottom: 12px;
 }
 
 .page-subtitle {
-  font-size: 16px;
-  color: var(--text-light);
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
   margin-bottom: 32px;
 }
 
@@ -180,27 +180,27 @@ onMounted(() => {
 }
 
 .filter-btn {
-  padding: 10px 24px;
-  font-size: 14px;
-  font-weight: 600;
+  padding: 8px 22px;
+  font-size: 13px;
+  font-weight: 500;
   font-family: var(--font-sans);
-  background-color: var(--bg-light);
-  color: var(--text-secondary);
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
+  background-color: var(--bg-white);
+  color: var(--color-text-secondary);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-full);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
 .filter-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent-dark);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .filter-btn.active {
-  background-color: var(--primary);
-  color: var(--bg-white);
-  border-color: var(--primary);
+  background-color: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
 }
 
 .faq-list {

@@ -13,6 +13,8 @@
           <div class="hero-slide-gradient"></div>
           <div class="hero-glow hero-glow--gold"></div>
           <div class="hero-glow hero-glow--blue"></div>
+          <div class="hero-glow hero-glow--amber"></div>
+          <div class="hero-glow hero-glow--deep-blue"></div>
           <div class="hero-content container">
             <div class="hero-badge">
               <span>精 品 投 资 移 民 决 策 平 台</span>
@@ -84,22 +86,23 @@
           <div v-for="(project, idx) in projectCards" :key="project.slug" class="project-card reveal">
             <div class="card-image" :class="`card-image--${idx % 3}`">
               <div class="card-image-glow"></div>
+              <div class="card-image-overlay"></div>
               <img v-if="project.image" :src="project.image" :alt="project.title" loading="lazy" />
             </div>
             <div class="card-body">
               <h3 class="card-title">{{ project.title }}</h3>
               <p class="card-desc">{{ project.description }}</p>
               <div class="card-stats">
-                <div class="card-stat" v-for="(feat, fi) in project.features" :key="fi">
-                  <span class="card-stat-value">{{ feat.split('：')[1] || feat }}</span>
-                  <span class="card-stat-label">{{ feat.split('：')[0] }}</span>
-                </div>
+                <span class="card-stat" v-for="(feat, fi) in project.features" :key="fi">
+                  {{ feat }}
+                </span>
               </div>
               <NuxtLink :to="project.link" class="card-link">
                 了解详情
                 <span class="link-arrow" v-html="getIconSvg('chevron-right', 14, 'currentColor')"></span>
               </NuxtLink>
             </div>
+            <div class="card-bottom-line"></div>
           </div>
         </div>
       </div>
@@ -123,23 +126,16 @@
           </div>
         </div>
         <div v-else class="cases-grid">
-          <NuxtLink v-for="item in featuredCases" :key="item.id" :to="'/case/' + item.slug" class="case-card reveal">
-            <div class="case-image">
-              <img
-                :src="item.photo_url || ''"
-                :alt="item.name"
-                loading="lazy"
-              />
-            </div>
-            <div class="case-body">
-              <div class="case-meta">
-                <span class="case-country">{{ item.country_from }}</span>
-                <span v-if="item.project?.name" class="case-project">{{ item.project.name }}</span>
-              </div>
-              <h3 class="case-name">{{ item.name }}</h3>
-              <p class="case-desc">{{ stripHtml(item.content) }}</p>
-            </div>
-          </NuxtLink>
+          <CaseCard
+            v-for="item in featuredCases"
+            :key="item.id"
+            :slug="item.slug"
+            :name="item.name"
+            :country="item.country_from"
+            :project="item.project?.name"
+            :summary="stripHtml(item.content)"
+            :image="item.photo_url"
+          />
         </div>
 
         <div v-if="!pending.cases && featuredCases.length === 0" class="empty-state">
@@ -156,41 +152,7 @@
           <p v-if="testimonialSubtitle">{{ testimonialSubtitle }}</p>
         </div>
 
-        <div class="testimonial-carousel">
-          <div class="carousel-viewport" ref="carouselViewport">
-            <div
-              class="carousel-track"
-              :style="{ transform: `translateX(${carouselOffset}px)`, gap: `${cardGap}px` }"
-            >
-              <div
-                v-for="item in featuredTestimonials"
-                :key="item.id"
-                class="testimonial-card"
-                :style="{ flex: `0 0 ${cardWidth}px`, width: `${cardWidth}px` }"
-              >
-                <div class="tm-header">
-                  <div class="tm-avatar">
-                    <img v-if="item.avatar_url" :src="item.avatar_url" :alt="item.nickname" />
-                    <svg v-else width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 22c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-                  </div>
-                  <div class="tm-meta">
-                    <span class="tm-name">{{ item.nickname }}</span>
-                    <el-rate v-model="item.rating" disabled size="small" />
-                  </div>
-                </div>
-                <p class="tm-desc">
-                  <span class="tm-quote tm-quote--l">"</span>
-                  {{ item.content }}
-                  <span class="tm-quote tm-quote--r">"</span>
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="carousel-dots" v-if="carouselMaxPage > 0">
-          <button v-for="p in carouselMaxPage + 1" :key="p" class="carousel-dot" :class="{ active: carouselPage === p - 1 }" @click="carouselPage = p - 1"></button>
-        </div>
+        <TestimonialCarousel :testimonials="featuredTestimonials" />
       </div>
     </section>
 
@@ -201,23 +163,7 @@
           <h2>专业律师团队</h2>
           <p>资深移民律师，为您保驾护航</p>
         </div>
-        <div class="lawyer-grid">
-          <div v-for="lawyer in lawyers" :key="lawyer.id" class="lawyer-card reveal">
-            <div class="lawyer-photo">
-              <img v-if="lawyer.photo_url" :src="lawyer.photo_url" :alt="lawyer.name" loading="lazy" />
-              <div v-else class="lawyer-photo-placeholder"></div>
-            </div>
-            <div class="lawyer-body">
-              <div class="lawyer-header-info">
-                <h3 class="lawyer-name">{{ lawyer.name }}</h3>
-                <p class="lawyer-title">{{ lawyer.title }}</p>
-              </div>
-              <ul class="lawyer-tags">
-                <li v-for="tag in lawyer.tags" :key="tag">{{ tag }}</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+        <LawyerCarousel :lawyers="lawyers" />
       </div>
     </section>
 
@@ -491,73 +437,6 @@ const featuredTestimonials = computed<TestimonialItem[]>(() => {
   return all;
 });
 
-// Testimonial carousel
-const carouselViewport = ref<HTMLElement | null>(null);
-const carouselPage = ref(0);
-const viewportWidth = ref(0);
-let testimonialAutoTimer: ReturnType<typeof setInterval> | null = null;
-
-const cardGap = computed(() => {
-  if (viewportWidth.value < 640) return 16;
-  if (viewportWidth.value < 1024) return 32;
-  return 48;
-});
-
-const cardWidth = computed(() => {
-  if (viewportWidth.value === 0) return 300;
-  const perView = viewportWidth.value < 640 ? 1 : viewportWidth.value < 1024 ? 2 : 3;
-  return (viewportWidth.value - cardGap.value * (perView - 1)) / perView;
-});
-
-const carouselCardsPerView = computed(() => {
-  if (viewportWidth.value < 640) return 1;
-  if (viewportWidth.value < 1024) return 2;
-  return 3;
-});
-
-const carouselMaxPage = computed(() => {
-  const total = featuredTestimonials.value.length;
-  const perView = carouselCardsPerView.value;
-  return Math.max(0, total - perView);
-});
-
-const carouselOffset = computed(() => {
-  return -(carouselPage.value * (cardWidth.value + cardGap.value));
-});
-
-function updateViewportWidth() {
-  if (carouselViewport.value) {
-    viewportWidth.value = carouselViewport.value.clientWidth;
-  }
-}
-
-function testimonialPrev() {
-  if (carouselPage.value > 0) carouselPage.value--;
-}
-
-function testimonialNext() {
-  if (carouselPage.value < carouselMaxPage.value) carouselPage.value++;
-}
-
-function startTestimonialAutoPlay() {
-  stopTestimonialAutoPlay();
-  if (featuredTestimonials.value.length <= 3) return;
-  testimonialAutoTimer = setInterval(() => {
-    if (carouselPage.value >= carouselMaxPage.value) {
-      carouselPage.value = 0;
-    } else {
-      carouselPage.value++;
-    }
-  }, 5000);
-}
-
-function stopTestimonialAutoPlay() {
-  if (testimonialAutoTimer) {
-    clearInterval(testimonialAutoTimer);
-    testimonialAutoTimer = null;
-  }
-}
-
 const advantageSection = computed(() => {
   if (homeConfig.value) {
     const config = homeConfig.value as unknown as Record<string, unknown>;
@@ -752,15 +631,6 @@ onMounted(() => {
     currentSlide.value = (currentSlide.value + 1) % heroSlides.value.length;
   }, 5000);
 
-  if (featuredTestimonials.value.length > 0) {
-    updateViewportWidth();
-    window.addEventListener('resize', updateViewportWidth);
-    nextTick(() => {
-      updateViewportWidth();
-      startTestimonialAutoPlay();
-    });
-  }
-
   revealObserver = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -799,8 +669,6 @@ onUnmounted(() => {
   if (autoTimer) clearInterval(autoTimer);
   if (revealObserver) revealObserver.disconnect();
   if (trustObserver) trustObserver.disconnect();
-  stopTestimonialAutoPlay();
-  window.removeEventListener('resize', updateViewportWidth);
 });
 </script>
 
@@ -840,22 +708,96 @@ onUnmounted(() => {
   position: absolute;
   border-radius: 50%;
   pointer-events: none;
+  filter: blur(60px);
+  will-change: transform, opacity, border-radius;
 }
 
 .hero-glow--gold {
-  top: -80px;
-  right: -60px;
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(200, 150, 62, 0.08) 0%, rgba(200, 150, 62, 0.02) 35%, transparent 70%);
+  top: -120px;
+  right: -80px;
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, rgba(200, 150, 62, 0.15) 0%, rgba(200, 150, 62, 0.04) 30%, transparent 65%);
+  animation: blobFloat1 12s ease-in-out infinite alternate,
+             blobPulse 8s ease-in-out infinite,
+             blobMorph 14s ease-in-out infinite;
+  animation-delay: 0s, 0s, 0s;
 }
 
 .hero-glow--blue {
-  bottom: -60px;
-  left: -40px;
-  width: 280px;
-  height: 280px;
-  background: radial-gradient(circle, rgba(30, 58, 110, 0.5) 0%, rgba(30, 58, 110, 0.12) 45%, transparent 70%);
+  bottom: -100px;
+  left: -60px;
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(30, 80, 160, 0.5) 0%, rgba(30, 58, 110, 0.15) 40%, transparent 70%);
+  animation: blobFloat2 14s ease-in-out infinite alternate,
+             blobPulse 10s ease-in-out infinite 2s,
+             blobMorph 16s ease-in-out infinite 3s;
+}
+
+.hero-glow--amber {
+  top: 50%;
+  right: -40px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(220, 170, 70, 0.18) 0%, rgba(200, 140, 50, 0.05) 30%, transparent 65%);
+  animation: blobFloat3 16s ease-in-out infinite alternate,
+             blobPulse 9s ease-in-out infinite 4s,
+             blobMorph 18s ease-in-out infinite 1s;
+}
+
+.hero-glow--deep-blue {
+  top: -40px;
+  left: 20%;
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(20, 40, 80, 0.6) 0%, rgba(15, 30, 60, 0.2) 35%, transparent 65%);
+  animation: blobFloat4 15s ease-in-out infinite alternate,
+             blobPulse 11s ease-in-out infinite 1s,
+             blobMorph 13s ease-in-out infinite 5s;
+}
+
+/* ── Ambient Light Blob Keyframes ── */
+
+@keyframes blobFloat1 {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  33%  { transform: translate(30px, -20px) rotate(120deg); }
+  66%  { transform: translate(-15px, 25px) rotate(240deg); }
+  100% { transform: translate(20px, -10px) rotate(360deg); }
+}
+
+@keyframes blobFloat2 {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  33%  { transform: translate(-25px, -15px) rotate(120deg); }
+  66%  { transform: translate(20px, 20px) rotate(240deg); }
+  100% { transform: translate(-10px, -25px) rotate(360deg); }
+}
+
+@keyframes blobFloat3 {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  33%  { transform: translate(-20px, 25px) rotate(140deg); }
+  66%  { transform: translate(25px, -15px) rotate(260deg); }
+  100% { transform: translate(-15px, 10px) rotate(380deg); }
+}
+
+@keyframes blobFloat4 {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  33%  { transform: translate(15px, -30px) rotate(100deg); }
+  66%  { transform: translate(-25px, -10px) rotate(220deg); }
+  100% { transform: translate(10px, 20px) rotate(340deg); }
+}
+
+@keyframes blobPulse {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 0.9; }
+}
+
+@keyframes blobMorph {
+  0%   { border-radius: 50% 50% 50% 50%; }
+  25%  { border-radius: 45% 55% 48% 52%; }
+  50%  { border-radius: 55% 45% 52% 48%; }
+  75%  { border-radius: 48% 52% 55% 45%; }
+  100% { border-radius: 50% 50% 50% 50%; }
 }
 
 .hero-content {
@@ -912,6 +854,7 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   padding: 13px 32px;
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   color: var(--bg-white);
@@ -922,11 +865,33 @@ onUnmounted(() => {
   cursor: pointer;
   box-shadow: var(--shadow-gold);
   transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.btn-hero-primary::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  transform: skewX(-25deg);
+  animation: shimmer 3s ease-in-out infinite 1s;
 }
 
 .btn-hero-primary:hover {
   box-shadow: 0 6px 24px rgba(200, 150, 62, 0.4);
   transform: translateY(-1px);
+}
+
+.btn-hero-primary:hover::after {
+  animation-duration: 1.5s;
+}
+
+@keyframes shimmer {
+  0%   { left: -100%; }
+  100% { left: 150%; }
 }
 
 .btn-hero-secondary {
@@ -951,8 +916,11 @@ onUnmounted(() => {
 
 /* Trust Bar Section */
 .trust-bar-section {
-  background: linear-gradient(135deg, #0F1E3D 0%, #15294D 100%);
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(15, 27, 45, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .trust-bar {
@@ -974,23 +942,24 @@ onUnmounted(() => {
 }
 
 .trust-bar-number {
+  font-family: var(--font-serif);
   font-size: 36px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--color-accent);
   letter-spacing: -0.5px;
   font-variant-numeric: tabular-nums;
 }
 
 .trust-bar-label {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.5);
   letter-spacing: 1px;
 }
 
 .trust-bar-divider {
   width: 1px;
   height: 40px;
-  background: rgba(255, 255, 255, 0.10);
+  background: linear-gradient(180deg, transparent, rgba(200, 150, 62, 0.3), transparent);
 }
 
 @media (max-width: 767px) {
@@ -1155,24 +1124,58 @@ onUnmounted(() => {
 }
 
 .project-card {
+  position: relative;
   background-color: var(--bg-white);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--color-border);
   box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.3s ease, transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2), border-color 0.3s ease;
+  transition: box-shadow var(--duration-slow) var(--ease-out),
+              transform 0.35s var(--ease-spring),
+              border-color var(--duration-normal) var(--ease-out);
 }
 
 .project-card:hover {
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-xl), 0 0 0 1px rgba(200, 150, 62, 0.25);
   transform: translateY(-6px);
-  border-color: rgba(200, 150, 62, 0.25);
+  border-color: rgba(200, 150, 62, 0.4);
 }
 
 .card-image {
-  height: 120px;
+  height: 200px;
   overflow: hidden;
   position: relative;
+}
+
+.card-image-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, transparent 50%, rgba(200, 150, 62, 0.25) 100%);
+  opacity: 0;
+  transition: opacity var(--duration-slow) var(--ease-out);
+}
+
+.card-image::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(to top, rgba(200, 150, 62, 0.3), transparent);
+  z-index: 2;
+  transition: height var(--duration-slow) var(--ease-out),
+              opacity var(--duration-slow) var(--ease-out);
+}
+
+.project-card:hover .card-image-overlay {
+  opacity: 1;
+}
+
+.project-card:hover .card-image::after {
+  height: 100px;
+  background: linear-gradient(to top, rgba(200, 150, 62, 0.4), transparent 80%);
 }
 
 .card-image--0 {
@@ -1189,74 +1192,85 @@ onUnmounted(() => {
 
 .card-image-glow {
   position: absolute;
-  top: -20px;
-  right: -10px;
-  width: 120px;
-  height: 120px;
+  top: -30px;
+  right: -20px;
+  width: 140px;
+  height: 140px;
   background: radial-gradient(circle, rgba(200, 150, 62, 0.12), transparent 70%);
   border-radius: 50%;
+  z-index: 1;
+  transition: all var(--duration-slow) var(--ease-out);
 }
 
-.card-image-flag {
-  position: absolute;
-  bottom: 14px;
-  left: 16px;
-  font-size: 22px;
-  z-index: 1;
+.project-card:hover .card-image-glow {
+  width: 220px;
+  height: 220px;
+  top: -60px;
+  right: -60px;
+  background: radial-gradient(circle, rgba(200, 150, 62, 0.22), transparent 65%);
 }
 
 .card-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  transition: transform 0.45s var(--ease-out);
 }
 
 .project-card:hover .card-image img {
-  transform: scale(1.05);
+  transform: scale(1.08);
 }
 
 .card-body {
   padding: 22px 24px;
+  position: relative;
+  z-index: 2;
 }
 
 .card-title {
   font-size: 18px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--color-text);
   margin-bottom: 8px;
+  transition: color var(--duration-normal) var(--ease-out);
+}
+
+.project-card:hover .card-title {
+  color: var(--color-accent-dark);
 }
 
 .card-desc {
-  font-size: 13px;
-  color: var(--text-secondary);
+  font-size: 14px;
+  color: var(--color-text-secondary);
   line-height: 1.7;
   margin-bottom: 16px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .card-stats {
   display: flex;
-  gap: 20px;
+  gap: 8px;
+  flex-wrap: wrap;
   margin-bottom: 18px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--border-color);
 }
 
 .card-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  background: var(--color-accent-soft);
+  color: var(--color-accent-dark);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  transition: background var(--duration-normal) var(--ease-out),
+              color var(--duration-normal) var(--ease-out);
 }
 
-.card-stat-value {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--accent-dark);
-}
-
-.card-stat-label {
-  font-size: 11px;
-  color: var(--text-light);
+.project-card:hover .card-stat {
+  background: rgba(200, 150, 62, 0.18);
+  color: var(--color-accent-dark);
 }
 
 .card-link {
@@ -1266,7 +1280,8 @@ onUnmounted(() => {
   font-size: 14px;
   font-weight: 600;
   color: var(--primary);
-  transition: gap 0.2s ease, color 0.2s ease;
+  transition: gap var(--duration-normal) var(--ease-out),
+              color var(--duration-normal) var(--ease-out);
 }
 
 .card-link:hover {
@@ -1277,11 +1292,30 @@ onUnmounted(() => {
 .link-arrow {
   display: inline-flex;
   align-items: center;
-  transition: transform 0.2s ease;
+  transition: transform var(--duration-normal) var(--ease-out);
 }
 
 .card-link:hover .link-arrow {
   transform: translateX(2px);
+}
+
+/* ── Bottom golden line ── */
+
+.card-bottom-line {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gradient-gold);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.45s var(--ease-spring);
+  z-index: 3;
+}
+
+.project-card:hover .card-bottom-line {
+  transform: scaleX(1);
 }
 
 @media (max-width: 1023px) {
@@ -1401,79 +1435,6 @@ onUnmounted(() => {
   gap: 32px;
 }
 
-.case-card {
-  background-color: var(--bg-white);
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
-}
-
-.case-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-4px);
-}
-
-.case-image {
-  height: 200px;
-  overflow: hidden;
-  background: linear-gradient(135deg, #0F1E3D, #1A3A5C);
-}
-
-.case-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.case-card:hover .case-image img {
-  transform: scale(1.05);
-}
-
-.case-body {
-  padding: 24px;
-}
-
-.case-meta {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.case-country,
-.case-project {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 2px 10px;
-  border-radius: var(--radius-sm);
-}
-
-.case-country {
-  background-color: rgba(26, 58, 92, 0.1);
-  color: var(--primary);
-}
-
-.case-project {
-  background-color: rgba(200, 150, 62, 0.1);
-  color: var(--accent-dark);
-}
-
-.case-name {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.case-desc {
-  font-size: 14px;
-  color: var(--text-secondary);
-  line-height: 1.7;
-  margin-bottom: 0;
-}
-
 .empty-state {
   text-align: center;
   padding: 60px 20px;
@@ -1499,105 +1460,6 @@ onUnmounted(() => {
   background: var(--primary);
   margin: 10px auto 0;
   border-radius: 2px;
-}
-
-.testimonial-carousel {
-  position: relative;
-}
-
-.carousel-viewport {
-  overflow: hidden;
-  margin: 0 -12px;
-  padding: 12px 12px;
-}
-
-.carousel-track {
-  display: flex;
-  transition: transform 0.5s ease;
-}
-
-.testimonial-card {
-  background: var(--bg-white);
-  border-radius: 12px;
-  padding: 28px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.05);
-}
-
-.tm-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.tm-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  overflow: hidden;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #e8ecf4;
-}
-
-.tm-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.tm-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.tm-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.tm-desc {
-  font-size: 14px;
-  line-height: 1.9;
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-.tm-quote {
-  color: #c8ccd4;
-  font-size: 18px;
-  font-family: Georgia, serif;
-  line-height: 0;
-}
-
-.tm-quote--l { margin-right: 2px; }
-.tm-quote--r { margin-left: 2px; }
-
-.carousel-dots {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 32px;
-}
-
-.carousel-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 5px;
-  border: none;
-  background: #d9d9d9;
-  cursor: pointer;
-  padding: 0;
-  transition: all 0.3s;
-}
-
-.carousel-dot.active {
-  background: var(--primary);
-  width: 24px;
 }
 
 /* CTA Section */
@@ -1767,122 +1629,6 @@ onUnmounted(() => {
   }
 
 
-  .carousel-viewport { margin: 0 -6px; padding: 6px; }
-  .carousel-viewport { margin: 0 -8px; padding: 8px; }
 }
 
-/* Lawyer Section */
-.lawyer-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
-}
-
-.lawyer-card {
-  display: flex;
-  gap: 24px;
-  background: var(--bg-white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: 24px;
-  transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
-}
-
-.lawyer-card:hover {
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.10);
-  transform: translateY(-3px);
-  border-color: rgba(200, 150, 62, 0.15);
-}
-
-.lawyer-photo {
-  width: 140px;
-  height: 160px;
-  flex-shrink: 0;
-  border-radius: 6px;
-  overflow: hidden;
-  background: linear-gradient(135deg, #0F1E3D, #1A3A5C);
-}
-
-.lawyer-photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.lawyer-photo-placeholder {
-  width: 100%;
-  height: 100%;
-}
-
-.lawyer-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  flex: 1;
-}
-
-.lawyer-header-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.lawyer-name {
-  font-size: 19px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.lawyer-title {
-  font-size: 13px;
-  color: var(--accent);
-  font-weight: 500;
-  margin: 0;
-}
-
-.lawyer-tags {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.lawyer-tags li {
-  font-size: 12px;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.lawyer-tags li::before {
-  content: '';
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--accent);
-  flex-shrink: 0;
-}
-
-@media (max-width: 767px) {
-  .lawyer-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .lawyer-card {
-    flex-direction: column;
-  }
-
-  .lawyer-photo {
-    width: 100%;
-    height: 220px;
-  }
-}
 </style>

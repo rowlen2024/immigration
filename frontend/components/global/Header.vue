@@ -1,40 +1,54 @@
 <template>
-  <header class="site-header">
+  <header class="site-header" :class="{ 'is-scrolled': isScrolled }">
+    <div class="header-gold-line"></div>
     <div class="header-container">
       <NuxtLink to="/" class="header-logo">
-        <span v-if="!siteConfig?.site_logo" class="logo-mark">M</span>
-        <img v-if="siteConfig?.site_logo" :src="siteConfig.site_logo" :alt="siteConfig?.site_name || '北极星移民'" class="logo-img" />
-        <span v-else class="logo-text">{{ siteConfig?.site_name || '北极星移民' }}</span>
+        <span class="logo-shield">
+          <span class="logo-shield-inner">M</span>
+        </span>
+        <span class="logo-text">{{ siteConfig?.site_name || '北极星移民' }}</span>
       </NuxtLink>
 
       <nav class="header-nav" :class="{ 'nav-open': mobileMenuOpen }">
         <ul class="nav-list">
           <li
-            v-for="item in navItems"
+            v-for="(item, index) in navItems"
             :key="item.id"
             class="nav-item"
-            :class="{ 'has-children': item.children?.length }"
+            :class="{
+              'has-children': item.children?.length,
+              'is-active': isNavActive(item),
+            }"
             @mouseenter="openMega(item.id)"
             @mouseleave="closeMega"
           >
-            <!-- Level 1 link -->
+            <span v-if="index > 0" class="nav-separator" aria-hidden="true">·</span>
+
             <NuxtLink v-if="item.link" :to="item.link" class="nav-link">
               {{ item.label }}
-              <span v-if="item.children?.length" class="dropdown-arrow">&#9662;</span>
+              <span v-if="item.children?.length" class="dropdown-arrow">
+                <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </span>
             </NuxtLink>
             <span v-else class="nav-link">
               {{ item.label }}
-              <span v-if="item.children?.length" class="dropdown-arrow">&#9662;</span>
+              <span v-if="item.children?.length" class="dropdown-arrow">
+                <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </span>
             </span>
 
-            <!-- Mobile: expand toggle -->
+            <span v-if="isNavActive(item)" class="nav-active-line"></span>
+
+            <!-- Mobile expand toggle -->
             <button
               v-if="item.children?.length"
               class="mobile-expand-toggle"
               @click.stop="toggleMobileExpand(item.id)"
               :aria-label="mobileExpanded.has(item.id) ? '收起' : '展开'"
             >
-              <span :class="{ rotated: mobileExpanded.has(item.id) }">&#9662;</span>
+              <span :class="{ rotated: mobileExpanded.has(item.id) }">
+                <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </span>
             </button>
 
             <!-- Mega Panel (desktop) -->
@@ -43,35 +57,42 @@
               class="mega-panel"
               @mouseenter="openMega(item.id)"
             >
-              <ul class="mega-list">
-                <li
-                  v-for="child in item.children"
-                  :key="child.id"
-                  class="mega-group"
-                  :class="{ 'has-subs': child.children?.length }"
-                >
-                  <!-- Level 2 title -->
-                  <NuxtLink v-if="child.link" :to="child.link" class="mega-group-title is-link">
-                    {{ child.label }}
-                  </NuxtLink>
-                  <span v-else class="mega-group-title">{{ child.label }}</span>
+              <div class="mega-arrow"></div>
+              <div class="mega-inner">
+                <div class="mega-glow-orb"></div>
+                <div class="mega-list">
+                  <div
+                    v-for="child in item.children"
+                    :key="child.id"
+                    class="mega-card"
+                    :class="{ 'has-subs': child.children?.length }"
+                  >
+                    <NuxtLink v-if="child.link" :to="child.link" class="mega-card-title is-link">
+                      <span class="mega-card-title-bar"></span>
+                      {{ child.label }}
+                    </NuxtLink>
+                    <span v-else class="mega-card-title">
+                      <span class="mega-card-title-bar"></span>
+                      {{ child.label }}
+                    </span>
 
-                  <!-- Level 3 items -->
-                  <ul v-if="child.children?.length" class="mega-subitems">
-                    <li v-for="sub in child.children" :key="sub.id">
-                      <NuxtLink v-if="sub.link" :to="sub.link" class="mega-subitem is-link">
-                        <span class="mega-subitem-dot"></span>{{ sub.label }}
-                      </NuxtLink>
-                      <span v-else class="mega-subitem">
-                        <span class="mega-subitem-dot"></span>{{ sub.label }}
-                      </span>
-                    </li>
-                  </ul>
-                </li>
-              </ul>
+                    <ul v-if="child.children?.length" class="mega-subitems">
+                      <li v-for="sub in child.children" :key="sub.id">
+                        <NuxtLink v-if="sub.link" :to="sub.link" class="mega-subitem is-link">
+                          <span class="mega-subitem-dot"></span>{{ sub.label }}
+                        </NuxtLink>
+                        <span v-else class="mega-subitem">
+                          <span class="mega-subitem-dot"></span>{{ sub.label }}
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="mega-bottom-line"></div>
+              </div>
             </div>
 
-            <!-- Mobile: expanded children (accordion) -->
+            <!-- Mobile: expanded children -->
             <ul
               v-if="item.children?.length && mobileExpanded.has(item.id)"
               class="mobile-submenu"
@@ -99,11 +120,12 @@
                     @click.stop="toggleMobileExpand(child.id)"
                     :aria-label="mobileExpanded.has(child.id) ? '收起' : '展开'"
                   >
-                    <span :class="{ rotated: mobileExpanded.has(child.id) }">&#9662;</span>
+                    <span :class="{ rotated: mobileExpanded.has(child.id) }">
+                      <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </span>
                   </button>
                 </div>
 
-                <!-- Level 3 mobile submenu -->
                 <ul
                   v-if="child.children?.length && mobileExpanded.has(child.id)"
                   class="mobile-submenu l3"
@@ -148,18 +170,54 @@
 </template>
 
 <script setup lang="ts">
+const route = useRoute();
 const { siteConfig, fetch: fetchSiteConfig } = useSiteConfig();
 const { navItems, fetchNav } = useNavigation();
 
 const mobileMenuOpen = ref(false);
 const activeMega = ref<number | null>(null);
 const mobileExpanded = ref<Set<number>>(new Set());
+const isScrolled = ref(false);
 
 let megaCloseTimer: ReturnType<typeof setTimeout> | null = null;
 
 onMounted(() => {
   fetchSiteConfig();
+  if (import.meta.client) {
+    window.addEventListener('scroll', onScroll, { passive: true });
+    isScrolled.value = window.scrollY > 50;
+  }
 });
+
+onUnmounted(() => {
+  if (import.meta.client) {
+    window.removeEventListener('scroll', onScroll);
+    document.body.style.overflow = '';
+  }
+});
+
+const onScroll = () => {
+  isScrolled.value = window.scrollY > 50;
+};
+
+const isNavActive = (item: NavItem): boolean => {
+  const path = route.path;
+  if (item.link && path === item.link) return true;
+  if (item.children?.length) {
+    return item.children.some((child: NavItem) => {
+      if (child.link && path === child.link) return true;
+      return child.children?.some((sub: NavItem) => sub.link && path === sub.link) ?? false;
+    });
+  }
+  return false;
+};
+
+interface NavItem {
+  id: number;
+  label: string;
+  link: string | null;
+  children: NavItem[];
+}
 
 const openMega = (id: number) => {
   if (megaCloseTimer) {
@@ -193,15 +251,11 @@ watch(mobileMenuOpen, (val) => {
     mobileExpanded.value = new Set();
   }
 });
-
-onUnmounted(() => {
-  if (import.meta.client) {
-    document.body.style.overflow = '';
-  }
-});
 </script>
 
 <style scoped>
+/* ==================== Header Base ==================== */
+
 .site-header {
   position: fixed;
   top: 0;
@@ -213,6 +267,27 @@ onUnmounted(() => {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(200, 150, 62, 0.12);
+  transition: height var(--duration-slow) var(--ease-out),
+              background var(--duration-slow) var(--ease-out),
+              box-shadow var(--duration-slow) var(--ease-out);
+}
+
+.site-header.is-scrolled {
+  height: var(--header-scrolled-height);
+  background: rgba(10, 22, 40, 0.98);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  border-bottom-color: rgba(200, 150, 62, 0.18);
+}
+
+/* Top gold line */
+.header-gold-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 5%, var(--accent) 50%, transparent 95%);
+  opacity: 0.7;
 }
 
 .header-container {
@@ -225,39 +300,46 @@ onUnmounted(() => {
   justify-content: space-between;
 }
 
+/* ==================== Logo ==================== */
+
 .header-logo {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 10px;
+  text-decoration: none;
 }
 
-.logo-text {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--bg-white);
-  letter-spacing: -0.5px;
-}
-
-.logo-img {
-  height: 32px;
-  width: auto;
-  filter: brightness(10) saturate(0);
-}
-
-.logo-mark {
-  width: 32px;
-  height: 32px;
+.logo-shield {
+  width: 34px;
+  height: 34px;
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  border-radius: 8px;
+  border-radius: 6px;
+  transform: rotate(45deg);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--bg-white);
-  font-weight: 800;
-  font-size: 14px;
   flex-shrink: 0;
+  box-shadow: 0 0 14px rgba(200, 150, 62, 0.25);
 }
+
+.logo-shield-inner {
+  transform: rotate(-45deg);
+  color: #fff;
+  font-weight: 800;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.logo-text {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--bg-white);
+  letter-spacing: 2px;
+  line-height: 1.2;
+}
+
+/* ==================== Nav ==================== */
 
 .header-nav {
   display: flex;
@@ -265,25 +347,36 @@ onUnmounted(() => {
 
 .nav-list {
   display: flex;
-  gap: 2px;
+  align-items: center;
 }
 
 .nav-item {
   position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.nav-separator {
+  color: rgba(200, 150, 62, 0.25);
+  font-size: 13px;
+  margin: 0 1px;
+  user-select: none;
+  pointer-events: none;
 }
 
 .nav-link {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 8px 14px;
-  color: rgba(255, 255, 255, 0.82);
+  padding: 8px 12px;
+  color: rgba(255, 255, 255, 0.78);
   font-size: 14px;
   font-weight: 500;
   border-radius: 6px;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) var(--ease-out);
   white-space: nowrap;
   cursor: default;
+  position: relative;
 }
 
 a.nav-link {
@@ -291,34 +384,62 @@ a.nav-link {
 }
 
 .nav-link:hover {
-  color: var(--bg-white);
-  background-color: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  background-color: rgba(200, 150, 62, 0.1);
+}
+
+.nav-item.is-active .nav-link {
+  color: #fff;
+}
+
+/* Active indicator underline */
+.nav-active-line {
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  width: calc(100% - 24px);
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+  transform: translateX(-50%) scaleX(0);
+  animation: activeLineIn var(--duration-normal) var(--ease-spring) forwards;
+}
+
+@keyframes activeLineIn {
+  to {
+    transform: translateX(-50%) scaleX(1);
+  }
 }
 
 .dropdown-arrow {
-  font-size: 9px;
+  display: inline-flex;
+  align-items: center;
   opacity: 0.5;
-  transition: transform 0.2s ease;
+  transition: opacity var(--duration-fast) var(--ease-out);
 }
 
-/* ==================== Mega Panel (Desktop) ==================== */
+.chevron-icon {
+  display: block;
+}
+
+/* ==================== Mega Panel ==================== */
 
 .mega-panel {
   position: absolute;
   top: 100%;
   left: 50%;
   transform: translateX(-50%);
-  padding-top: 6px;
-  min-width: 480px;
-  max-width: 640px;
-  animation: megaIn 0.2s ease-out;
+  padding-top: 12px;
+  min-width: 520px;
+  max-width: 680px;
+  animation: megaIn var(--duration-normal) var(--ease-out);
   z-index: 101;
 }
 
 @keyframes megaIn {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(-4px);
+    transform: translateX(-50%) translateY(-6px);
   }
   to {
     opacity: 1;
@@ -326,49 +447,104 @@ a.nav-link {
   }
 }
 
+/* Arrow pointer */
+.mega-arrow {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 7px solid var(--accent);
+  filter: drop-shadow(0 -1px 2px rgba(0,0,0,0.06));
+}
+
+.mega-inner {
+  position: relative;
+  background-color: #FAFBFC;
+  border-radius: var(--radius-xl);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(200, 150, 62, 0.06);
+  padding: 16px;
+  overflow: hidden;
+}
+
+/* Decorative glow orb */
+.mega-glow-orb {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(200, 150, 62, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
 .mega-list {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px 24px;
-  background-color: var(--bg-white);
-  border-radius: 12px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-  padding: 20px 24px;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
 }
 
-.mega-group {
-  min-width: 0;
+/* Card-style group */
+.mega-card {
+  background: #fff;
+  border: 1px solid rgba(200, 150, 62, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px 8px;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
 }
 
-.mega-group-title {
-  display: block;
+.mega-card:hover {
+  border-color: rgba(200, 150, 62, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.mega-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
-  padding: 6px 10px;
-  border-radius: 6px;
-  transition: all 0.15s ease;
-  margin-bottom: 2px;
+  padding: 4px 0 6px;
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
-.mega-group-title.is-link {
+.mega-card-title-bar {
+  width: 3px;
+  height: 14px;
+  background: rgba(200, 150, 62, 0.3);
+  border-radius: 2px;
+  flex-shrink: 0;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.mega-card-title.is-link {
   cursor: pointer;
 }
 
-.mega-group-title.is-link:hover {
-  background-color: var(--bg-light);
+.mega-card-title.is-link:hover {
   color: var(--primary);
 }
 
-.mega-group.has-subs .mega-group-title {
-  border-bottom: 1px solid var(--bg-light);
-  border-radius: 6px 6px 0 0;
-  margin-bottom: 0;
+.mega-card-title.is-link:hover .mega-card-title-bar {
+  background: var(--accent);
+}
+
+.mega-card.has-subs .mega-card-title {
+  border-bottom: 1px solid rgba(200, 150, 62, 0.08);
   padding-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .mega-subitems {
-  padding: 0 0 4px 10px;
+  padding-top: 2px;
 }
 
 .mega-subitem {
@@ -376,9 +552,9 @@ a.nav-link {
   align-items: center;
   font-size: 13px;
   color: var(--text-secondary);
-  padding: 5px 10px;
-  border-radius: 4px;
-  transition: all 0.15s ease;
+  padding: 6px 10px 6px 11px;
+  border-radius: 6px;
+  transition: all var(--duration-fast) var(--ease-out);
   cursor: default;
 }
 
@@ -387,14 +563,32 @@ a.nav-link {
 }
 
 .mega-subitem.is-link:hover {
-  background-color: var(--bg-light);
+  background-color: rgba(200, 150, 62, 0.06);
   color: var(--primary);
+  transform: translateX(4px);
 }
 
 .mega-subitem-dot {
-  margin-right: 6px;
-  opacity: 0.35;
-  font-size: 10px;
+  width: 4px;
+  height: 4px;
+  background: rgba(200, 150, 62, 0.4);
+  border-radius: 50%;
+  margin-right: 8px;
+  flex-shrink: 0;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.mega-subitem.is-link:hover .mega-subitem-dot {
+  background: var(--accent);
+  width: 6px;
+  height: 6px;
+}
+
+/* Bottom decorative line */
+.mega-bottom-line {
+  height: 1px;
+  margin-top: 14px;
+  background: linear-gradient(90deg, transparent, rgba(200, 150, 62, 0.15), transparent);
 }
 
 /* ==================== CTA Button ==================== */
@@ -403,16 +597,18 @@ a.nav-link {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 8px 20px;
-  border: 1.5px solid rgba(200, 150, 62, 0.5);
+  padding: 9px 20px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   border-radius: 6px;
-  color: var(--accent);
+  color: #fff;
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
-  transition: all 0.2s ease;
   letter-spacing: 0.3px;
+  box-shadow: 0 2px 12px rgba(200, 150, 62, 0.25);
+  transition: all var(--duration-fast) var(--ease-out);
+  flex-shrink: 0;
 }
 
 .header-cta-icon {
@@ -422,10 +618,8 @@ a.nav-link {
 }
 
 .header-cta:hover {
-  background: var(--accent);
-  color: var(--bg-white);
-  border-color: var(--accent);
-  box-shadow: 0 2px 12px rgba(200, 150, 62, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(200, 150, 62, 0.4);
 }
 
 /* ==================== Hamburger ==================== */
@@ -443,7 +637,7 @@ a.nav-link {
 
 .hamburger-bar {
   width: 24px;
-  height: 2px;
+  height: 2.5px;
   background-color: var(--bg-white);
   border-radius: 1px;
   transition: all 0.3s ease;
@@ -456,28 +650,46 @@ a.nav-link {
   background: none;
   border: none;
   color: rgba(255, 255, 255, 0.65);
-  font-size: 12px;
   padding: 4px 8px;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
 .mobile-expand-toggle:hover {
-  color: var(--bg-white);
+  color: #fff;
 }
 
 .mobile-expand-toggle span {
-  display: inline-block;
-  transition: transform 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  transition: transform var(--duration-normal) var(--ease-out);
 }
 
 .mobile-expand-toggle span.rotated {
   transform: rotate(180deg);
 }
 
-/* ==================== Mobile: full-screen nav overlay ==================== */
+/* ==================== Mobile ==================== */
 
 @media (max-width: 767px) {
+  .logo-text {
+    font-size: 16px;
+    letter-spacing: 1px;
+  }
+
+  .logo-shield {
+    width: 28px;
+    height: 28px;
+  }
+
+  .logo-shield-inner {
+    font-size: 13px;
+  }
+
+  .nav-separator {
+    display: none;
+  }
+
   .hamburger {
     display: flex;
   }
@@ -515,6 +727,17 @@ a.nav-link {
     transform: translateX(0);
   }
 
+  /* Mobile gold accent line at top of nav overlay */
+  .header-nav.nav-open::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(200, 150, 62, 0.4), transparent);
+  }
+
   .nav-list {
     flex-direction: column;
     align-items: center;
@@ -526,11 +749,12 @@ a.nav-link {
   .nav-item {
     width: 100%;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .nav-item.has-children {
     display: flex;
-    flex-wrap: wrap;
   }
 
   .nav-link {
@@ -540,6 +764,14 @@ a.nav-link {
     justify-content: center;
     width: 100%;
     border-radius: 0;
+  }
+
+  .nav-item.is-active .nav-link {
+    color: var(--accent);
+  }
+
+  .nav-active-line {
+    display: none;
   }
 
   .mega-panel {
@@ -577,7 +809,7 @@ a.nav-link {
 
   .mobile-subitem-label {
     display: block;
-    padding: 10px 32px;
+    padding: 10px 40px;
     color: rgba(255, 255, 255, 0.65);
     font-size: 15px;
     text-align: center;
@@ -598,7 +830,7 @@ a.nav-link {
   }
 
   .mobile-submenu.l3 {
-    padding: 0 0 6px 16px;
+    padding: 0 0 6px 24px;
     background: rgba(255, 255, 255, 0.02);
   }
 
@@ -608,8 +840,9 @@ a.nav-link {
 
   .mobile-subitem-label.l3 {
     font-size: 14px;
-    padding: 8px 32px;
+    padding: 8px 48px;
     color: rgba(255, 255, 255, 0.5);
+    text-align: center;
   }
 
   .mobile-subitem-label.l3.is-link:active {
@@ -618,7 +851,7 @@ a.nav-link {
 
   .header-cta {
     font-size: 11px;
-    padding: 6px 14px;
+    padding: 7px 14px;
     gap: 5px;
   }
 
