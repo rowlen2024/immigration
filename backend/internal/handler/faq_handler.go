@@ -5,14 +5,13 @@ import (
 	"strconv"
 
 	"mygo-immigration/backend/internal/dto"
+	"mygo-immigration/backend/internal/logging"
 	"mygo-immigration/backend/internal/model"
 
 	"github.com/gin-gonic/gin"
 )
 
 func (h *Handler) ListFAQs(c *gin.Context) {
-	page, perPage := parsePagination(c)
-
 	var projectID *uint64
 	if v := c.Query("project_id"); v != "" {
 		id, err := strconv.ParseUint(v, 10, 64)
@@ -29,13 +28,14 @@ func (h *Handler) ListFAQs(c *gin.Context) {
 		}
 	}
 
-	faqs, total, err := h.svc.FAQ.List(projectID, isGlobal, page, perPage)
+	faqs, _, err := h.svc.FAQ.List(projectID, isGlobal, 1, 10000)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in ListFAQs", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessPaginated(faqs, page, perPage, total))
+	c.JSON(http.StatusOK, dto.Success(faqs))
 }
 
 func (h *Handler) AdminListFAQs(c *gin.Context) {
@@ -53,11 +53,22 @@ func (h *Handler) AdminListFAQs(c *gin.Context) {
 
 	faqs, total, err := h.svc.FAQ.AdminList(projectID, search, page, perPage)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in AdminListFAQs", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
 	c.JSON(http.StatusOK, dto.SuccessPaginated(faqs, page, perPage, total))
+}
+
+func (h *Handler) ListFAQProjects(c *gin.Context) {
+	projects, err := h.svc.FAQ.ListProjects()
+	if err != nil {
+		logging.Logger.Error("failed in ListFAQProjects", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		return
+	}
+	c.JSON(http.StatusOK, dto.Success(projects))
 }
 
 func (h *Handler) CreateFAQ(c *gin.Context) {
@@ -67,9 +78,11 @@ func (h *Handler) CreateFAQ(c *gin.Context) {
 		return
 	}
 
+	faq.ID = 0 // ensure DB auto-increment
 	created, err := h.svc.FAQ.Create(&faq)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in CreateFAQ", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -91,7 +104,8 @@ func (h *Handler) UpdateFAQ(c *gin.Context) {
 
 	updated, err := h.svc.FAQ.Update(id, &faq)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in UpdateFAQ", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -106,7 +120,8 @@ func (h *Handler) DeleteFAQ(c *gin.Context) {
 	}
 
 	if err := h.svc.FAQ.Delete(id); err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in DeleteFAQ", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 

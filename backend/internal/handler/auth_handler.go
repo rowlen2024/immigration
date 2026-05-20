@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"mygo-immigration/backend/internal/dto"
+	"mygo-immigration/backend/internal/logging"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,7 +22,8 @@ func (h *Handler) Login(c *gin.Context) {
 
 	tokenPair, err := h.svc.Auth.Login(req.Username, req.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, dto.Error(401, err.Error()))
+		logging.Logger.Warn("auth failure in Login", "error", err)
+		c.JSON(http.StatusUnauthorized, dto.Error(401, "unauthorized"))
 		return
 	}
 
@@ -46,7 +48,8 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 
 	tokenPair, err := h.svc.Auth.RefreshToken(refreshToken)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, dto.Error(401, err.Error()))
+		logging.Logger.Warn("auth failure in RefreshToken", "error", err)
+		c.JSON(http.StatusUnauthorized, dto.Error(401, "unauthorized"))
 		return
 	}
 

@@ -1,5 +1,12 @@
 package dto
 
+// FAQProjectInfo is a lightweight project reference used in FAQ project filters.
+type FAQProjectInfo struct {
+	ID   uint64 `json:"id"`
+	Name string `json:"name"`
+	Slug string `json:"slug"`
+}
+
 // FAQResponse is the API response struct for FAQ entries, including project info.
 type FAQResponse struct {
 	ID          uint64  `json:"id"`

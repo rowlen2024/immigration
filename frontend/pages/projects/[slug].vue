@@ -135,7 +135,13 @@
 
         <section id="faqs" v-if="faqs.length > 0" class="detail-section">
           <h2 class="detail-section-title">常见问题</h2>
-          <ProjectFAQAccordion :items="faqs" />
+          <ProjectFAQAccordion :items="paginatedFaqs" />
+          <Pagination
+            :page="faqPage"
+            :per-page="faqPerPage"
+            :total="faqs.length"
+            @change="changeFaqPage"
+          />
         </section>
 
         <section class="detail-cta">
@@ -321,6 +327,18 @@ const costTable = computed(() => project.value.cost_table);
 const timelinePhases = computed(() => project.value.timeline);
 const faqs = computed(() => project.value.faqs);
 const advantages = computed(() => project.value.advantages);
+
+const faqPage = ref(1);
+const faqPerPage = 10;
+const paginatedFaqs = computed(() => {
+  const start = (faqPage.value - 1) * faqPerPage;
+  return faqs.value.slice(start, start + faqPerPage);
+});
+const changeFaqPage = (p: number) => {
+  faqPage.value = p;
+  const el = document.getElementById('faqs');
+  if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
+};
 
 interface TabItem {
   id: string;

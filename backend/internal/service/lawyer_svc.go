@@ -58,6 +58,18 @@ func (s *LawyerService) List() ([]LawyerResponse, error) {
 	return result, nil
 }
 
+func (s *LawyerService) ListPaginated(page, perPage int, search string) ([]LawyerResponse, int64, error) {
+	items, total, err := s.repo.FindPaginated(page, perPage, search)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to list lawyers: %w", err)
+	}
+	result := make([]LawyerResponse, len(items))
+	for i, item := range items {
+		result[i] = toLawyerResponse(&item)
+	}
+	return result, total, nil
+}
+
 func (s *LawyerService) GetByID(id uint64) (*LawyerResponse, error) {
 	item, err := s.repo.FindByID(id)
 	if err != nil {

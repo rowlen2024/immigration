@@ -112,9 +112,12 @@
 <script setup lang="ts">
 import { Search, Refresh } from '@element-plus/icons-vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
+import { useNotify } from '~/composables/useNotify';
 import { getIconSvg } from '~/composables/lucideIcons';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
+
+const notify = useNotify();
 
 interface Faq {
   id: string;
@@ -173,8 +176,8 @@ const rules: FormRules = {
 const loadProjects = async () => {
   try {
     const api = useApi();
-    const data = await api<{ items: { id: string; name: string }[] }>('/admin/projects?all=true');
-    projects.value = data?.items ?? [];
+    const data = await api<{ id: string; name: string }[]>('/admin/projects?all=true');
+    projects.value = data ?? [];
   } catch {
     projects.value = [];
   }
@@ -225,13 +228,15 @@ const handleSave = async () => {
     const api = useApi();
     if (editingId.value) {
       await api(`/admin/faqs/${editingId.value}`, { method: 'PUT', body: form });
+      notify.success('更新成功');
     } else {
       await api('/admin/faqs', { method: 'POST', body: form });
+      notify.success('添加成功');
     }
     drawerVisible.value = false;
     loadList();
-  } catch {
-    ElMessage.error('操作失败');
+  } catch (e) {
+    notify.error(e, '操作失败');
   } finally {
     saving.value = false;
   }
@@ -241,9 +246,10 @@ const handleDelete = async (id: string) => {
   try {
     const api = useApi();
     await api(`/admin/faqs/${id}`, { method: 'DELETE' });
+    notify.success('已删除');
     loadList();
-  } catch {
-    ElMessage.error('操作失败');
+  } catch (e) {
+    notify.error(e, '操作失败');
   }
 };
 

@@ -344,9 +344,13 @@
 
 <script setup lang="ts">
 definePageMeta({ layout: 'admin', middleware: ['auth'] });
+
+const notify = useNotify();
+
 import ImageInput from '~/components/admin/ImageInput.vue';
 import IconPicker from '~/components/admin/IconPicker.vue';
 import { getIconByName, getIconSvg } from '~/composables/lucideIcons';
+import { useNotify } from '~/composables/useNotify';
 
 interface HeroSlide {
   title: string;
@@ -456,9 +460,9 @@ const load = async () => {
         testimonial_showcase: TestimonialShowcase | null;
         hero_trust: TrustItem[] | null;
       }>('/admin/home-config'),
-      api<{ items: ProjectOption[] }>('/projects'),
-      api<{ items: CaseOption[] } | CaseOption[]>('/cases'),
-      api<TestimonialOption[]>('/testimonials'),
+      api<ProjectOption[]>('/admin/projects?all=true'),
+      api<CaseOption[]>('/admin/cases?all=true'),
+      api<TestimonialOption[]>('/admin/testimonials?all=true'),
     ]);
 
     if (config) {
@@ -479,9 +483,9 @@ const load = async () => {
       trustItems.value = config.hero_trust || [];
     }
 
-    if (projects?.items) {
+    if (projects) {
       const seen = new Set<string>();
-      allProjects.value = projects.items.filter((p) => {
+      allProjects.value = (projects as ProjectOption[]).filter((p) => {
         if (seen.has(p.slug)) return false;
         seen.add(p.slug);
         return true;
@@ -489,20 +493,16 @@ const load = async () => {
     }
 
     if (casesData) {
-      const items = Array.isArray(casesData) ? casesData : (casesData as { items: CaseOption[] }).items;
-      if (items) {
-        const seen = new Set<number>();
-        allCases.value = items.filter((c) => {
-          if (seen.has(c.id)) return false;
-          seen.add(c.id);
-          return true;
-        });
-      }
+      const seen = new Set<number>();
+      allCases.value = (casesData as CaseOption[]).filter((c) => {
+        if (seen.has(c.id)) return false;
+        seen.add(c.id);
+        return true;
+      });
     }
 
     if (testimonialsData) {
-      const items = Array.isArray(testimonialsData) ? testimonialsData : [];
-      allTestimonials.value = items;
+      allTestimonials.value = testimonialsData as TestimonialOption[];
     }
   } finally {
     loading.value = false;
@@ -569,9 +569,9 @@ async function saveSlides() {
       method: 'PUT',
       body: { hero_slides: heroSlides.value },
     });
-    ElMessage.success('轮播已保存');
-  } catch {
-    ElMessage.error('保存失败');
+    notify.success('轮播已保存');
+  } catch (e) {
+    notify.error(e, '保存失败');
   } finally {
     slideSaving.value = false;
   }
@@ -621,9 +621,9 @@ async function saveCaseShowcase() {
       method: 'PUT',
       body: { case_showcase: caseShowcase.value },
     });
-    ElMessage.success('案例展示区已保存');
-  } catch {
-    ElMessage.error('保存失败');
+    notify.success('案例展示区已保存');
+  } catch (e) {
+    notify.error(e, '保存失败');
   } finally {
     caseSaving.value = false;
   }
@@ -665,9 +665,9 @@ async function saveTestimonialShowcase() {
       method: 'PUT',
       body: { testimonial_showcase: testimonialShowcase.value },
     });
-    ElMessage.success('评价展示区已保存');
-  } catch {
-    ElMessage.error('保存失败');
+    notify.success('评价展示区已保存');
+  } catch (e) {
+    notify.error(e, '保存失败');
   } finally {
     testimonialSaving.value = false;
   }
@@ -699,9 +699,9 @@ async function saveShowcase() {
       method: 'PUT',
       body: { project_showcase: projectShowcase.value },
     });
-    ElMessage.success('项目展示区已保存');
-  } catch {
-    ElMessage.error('保存失败');
+    notify.success('项目展示区已保存');
+  } catch (e) {
+    notify.error(e, '保存失败');
   } finally {
     showcaseSaving.value = false;
   }
@@ -762,9 +762,9 @@ async function saveAdvantages() {
         advantage_section: advantageSection.value,
       },
     });
-    ElMessage.success('优势设置已保存');
-  } catch {
-    ElMessage.error('保存失败');
+    notify.success('优势设置已保存');
+  } catch (e) {
+    notify.error(e, '保存失败');
   } finally {
     advSaving.value = false;
   }
@@ -817,9 +817,9 @@ async function saveTrust() {
       method: 'PUT',
       body: { hero_trust: trustItems.value },
     });
-    ElMessage.success('信任数据已保存');
-  } catch {
-    ElMessage.error('保存失败');
+    notify.success('信任数据已保存');
+  } catch (e) {
+    notify.error(e, '保存失败');
   } finally {
     trustSaving.value = false;
   }

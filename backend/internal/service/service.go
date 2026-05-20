@@ -1,6 +1,7 @@
 package service
 
 import (
+	"mygo-immigration/backend/internal/logging"
 	"mygo-immigration/backend/internal/config"
 	"mygo-immigration/backend/internal/repository"
 	"strconv"
@@ -40,7 +41,7 @@ func New(repo *repository.Repository, cfg *config.Config) *Service {
 		Case:          &CaseService{repo: repo.Case},
 		Lead:          &LeadService{repo: repo.Lead},
 		Lawyer:        &LawyerService{repo: repo.Lawyer},
-		HomeConfig:    &HomeConfigService{repo: repo.HomeConfig},
+		HomeConfig:    &HomeConfigService{repo: repo.HomeConfig, projectRepo: repo.Project, caseRepo: repo.Case, testimonialRepo: repo.Testimonial},
 		Media:         &MediaService{repo: repo.Media},
 		Nav:           &NavService{repo: repo.Nav, projectRepo: repo.Project, pageRepo: repo.Page},
 		Search:        &SearchService{faqRepo: repo.FAQ, pageRepo: repo.Page},
@@ -78,20 +79,59 @@ func (s *Service) Stats() (*DashboardStats, error) {
 	lastMonthStart := thisMonthStart.AddDate(0, -1, 0)
 	lastMonthEnd := thisMonthStart
 
-	projects, _ := s.repo.Project.Count()
-	pages, _ := s.repo.Page.Count()
-	leads, _ := s.repo.Lead.CountAll()
-	cases, _ := s.repo.Case.Count()
-	unread, _ := s.repo.Lead.CountByStatus("new")
+	projects, err := s.repo.Project.Count()
+	if err != nil {
+		logging.Logger.Warn("stats: failed to count projects", "error", err)
+	}
+	pages, err := s.repo.Page.Count()
+	if err != nil {
+		logging.Logger.Warn("stats: failed to count pages", "error", err)
+	}
+	leads, err := s.repo.Lead.CountAll()
+	if err != nil {
+		logging.Logger.Warn("stats: failed to count leads", "error", err)
+	}
+	cases, err := s.repo.Case.Count()
+	if err != nil {
+		logging.Logger.Warn("stats: failed to count cases", "error", err)
+	}
+	unread, err := s.repo.Lead.CountByStatus("new")
+	if err != nil {
+		logging.Logger.Warn("stats: failed to count unread leads", "error", err)
+	}
 
-	projectsThis, _ := s.repo.Project.CountByRange(thisMonthStart, now)
-	projectsLast, _ := s.repo.Project.CountByRange(lastMonthStart, lastMonthEnd)
-	pagesThis, _ := s.repo.Page.CountByRange(thisMonthStart, now)
-	pagesLast, _ := s.repo.Page.CountByRange(lastMonthStart, lastMonthEnd)
-	leadsThis, _ := s.repo.Lead.CountByRange(thisMonthStart, now)
-	leadsLast, _ := s.repo.Lead.CountByRange(lastMonthStart, lastMonthEnd)
-	casesThis, _ := s.repo.Case.CountByRange(thisMonthStart, now)
-	casesLast, _ := s.repo.Case.CountByRange(lastMonthStart, lastMonthEnd)
+	projectsThis, err := s.repo.Project.CountByRange(thisMonthStart, now)
+	if err != nil {
+		logging.Logger.Warn("stats: failed to count projects this month", "error", err)
+	}
+	projectsLast, err := s.repo.Project.CountByRange(lastMonthStart, lastMonthEnd)
+	if err != nil {
+		logging.Logger.Warn("stats: failed to count projects last month", "error", err)
+	}
+	pagesThis, err := s.repo.Page.CountByRange(thisMonthStart, now)
+	if err != nil {
+		logging.Logger.Warn("stats: failed to count pages this month", "error", err)
+	}
+	pagesLast, err := s.repo.Page.CountByRange(lastMonthStart, lastMonthEnd)
+	if err != nil {
+		logging.Logger.Warn("stats: failed to count pages last month", "error", err)
+	}
+	leadsThis, err := s.repo.Lead.CountByRange(thisMonthStart, now)
+	if err != nil {
+		logging.Logger.Warn("stats: failed to count leads this month", "error", err)
+	}
+	leadsLast, err := s.repo.Lead.CountByRange(lastMonthStart, lastMonthEnd)
+	if err != nil {
+		logging.Logger.Warn("stats: failed to count leads last month", "error", err)
+	}
+	casesThis, err := s.repo.Case.CountByRange(thisMonthStart, now)
+	if err != nil {
+		logging.Logger.Warn("stats: failed to count cases this month", "error", err)
+	}
+	casesLast, err := s.repo.Case.CountByRange(lastMonthStart, lastMonthEnd)
+	if err != nil {
+		logging.Logger.Warn("stats: failed to count cases last month", "error", err)
+	}
 
 	calc := func(this, last int64) Trend {
 		if last == 0 {

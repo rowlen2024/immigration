@@ -97,8 +97,11 @@
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { Refresh } from '@element-plus/icons-vue';
 import { getIconSvg } from '~/composables/lucideIcons';
+import { useNotify } from '~/composables/useNotify';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
+
+const notify = useNotify();
 
 interface User {
   id: string;
@@ -176,10 +179,11 @@ const handleCreateUser = async () => {
   try {
     const api = useApi();
     await api('/admin/users', { method: 'POST', body: form });
+    notify.success('创建成功');
     drawerVisible.value = false;
     loadList();
-  } catch {
-    ElMessage.error('创建用户失败');
+  } catch (e) {
+    notify.error(e, '创建用户失败');
   } finally {
     saving.value = false;
   }
@@ -201,10 +205,11 @@ const handleSaveRole = async () => {
       method: 'PUT',
       body: { role: editRoleValue.value },
     });
+    notify.success('角色已更新');
     roleDialogVisible.value = false;
     loadList();
-  } catch {
-    ElMessage.error('更新角色失败');
+  } catch (e) {
+    notify.error(e, '更新角色失败');
   } finally {
     saving.value = false;
   }
@@ -215,9 +220,10 @@ const handleToggleStatus = async (row: User) => {
   try {
     const api = useApi();
     await api(`/admin/users/${row.id}`, { method: 'PUT', body: { status: newStatus } });
+    notify.success('状态已更新');
     loadList();
-  } catch {
-    ElMessage.error('更新用户状态失败');
+  } catch (e) {
+    notify.error(e, '更新用户状态失败');
   }
 };
 

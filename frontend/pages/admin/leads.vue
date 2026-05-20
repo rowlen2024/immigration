@@ -100,9 +100,12 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus';
 import { Refresh } from '@element-plus/icons-vue';
+import { useNotify } from '~/composables/useNotify';
 import { getIconSvg } from '~/composables/lucideIcons';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
+
+const notify = useNotify();
 
 interface Lead {
   id: string;
@@ -184,10 +187,11 @@ const handleUpdateStatus = async () => {
       method: 'PUT',
       body: { status: editStatus.value, notes: editNotes.value },
     });
+    notify.success('已更新');
     detailVisible.value = false;
     loadList();
-  } catch {
-    ElMessage.error('操作失败');
+  } catch (e) {
+    notify.error(e, '操作失败');
   } finally {
     updating.value = false;
   }

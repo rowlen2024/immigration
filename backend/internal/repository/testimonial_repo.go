@@ -22,6 +22,15 @@ func (r *TestimonialRepo) FindByProjectID(projectID uint64) ([]model.Testimonial
 	return items, nil
 }
 
+func (r *TestimonialRepo) FindByIDs(ids []uint64) ([]model.Testimonial, error) {
+	var items []model.Testimonial
+	err := r.db.Where("id IN ?", ids).Find(&items).Error
+	if err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 func (r *TestimonialRepo) FindAll() ([]model.Testimonial, error) {
 	var items []model.Testimonial
 	err := r.db.Order("sort_order asc").Find(&items).Error

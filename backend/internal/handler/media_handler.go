@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"mygo-immigration/backend/internal/dto"
+	"mygo-immigration/backend/internal/logging"
 	"mygo-immigration/backend/internal/model"
 
 	"github.com/gin-gonic/gin"
@@ -61,7 +62,8 @@ func (h *Handler) UploadMedia(c *gin.Context) {
 	}
 	media, err := h.svc.Media.Upload(mediaModel)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in UploadMedia", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -74,7 +76,8 @@ func (h *Handler) ListMedia(c *gin.Context) {
 
 	mediaList, total, err := h.svc.Media.List(page, perPage, search)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in ListMedia", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -89,7 +92,8 @@ func (h *Handler) DeleteMedia(c *gin.Context) {
 	}
 
 	if err := h.svc.Media.Delete(id); err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in DeleteMedia", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 

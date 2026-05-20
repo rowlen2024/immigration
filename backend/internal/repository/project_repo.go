@@ -76,12 +76,22 @@ func (r *ProjectRepo) FindBySlugs(slugs []string) ([]model.Project, error) {
 	return projects, nil
 }
 
+// FindBySlugsLight returns projects by slugs without heavy preloads.
+func (r *ProjectRepo) FindBySlugsLight(slugs []string) ([]model.Project, error) {
+	var projects []model.Project
+	err := r.db.Where("slug IN ?", slugs).Find(&projects).Error
+	if err != nil {
+		return nil, err
+	}
+	return projects, nil
+}
+
 func (r *ProjectRepo) Create(project *model.Project) error {
 	return r.db.Create(project).Error
 }
 
 func (r *ProjectRepo) Update(project *model.Project) error {
-	return r.db.Omit("Requirements", "CostItems", "TimelinePhases", "Milestones", "FAQs", "Cases", "Advantages").Save(project).Error
+	return r.db.Omit("Requirements", "CostItems", "TimelinePhases", "Milestones", "FAQs", "Cases", "Advantages", "created_at").Save(project).Error
 }
 
 func (r *ProjectRepo) Delete(id uint64) error {

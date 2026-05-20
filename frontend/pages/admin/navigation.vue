@@ -21,9 +21,8 @@
       </el-select>
       <el-select v-model="positionFilter" placeholder="显示位置" clearable class="admin-filter-select">
         <el-option label="全部" value="" />
-        <el-option label="仅头部" value="header" />
-        <el-option label="仅页脚" value="footer" />
-        <el-option label="头部+页脚" value="both" />
+        <el-option label="头部" value="header" />
+        <el-option label="底部" value="footer" />
       </el-select>
       <el-button :icon="Refresh" circle @click="searchQuery='';typeFilter='';positionFilter='';loadTree()" :loading="loading" />
     </div>
@@ -31,6 +30,7 @@
     <div class="admin-table-wrap">
       <div class="nav-tree-header">
         <span class="nav-th nav-th-name">名称</span>
+        <span class="nav-th nav-th-sort">排序</span>
         <span class="nav-th nav-th-link">链接</span>
         <span class="nav-th nav-th-type">类型</span>
         <span class="nav-th nav-th-pos">显示位置</span>
@@ -50,6 +50,7 @@
               <span class="row-title">{{ data.label }}</span>
               <span v-if="!data.status" class="status-pill draft">已隐藏</span>
             </div>
+            <span class="row-sort">{{ data.sort_order }}</span>
             <span class="row-meta">{{ data.link }}</span>
             <span class="row-type">
               <el-tag
@@ -62,13 +63,22 @@
             </span>
             <span class="row-pos">
               <el-tag
-                v-if="data.display_position && data.display_position !== 'header'"
-                :type="data.display_position === 'both' ? 'success' : 'warning'"
+                v-if="data.display_position === 'both'"
+                type="success"
                 size="small"
                 effect="plain"
-              >
-                {{ data.display_position === 'both' ? '头部+页脚' : '仅页脚' }}
-              </el-tag>
+              >头部+底部</el-tag>
+              <el-tag
+                v-else-if="data.display_position === 'header'"
+                size="small"
+                effect="plain"
+              >头部</el-tag>
+              <el-tag
+                v-else-if="data.display_position === 'footer'"
+                type="warning"
+                size="small"
+                effect="plain"
+              >底部</el-tag>
             </span>
             <span v-if="!isViewer" class="tree-node-actions">
               <el-tooltip content="添加子级" placement="top">
@@ -200,8 +210,11 @@
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { Refresh, Search } from '@element-plus/icons-vue';
 import { getIconSvg } from '~/composables/lucideIcons';
+import { useNotify } from '~/composables/useNotify';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
+
+const notify = useNotify();
 
 interface NavItem {
   id: number;
@@ -333,7 +346,7 @@ const filterTree = (items: NavItem[]): NavItem[] => {
   return items.reduce((acc: NavItem[], item) => {
     const matchName = !searchQuery.value || item.label.toLowerCase().includes(searchQuery.value.toLowerCase());
     const matchType = !typeFilter.value || item.link_type === typeFilter.value;
-    const matchPos = !positionFilter.value || item.display_position === positionFilter.value;
+    const matchPos = !positionFilter.value || item.display_position === positionFilter.value || item.display_position === 'both';
     const matches = matchName && matchType && matchPos;
     const filteredChildren = filterTree(item.children || []);
     if (matches || filteredChildren.length > 0) {
@@ -368,11 +381,11 @@ const loadOptions = async () => {
   try {
     const api = useApi();
     const [projRes, pageRes] = await Promise.all([
-      api<{ items: ProjectBrief[] }>('/admin/projects?all=true'),
-      api<{ items: PageBrief[] }>('/admin/pages?all=true'),
+      api<ProjectBrief[]>('/admin/projects?all=true'),
+      api<PageBrief[]>('/admin/pages?all=true'),
     ]);
-    projects.value = (projRes as any)?.items || [];
-    pages.value = (pageRes as any)?.items || [];
+    projects.value = projRes || [];
+    pages.value = pageRes || [];
   } catch {
     // non-critical; dropdowns will be empty
   }
@@ -447,13 +460,15 @@ const handleSave = async () => {
 
     if (editingId.value) {
       await api(`/admin/navigation/${editingId.value}`, { method: 'PUT', body });
+      notify.success('更新成功');
     } else {
       await api('/admin/navigation', { method: 'POST', body });
+      notify.success('添加成功');
     }
     dialogVisible.value = false;
     loadTree();
   } catch (err: any) {
-    ElMessage.error(err?.message || '操作失败');
+    notify.error(err, '操作失败');
   } finally {
     saving.value = false;
   }
@@ -463,9 +478,10 @@ const handleDelete = async (id: number) => {
   try {
     const api = useApi();
     await api(`/admin/navigation/${id}`, { method: 'DELETE' });
+    notify.success('已删除');
     loadTree();
   } catch (err: any) {
-    ElMessage.error(err?.data?.message || err?.message || '删除失败');
+    notify.error(err, '删除失败');
   }
 };
 
@@ -489,9 +505,10 @@ onMounted(() => {
 }
 
 .nav-th-name { min-width: 160px; }
+.nav-th-sort { width: 100px; text-align: center; }
 .nav-th-link { flex: 1; }
-.nav-th-type { width: 70px; }
-.nav-th-pos { width: 90px; }
+.nav-th-type { width: 70px; text-align: center; }
+.nav-th-pos { width: 90px; text-align: center; }
 .nav-th-actions { width: 110px; text-align: right; }
 
 .nav-tree {
@@ -529,6 +546,13 @@ onMounted(() => {
   font-size: 12px;
   color: var(--color-text-muted);
   flex: 1;
+}
+
+.row-sort {
+  width: 100px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  text-align: center;
 }
 
 .row-type {

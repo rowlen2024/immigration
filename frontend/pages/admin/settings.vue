@@ -79,8 +79,11 @@
 import { Delete } from '@element-plus/icons-vue';
 import ImageInput from '~/components/admin/ImageInput.vue';
 import { getIconSvg } from '~/composables/lucideIcons';
+import { useNotify } from '~/composables/useNotify';
 
 definePageMeta({ layout: 'admin', middleware: ['auth'] });
+
+const notify = useNotify();
 
 interface SiteConfig {
   [key: string]: any;
@@ -257,7 +260,7 @@ const load = async () => {
   loading.value = true;
   try {
     const api = useApi();
-    const data = await api<SiteConfig>('/site-config');
+    const data = await api<SiteConfig>('/admin/site-config');
     if (data) {
       form.value = { ...defaultForm(), ...data };
     }
@@ -274,15 +277,18 @@ const save = async () => {
       method: 'PUT',
       body: JSON.parse(JSON.stringify(form.value)),
     });
-    ElMessage.success('设置已保存');
-  } catch {
-    ElMessage.error('保存失败');
+    notify.success('设置已保存');
+  } catch (e) {
+    notify.error(e, '保存失败');
   } finally {
     saving.value = false;
   }
 };
 
-const addSameAs = () => form.value.same_as.push('');
+const addSameAs = () => {
+  if (!Array.isArray(form.value.same_as)) form.value.same_as = [];
+  form.value.same_as.push('');
+};
 const removeSameAs = (idx: number) => form.value.same_as.splice(idx, 1);
 
 onMounted(load);

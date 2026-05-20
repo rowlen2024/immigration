@@ -648,3 +648,11 @@
   --el-border-radius-base: var(--radius-sm);
   --el-font-family: var(--font-sans);
 }
+
+/* Ensure messages & confirm dialogs always clear drawers/dialogs */
+.el-message {
+  z-index: 10000 !important;
+}
+.el-message-box__wrapper {
+  z-index: 10001 !important;
+}

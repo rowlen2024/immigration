@@ -72,6 +72,20 @@ func (r *FAQRepo) Delete(id uint64) error {
 	return r.db.Delete(&model.FAQ{}, id).Error
 }
 
+// FindDistinctProjects returns projects that have at least one FAQ.
+func (r *FAQRepo) FindDistinctProjects() ([]model.Project, error) {
+	var projects []model.Project
+	err := r.db.
+		Distinct("projects.*").
+		Joins("INNER JOIN faqs ON faqs.project_id = projects.id").
+		Where("projects.deleted_at IS NULL").
+		Find(&projects).Error
+	if err != nil {
+		return nil, err
+	}
+	return projects, nil
+}
+
 func (r *FAQRepo) Search(keyword string) ([]model.FAQ, error) {
 	var faqs []model.FAQ
 	err := r.db.

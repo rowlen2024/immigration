@@ -32,6 +32,15 @@ func (r *CaseRepo) FindBySlug(slug string) (*model.Case, error) {
 	return &c, nil
 }
 
+func (r *CaseRepo) FindByIDs(ids []uint64) ([]model.Case, error) {
+	var cases []model.Case
+	err := r.db.Preload("Project").Where("id IN ?", ids).Find(&cases).Error
+	if err != nil {
+		return nil, err
+	}
+	return cases, nil
+}
+
 func (r *CaseRepo) FindAll(search string) ([]model.Case, error) {
 	var cases []model.Case
 	q := r.db.Preload("Project").Order("sort_order asc")

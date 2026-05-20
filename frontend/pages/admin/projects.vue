@@ -571,6 +571,7 @@
 <script setup lang="ts">
 import { Search, Refresh } from '@element-plus/icons-vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
+import { useNotify } from '~/composables/useNotify';
 import ImageInput from '~/components/admin/ImageInput.vue';
 import IconPicker from '~/components/admin/IconPicker.vue';
 import RichEditor from '~/components/RichEditor.vue';
@@ -578,6 +579,8 @@ import { getIconByName, getIconSvg } from '~/composables/lucideIcons';
 import { pinyin } from 'pinyin-pro';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
+
+const notify = useNotify();
 
 interface Project {
   id: string;
@@ -665,6 +668,7 @@ const onSearch = () => {
 };
 
 const defaultForm = (): Partial<Project> => ({
+  id: undefined,
   slug: '',
   name: '',
   country: '',
@@ -790,7 +794,8 @@ const openCreate = () => {
 
 const openEdit = (row: Project) => {
   editingId.value = row.id;
-  Object.assign(form, row);
+  const { id, created_at, updated_at, deleted_at, ...cleanRow } = row;
+  Object.assign(form, cleanRow);
   resetSubData();
   activeTab.value = 'basic';
   drawerVisible.value = true;
@@ -849,16 +854,18 @@ const handleSave = async () => {
         method: 'PUT',
         body: form,
       });
+      notify.success('更新成功');
     } else {
       const created = await api<{ id: string }>('/admin/projects', { method: 'POST', body: form });
       if (created?.id) {
         editingId.value = String(created.id);
       }
+      notify.success('创建成功');
     }
     drawerVisible.value = false;
     loadList();
-  } catch {
-    ElMessage.error(editingId.value ? '更新项目失败' : '创建项目失败');
+  } catch (e) {
+    notify.error(e, editingId.value ? '更新项目失败' : '创建项目失败');
   } finally {
     saving.value = false;
   }
@@ -868,9 +875,10 @@ const handleDelete = async (id: string) => {
   try {
     const api = useApi();
     await api(`/admin/projects/${id}`, { method: 'DELETE' });
+    notify.success('已删除');
     loadList();
-  } catch {
-    ElMessage.error('删除项目失败');
+  } catch (e) {
+    notify.error(e, '删除项目失败');
   }
 };
 
@@ -891,7 +899,13 @@ const generateSlug = () => {
 const openSubDialog = (type: SubType, row?: any) => {
   subType.value = type;
   subEditingId.value = row?.id ?? null;
-  Object.assign(subForm, row ? { ...row } : defaultSubForm(type));
+  if (row) {
+    const { id, created_at, updated_at, deleted_at, project_id, project, ...cleanRow } = row;
+    Object.assign(subForm, cleanRow);
+  } else {
+    Object.assign(subForm, defaultSubForm(type));
+    delete subForm.id;
+  }
   if (type === 'requirement') {
     subForm.is_required = subForm.is_required === true || subForm.is_required === 1;
   }
@@ -920,10 +934,11 @@ const handleSubSave = async () => {
     } else {
       await api(endpoint, { method: 'POST', body: subForm });
     }
+    notify.success(subEditingId.value ? '更新成功' : '添加成功');
     subDialogVisible.value = false;
     loadSubData();
-  } catch {
-    ElMessage.error('保存失败');
+  } catch (e) {
+    notify.error(e, '保存失败');
   } finally {
     subSaving.value = false;
   }
@@ -941,9 +956,10 @@ const deleteSubItem = async (type: SubType, id: number) => {
     else if (type === 'testimonial') endpoint += `/testimonials/${id}`;
     else endpoint += `/timeline-phases/${id}`;
     await api(endpoint, { method: 'DELETE' });
+    notify.success('已删除');
     loadSubData();
-  } catch {
-    ElMessage.error('删除失败');
+  } catch (e) {
+    notify.error(e, '删除失败');
   }
 };
 
@@ -959,8 +975,8 @@ const loadNews = async () => {
 const openNewsDialog = async () => {
   try {
     const api = useApi();
-    const data = await api<{ items: NewsItem[] }>('/admin/pages?page_type=news&status=published&all=true');
-    newsOptions.value = data.items ?? [];
+    const data = await api<NewsItem[]>('/admin/pages?page_type=news&status=published&all=true');
+    newsOptions.value = data ?? [];
   } catch { newsOptions.value = []; }
   newsSelected.value = [];
   newsDialogVisible.value = true;
@@ -971,9 +987,10 @@ const addNewsLinks = async () => {
   try {
     const api = useApi();
     await api(`/admin/projects/${editingId.value}/news`, { method: 'POST', body: { page_ids: newsSelected.value } });
+    notify.success('已关联');
     newsDialogVisible.value = false;
     loadNews();
-  } catch { ElMessage.error('添加资讯失败'); }
+  } catch (e) { notify.error(e, '添加资讯失败'); }
 };
 
 const removeNewsLink = async (pageId: number) => {
@@ -981,8 +998,9 @@ const removeNewsLink = async (pageId: number) => {
   try {
     const api = useApi();
     await api(`/admin/projects/${editingId.value}/news/${pageId}`, { method: 'DELETE' });
+    notify.success('已解除关联');
     loadNews();
-  } catch { ElMessage.error('解除关联失败'); }
+  } catch (e) { notify.error(e, '解除关联失败'); }
 };
 
 const loadCompareConfig = async () => {
@@ -1012,15 +1030,15 @@ const loadCompareConfig = async () => {
 const loadProjectOptions = async () => {
   try {
     const api = useApi();
-    const data = await api<{ items: ProjectOption[] }>('/admin/projects?all=true');
-    projectOptions.value = data.items ?? [];
+    const data = await api<ProjectOption[]>('/admin/projects?all=true');
+    projectOptions.value = data ?? [];
   } catch { projectOptions.value = []; }
 };
 
 const saveCompareConfig = async () => {
   if (!editingId.value) return;
   if (compareConfig.compare_with.length < 2) {
-    ElMessage({ message: '请至少选择 2 个对比项目', type: 'warning', zIndex: 9999 });
+    ElMessage.warning('请至少选择 2 个对比项目');
     return;
   }
   try {
@@ -1033,8 +1051,8 @@ const saveCompareConfig = async () => {
         compare_fields: compareConfig.compare_fields,
       },
     });
-    ElMessage.success('项目对比配置已保存');
-  } catch { ElMessage.error('保存对比配置失败'); }
+    notify.success('项目对比配置已保存');
+  } catch (e) { notify.error(e, '保存对比配置失败'); }
 };
 
 

@@ -1,6 +1,45 @@
-# Progress Log — MyGo 移民前台 UI 优化
+# Progress Log — MyGo 移民
 
 **关联计划:** task_plan.md
+
+---
+
+## Session 2 — 2026-05-20 — 接口规范化
+
+### 分析阶段
+- 通读 `router.go` 全部路由定义（~150 行）
+- 通读 13 个 handler 文件，识别响应格式
+- 扫描前台 8 个页面 + 后台 13 个页面的所有 API 调用
+- 交叉比对前后端，找出 5 类问题
+
+### 实施阶段 — 后端
+- `handler/faq_handler.go`: `ListFAQs` → 非分页 `Success`
+- `handler/project_handler.go`: `AdminListProjects` `?all=true` → `Success`
+- `handler/page_handler.go`: `AdminListPages` `?all=true` → `Success`
+- `handler/case_handler.go`: `AdminListCases` 新增 `?all=true` 支持
+- `handler/lawyer_handler.go`: 默认分页 + `?all=true` 全量
+- `repository/lawyer_repo.go`: 新增 `FindPaginated`
+- `service/lawyer_svc.go`: 新增 `ListPaginated`
+- `handler/testimonial_handler.go`: 新增 `AdminListTestimonials`（支持 `?project_id=`）
+- `handler/home_handler.go`: 新增 `GetAdminHomeConfig`，与公共 `GetHomeConfig` 分离
+- `router/router.go`: 新增 `GET /admin/testimonials`、`GET /admin/site-config`，绑定分离的 handler
+
+### 实施阶段 — 前端
+- `homepage.vue`: 3 处公共接口 → admin 接口 + 响应类型修正
+- `settings.vue`: `GET /site-config` → `GET /admin/site-config`
+- `faqs.vue` / `cases.vue` / `navigation.vue` / `projects.vue` / `lawyers.vue`: `?all=true` 响应类型修正
+
+### 验证
+- `go build ./...` 后端编译通过
+- `npx nuxi typecheck` 前端无新增错误（现有错误均为 Nuxt auto-import 预存问题）
+
+### 产出物
+| 文件 | 操作 | 说明 |
+|------|------|------|
+| CLAUDE.md | 更新 | 新增"API 接口规范"章节（含速查表） |
+| findings.md | 更新 | 记录 5 类接口问题 |
+| 后端 8 文件 | 修改 | handler/repo/service/router |
+| 前端 6 文件 | 修改 | admin 页面 API 调用修正 |
 
 ---
 

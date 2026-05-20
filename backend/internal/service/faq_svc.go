@@ -66,6 +66,23 @@ func toFAQResponses(rows []repository.FAQWithProject) []dto.FAQResponse {
 	return result
 }
 
+// ListProjects returns projects that have at least one FAQ.
+func (s *FAQService) ListProjects() ([]dto.FAQProjectInfo, error) {
+	projects, err := s.repo.FindDistinctProjects()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list faq projects: %w", err)
+	}
+	result := make([]dto.FAQProjectInfo, len(projects))
+	for i, p := range projects {
+		result[i] = dto.FAQProjectInfo{
+			ID:   p.ID,
+			Name: p.Name,
+			Slug: p.Slug,
+		}
+	}
+	return result, nil
+}
+
 // Create creates a new FAQ entry.
 func (s *FAQService) Create(faq *model.FAQ) (*model.FAQ, error) {
 	if faq == nil {

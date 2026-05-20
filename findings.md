@@ -1,10 +1,41 @@
-# Findings — MyGo 移民前台 UI 优化
+# Findings — MyGo 移民
 
 **关联任务:** task_plan.md
 
 ---
 
-## 发现的 Bug
+## 接口规范化 (2026-05-20)
+
+### 发现的问题
+
+#### A1: Admin 页面错用公共接口（4 处）
+- **homepage.vue**: 调 `GET /projects`、`GET /cases`、`GET /testimonials`（应为 `/admin/projects?all=true` 等）
+- **settings.vue**: 调 `GET /site-config`（应为 `GET /admin/site-config`）
+- **根因**: 缺少对应 admin 端点，前端只能绕道公共接口
+- **修复**: 新增 `GET /admin/cases?all=true`、`GET /admin/testimonials`、`GET /admin/site-config`，前端改为调 admin 端点
+
+#### A2: `?all=true` 返回虚假分页格式
+- **位置**: `AdminListProjects`、`AdminListPages`
+- **问题**: `?all=true` 时传入 page=1, perPage=1000，外层仍包裹 `SuccessPaginated`，给前端 `{items, total, page:1, perPage:1000}`
+- **修复**: `?all=true` 返回 `Success(data)`，前端 `useApi()` 解包为原始数组
+
+#### A3: 公共 FAQ 接口错误使用分页
+- **位置**: `GET /faqs` → `ListFAQs`
+- **问题**: 返回 `SuccessPaginated`，但前端 FAQ 页传 `?per_page=100` 变相查全表
+- **修复**: 改为 `Success(faqs)` 全量返回
+
+#### A4: 公共/admin 共用 handler
+- **位置**: `GET /home-config` 和 `GET /admin/home-config` 均指向 `GetHomeConfig`
+- **修复**: 分离为 `GetHomeConfig`（公共）和 `GetAdminHomeConfig`（admin）
+
+#### A5: Lawyer 缺少分页支持
+- **修复**: 新增 `FindPaginated` (repo) + `ListPaginated` (service)，handler 默认分页 + `?all=true` 全量
+
+---
+
+## 前台 UI 优化 (2026-05-17)
+
+### 发现的 Bug
 
 ### B1: Windows 下衬线标题不生效
 - **根因:** `--font-serif` 字体栈以 `Georgia` 为首选，Georgia 不含中文字符，Windows 不支持 `Noto Serif CJK SC` / `Songti SC`

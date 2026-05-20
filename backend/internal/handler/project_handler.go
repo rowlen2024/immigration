@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"mygo-immigration/backend/internal/dto"
+	"mygo-immigration/backend/internal/logging"
 	"mygo-immigration/backend/internal/model"
 
 	"github.com/gin-gonic/gin"
@@ -19,7 +20,8 @@ func (h *Handler) ListProjects(c *gin.Context) {
 
 	projects, total, err := h.svc.Project.List(page, perPage, "", "")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in ListProjects", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -58,7 +60,8 @@ func (h *Handler) CompareProjects(c *gin.Context) {
 
 	result, err := h.svc.Project.CompareRows(slugs, fields)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in CompareProjects", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -72,10 +75,11 @@ func (h *Handler) AdminListProjects(c *gin.Context) {
 	if c.Query("all") == "true" {
 		projects, _, err := h.svc.Project.AdminList(1, 1000, search, status)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+			logging.Logger.Error("failed in AdminListProjects", "error", err)
+			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 			return
 		}
-		c.JSON(http.StatusOK, dto.SuccessPaginated(projects, 1, 1000, int64(len(projects))))
+		c.JSON(http.StatusOK, dto.Success(projects))
 		return
 	}
 
@@ -83,7 +87,8 @@ func (h *Handler) AdminListProjects(c *gin.Context) {
 
 	projects, total, err := h.svc.Project.AdminList(page, perPage, search, status)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in AdminListProjects", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -97,9 +102,11 @@ func (h *Handler) CreateProject(c *gin.Context) {
 		return
 	}
 
+	project.ID = 0 // ensure DB auto-increment
 	created, err := h.svc.Project.Create(&project)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in CreateProject", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -121,7 +128,8 @@ func (h *Handler) UpdateProject(c *gin.Context) {
 
 	updated, err := h.svc.Project.Update(id, &project)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in UpdateProject", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -136,7 +144,8 @@ func (h *Handler) DeleteProject(c *gin.Context) {
 	}
 
 	if err := h.svc.Project.Delete(id); err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in DeleteProject", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -176,7 +185,8 @@ func (h *Handler) ListProjectNews(c *gin.Context) {
 
 	news, err := h.svc.Project.ListNews(projectID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in ListProjectNews", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -198,7 +208,8 @@ func (h *Handler) AddProjectNews(c *gin.Context) {
 	}
 
 	if err := h.svc.Project.AddNews(projectID, req.PageIDs); err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in AddProjectNews", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -220,7 +231,8 @@ func (h *Handler) RemoveProjectNews(c *gin.Context) {
 	}
 
 	if err := h.svc.Project.RemoveNews(projectID, pageID); err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in RemoveProjectNews", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 

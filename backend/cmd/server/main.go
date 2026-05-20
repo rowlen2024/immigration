@@ -12,11 +12,13 @@ import (
 
 	"mygo-immigration/backend/internal/config"
 	"mygo-immigration/backend/internal/database"
+	"mygo-immigration/backend/internal/logging"
 	"mygo-immigration/backend/internal/router"
 )
 
 func main() {
 	cfg := config.Load()
+	logging.Init(cfg.LogLevel)
 
 	db, err := database.InitMySQL(cfg)
 	if err != nil {

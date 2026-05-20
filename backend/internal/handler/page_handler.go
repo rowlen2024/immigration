@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"mygo-immigration/backend/internal/dto"
+	"mygo-immigration/backend/internal/logging"
 	"mygo-immigration/backend/internal/model"
 
 	"github.com/gin-gonic/gin"
@@ -13,7 +14,8 @@ import (
 func (h *Handler) ListPages(c *gin.Context) {
 	pages, err := h.svc.Page.List()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in ListPages", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -60,10 +62,11 @@ func (h *Handler) AdminListPages(c *gin.Context) {
 	if c.Query("all") == "true" {
 		pages, _, err := h.svc.Page.AdminList(1, 1000, pageType, search, status)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+			logging.Logger.Error("failed in AdminListPages", "error", err)
+			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 			return
 		}
-		c.JSON(http.StatusOK, dto.SuccessPaginated(pages, 1, 1000, int64(len(pages))))
+		c.JSON(http.StatusOK, dto.Success(pages))
 		return
 	}
 
@@ -71,7 +74,8 @@ func (h *Handler) AdminListPages(c *gin.Context) {
 
 	pages, total, err := h.svc.Page.AdminList(paginationPage, perPage, pageType, search, status)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in AdminListPages", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -85,9 +89,11 @@ func (h *Handler) CreatePage(c *gin.Context) {
 		return
 	}
 
+	page.ID = 0 // ensure DB auto-increment
 	created, err := h.svc.Page.Create(&page)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in CreatePage", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -109,7 +115,8 @@ func (h *Handler) UpdatePage(c *gin.Context) {
 
 	updated, err := h.svc.Page.Update(id, &page)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in UpdatePage", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -124,7 +131,8 @@ func (h *Handler) DeletePage(c *gin.Context) {
 	}
 
 	if err := h.svc.Page.Delete(id); err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in DeletePage", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 

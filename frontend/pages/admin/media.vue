@@ -95,9 +95,12 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus';
 import { Refresh, Search } from '@element-plus/icons-vue';
+import { useNotify } from '~/composables/useNotify';
 import { getIconSvg } from '~/composables/lucideIcons';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
+
+const notify = useNotify();
 
 interface MediaItem {
   id: string;
@@ -169,6 +172,7 @@ const loadList = async () => {
 };
 
 const handleUploadSuccess = () => {
+  notify.success('上传成功');
   loadList();
 };
 
@@ -180,9 +184,10 @@ const handleDelete = async (id: string) => {
   try {
     const api = useApi();
     await api(`/admin/media/${id}`, { method: 'DELETE' });
+    notify.success('已删除');
     loadList();
-  } catch {
-    ElMessage.error('操作失败');
+  } catch (e) {
+    notify.error(e, '操作失败');
   }
 };
 

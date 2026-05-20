@@ -51,6 +51,7 @@ type Config struct {
 	JWTRefreshExpiry time.Duration
 	CORSOrigin       string
 	Env              string
+	LogLevel         string
 }
 
 func Load() *Config {
@@ -66,6 +67,7 @@ func Load() *Config {
 		JWTRefreshExpiry: getDurationEnv("JWT_REFRESH_EXPIRY", 168*time.Hour),
 		CORSOrigin:       getEnv("CORS_ORIGIN", "http://localhost:3000"),
 		Env:              getEnv("ENV", "development"),
+		LogLevel:         getEnv("LOG_LEVEL", "info"),
 	}
 }
 

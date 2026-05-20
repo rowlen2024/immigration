@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"mygo-immigration/backend/internal/dto"
+	"mygo-immigration/backend/internal/logging"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,7 +21,8 @@ func (h *Handler) AdminListUsers(c *gin.Context) {
 
 	users, total, err := h.svc.User.ListPaginated(page, perPage)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in AdminListUsers", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -36,7 +38,8 @@ func (h *Handler) AdminCreateUser(c *gin.Context) {
 
 	user, err := h.svc.User.Create(req.Username, req.Password, req.DisplayName, req.Role)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in AdminCreateUser", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -58,7 +61,8 @@ func (h *Handler) AdminUpdateUser(c *gin.Context) {
 
 	user, err := h.svc.User.Update(id, updates)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in AdminUpdateUser", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 

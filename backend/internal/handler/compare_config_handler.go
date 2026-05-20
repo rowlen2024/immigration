@@ -6,6 +6,7 @@ import (
 
 	"mygo-immigration/backend/internal/config"
 	"mygo-immigration/backend/internal/dto"
+	"mygo-immigration/backend/internal/logging"
 	"mygo-immigration/backend/internal/model"
 
 	"github.com/gin-gonic/gin"
@@ -63,7 +64,8 @@ func (h *Handler) SaveCompareConfig(c *gin.Context) {
 
 	saved, err := h.svc.CompareConfig.Save(cfg)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in SaveCompareConfig", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 

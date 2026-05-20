@@ -39,6 +39,7 @@ type FAQQueryParams struct {
 // FAQRepository defines the interface for FAQ data access.
 type FAQRepository interface {
 	FindAll(params FAQQueryParams) ([]FAQWithProject, int64, error)
+	FindDistinctProjects() ([]model.Project, error)
 	Create(faq *model.FAQ) error
 	Update(faq *model.FAQ) error
 	Delete(id uint64) error

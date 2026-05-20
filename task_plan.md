@@ -1,16 +1,43 @@
-# Task Plan — MyGo 移民前台 UI 优化
+# Task Plan — MyGo 移民
 
-**创建时间:** 2026-05-17  
-**方案:** 方案 B — 品牌视觉升级  
-**状态:** 已完成
+**更新时间:** 2026-05-20
 
-## 目标
+---
 
-在不改变现有功能的前提下，优化官网前台 UI，提升美观度、视觉层次和推广转化效果。
+## Phase 5: 接口规范化 ✅ (2026-05-20 完成)
 
-## 阶段进度
+**目标:** 规范前后台 API 使用，确保前后台接口严格隔离、响应格式统一。
 
-- [x] **Phase 1: 设计令牌基础设施**
+### 完成项
+
+- [x] **后台接口补充**: 新增 `GET /admin/cases?all=true`、`GET /admin/testimonials`、`GET /admin/site-config`
+- [x] **响应格式规范化**: `?all=true` 返回 `Success` 非分页；分页返回 `SuccessPaginated`
+- [x] **公共接口修正**: `GET /faqs` 改为非分页；`GetHomeConfig` 分离公共/admin handler
+- [x] **Lawyer 分页**: 新增 repo/service 分页方法，handler 默认分页 + `?all=true`
+- [x] **前端修正**: 6 个 admin 页面的 API 调用改为正确 admin 端点 + 响应类型修正
+- [x] **规范文档**: CLAUDE.md 新增"API 接口规范"章节（含模板代码 + 接口速查表）
+
+### 修改文件（14 个）
+
+| 层 | 文件 | 说明 |
+|----|------|------|
+| handler | `faq_handler.go` | ListFAQs → 非分页 |
+| handler | `project_handler.go` | AdminListProjects ?all=true → Success |
+| handler | `page_handler.go` | AdminListPages ?all=true → Success |
+| handler | `case_handler.go` | AdminListCases 新增 ?all=true |
+| handler | `lawyer_handler.go` | 分页 + ?all=true |
+| handler | `testimonial_handler.go` | 新增 AdminListTestimonials |
+| handler | `home_handler.go` | 新增 GetAdminHomeConfig |
+| repo | `lawyer_repo.go` | 新增 FindPaginated |
+| service | `lawyer_svc.go` | 新增 ListPaginated |
+| router | `router.go` | 新增路由 + handler 绑定 |
+| frontend | `homepage.vue` | 公共接口 → admin 接口 |
+| frontend | `settings.vue` | /site-config → /admin/site-config |
+| frontend | `faqs/cases/navigation/projects/lawyers.vue` | ?all=true 响应类型修正 |
+
+---
+
+## Phase 1–4: 前台 UI 优化 ✅ (2026-05-17 完成)
   - [x] 统一 CSS 变量（合并双套体系，更新色值）
   - [x] 引入 Noto Serif SC + Noto Sans SC Web 字体
   - [x] 添加 Type Scale、完整阴影层级、圆角系统、间距系统

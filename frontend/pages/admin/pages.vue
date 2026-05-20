@@ -157,11 +157,14 @@
 <script setup lang="ts">
 import { Search, Refresh } from '@element-plus/icons-vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
+import { useNotify } from '~/composables/useNotify';
 import { getIconSvg } from '~/composables/lucideIcons';
 import { pinyin } from 'pinyin-pro';
 import ImageInput from '~/components/admin/ImageInput.vue';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
+
+const notify = useNotify();
 
 interface Page {
   id: string;
@@ -247,7 +250,8 @@ const openCreate = () => {
 
 const openEdit = (row: Page) => {
   editingId.value = row.id;
-  Object.assign(form, row);
+  const { id, created_at, updated_at, deleted_at, ...cleanRow } = row;
+  Object.assign(form, cleanRow);
   drawerVisible.value = true;
 };
 
@@ -263,13 +267,15 @@ const handleSave = async () => {
         method: 'PUT',
         body: form,
       });
+      notify.success('更新成功');
     } else {
       await api('/admin/pages', { method: 'POST', body: form });
+      notify.success('创建成功');
     }
     drawerVisible.value = false;
     loadList();
-  } catch {
-    ElMessage.error(editingId.value ? '更新页面失败' : '创建页面失败');
+  } catch (e) {
+    notify.error(e, editingId.value ? '更新页面失败' : '创建页面失败');
   } finally {
     saving.value = false;
   }
@@ -288,9 +294,9 @@ const handleToggleStatus = async (row: Page) => {
       body: { ...row, status: newStatus },
     });
     row.status = newStatus;
-    ElMessage.success(newStatus === 'published' ? '已发布' : '已下架');
-  } catch {
-    ElMessage.error('操作失败');
+    notify.success(newStatus === 'published' ? '已发布' : '已下架');
+  } catch (e) {
+    notify.error(e, '操作失败');
   }
 };
 
@@ -298,9 +304,10 @@ const handleDelete = async (id: string) => {
   try {
     const api = useApi();
     await api(`/admin/pages/${id}`, { method: 'DELETE' });
+    notify.success('已删除');
     loadList();
-  } catch {
-    ElMessage.error('删除页面失败');
+  } catch (e) {
+    notify.error(e, '删除页面失败');
   }
 };
 

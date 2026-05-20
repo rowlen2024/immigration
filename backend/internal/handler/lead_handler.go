@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"mygo-immigration/backend/internal/dto"
+	"mygo-immigration/backend/internal/logging"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,7 +23,8 @@ func (h *Handler) CreateLead(c *gin.Context) {
 
 	lead, err := h.svc.Lead.Create(&req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in CreateLead", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -48,7 +50,8 @@ func (h *Handler) AdminListLeads(c *gin.Context) {
 
 	leads, total, err := h.svc.Lead.AdminList(page, perPage, pagination.Status)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in AdminListLeads", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -75,7 +78,8 @@ func (h *Handler) UpdateLead(c *gin.Context) {
 
 	lead, err := h.svc.Lead.Update(id, req.Status, notes)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in UpdateLead", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 

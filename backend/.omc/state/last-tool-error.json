@@ -1,7 +1,7 @@
 {
   "tool_name": "Read",
-  "tool_input_preview": "{\"file_path\":\"D:\\\\mygo\\\\src\\\\web\\\\immigration\\\\c.html\"}",
-  "error": "File content (32614 tokens) exceeds maximum allowed tokens (25000). Use offset and limit parameters to read specific portions of the file, or search for specific content instead of reading the whole file.",
-  "timestamp": "2026-05-17T03:05:45.036Z",
+  "tool_input_preview": "{\"file_path\":\"D:\\\\mygo\\\\src\\\\web\\\\immigration\\\\backend\\\\frontend\\\\pages\\\\admin\\\\navigation.vue\"}",
+  "error": "File does not exist. Note: your current working directory is D:\\mygo\\src\\web\\immigration\\backend.",
+  "timestamp": "2026-05-20T14:45:20.240Z",
   "retry_count": 1
 }

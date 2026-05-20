@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"mygo-immigration/backend/internal/dto"
+	"mygo-immigration/backend/internal/logging"
 	"mygo-immigration/backend/internal/model"
 
 	"github.com/gin-gonic/gin"
@@ -17,7 +18,8 @@ func (h *Handler) ListProjectTestimonials(c *gin.Context) {
 	}
 	items, err := h.svc.Testimonial.ListByProject(projectID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in ListProjectTestimonials", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 	c.JSON(http.StatusOK, dto.Success(items))
@@ -26,7 +28,31 @@ func (h *Handler) ListProjectTestimonials(c *gin.Context) {
 func (h *Handler) ListAllTestimonials(c *gin.Context) {
 	items, err := h.svc.Testimonial.ListAll()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in ListAllTestimonials", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		return
+	}
+	c.JSON(http.StatusOK, dto.Success(items))
+}
+
+func (h *Handler) AdminListTestimonials(c *gin.Context) {
+	var items []model.Testimonial
+	var err error
+
+	if pidStr := c.Query("project_id"); pidStr != "" {
+		pid, parseErr := parseIDParam(c, "project_id")
+		if parseErr != nil {
+			c.JSON(http.StatusBadRequest, dto.Error(400, "invalid project_id"))
+			return
+		}
+		items, err = h.svc.Testimonial.ListByProject(pid)
+	} else {
+		items, err = h.svc.Testimonial.ListAll()
+	}
+
+	if err != nil {
+		logging.Logger.Error("failed in AdminListTestimonials", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 	c.JSON(http.StatusOK, dto.Success(items))
@@ -43,9 +69,11 @@ func (h *Handler) CreateProjectTestimonial(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request"))
 		return
 	}
+	item.ID = 0 // ensure DB auto-increment
 	created, err := h.svc.Testimonial.Create(projectID, &item)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in CreateProjectTestimonial", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 	c.JSON(http.StatusCreated, dto.Success(created))
@@ -69,7 +97,8 @@ func (h *Handler) UpdateProjectTestimonial(c *gin.Context) {
 	}
 	updated, err := h.svc.Testimonial.Update(tid, &item)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in UpdateProjectTestimonial", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 	c.JSON(http.StatusOK, dto.Success(updated))
@@ -87,7 +116,8 @@ func (h *Handler) DeleteProjectTestimonial(c *gin.Context) {
 		return
 	}
 	if err := h.svc.Testimonial.HardDelete(tid); err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in DeleteProjectTestimonial", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 	c.JSON(http.StatusOK, dto.Success(nil))

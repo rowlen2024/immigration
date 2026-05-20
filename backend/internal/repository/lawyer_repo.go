@@ -16,6 +16,24 @@ func (r *LawyerRepo) FindAll() ([]model.Lawyer, error) {
 	return items, err
 }
 
+func (r *LawyerRepo) FindPaginated(page, perPage int, search string) ([]model.Lawyer, int64, error) {
+	var items []model.Lawyer
+	var total int64
+
+	q := r.db.Model(&model.Lawyer{})
+	if search != "" {
+		q = q.Where("name LIKE ?", "%"+search+"%")
+	}
+
+	if err := q.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * perPage
+	err := q.Order("sort_order ASC, id ASC").Offset(offset).Limit(perPage).Find(&items).Error
+	return items, total, err
+}
+
 func (r *LawyerRepo) FindByID(id uint64) (*model.Lawyer, error) {
 	var item model.Lawyer
 	err := r.db.First(&item, id).Error

@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"mygo-immigration/backend/internal/logging"
 
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
@@ -10,7 +11,10 @@ import (
 
 // HomeConfigService handles business logic for the homepage configuration.
 type HomeConfigService struct {
-	repo *repository.HomeConfigRepo
+	repo          *repository.HomeConfigRepo
+	projectRepo   *repository.ProjectRepo
+	caseRepo      *repository.CaseRepo
+	testimonialRepo *repository.TestimonialRepo
 }
 
 // HeroSlide represents a slide in the hero section of the homepage.
@@ -44,25 +48,57 @@ type AdvantageSectionConfig struct {
 	Image           string `json:"image"`
 }
 
+// FeaturedProject holds lightweight project data embedded in home-config.
+type FeaturedProject struct {
+	Name       string `json:"name"`
+	Slug       string `json:"slug"`
+	Tagline    string `json:"tagline"`
+	CoverImage string `json:"cover_image"`
+	OverviewText string `json:"overview_text"`
+}
+
+// FeaturedCase holds lightweight case data embedded in home-config.
+type FeaturedCase struct {
+	ID          uint64 `json:"id"`
+	Slug        string `json:"slug"`
+	Name        string `json:"name"`
+	CountryFrom string `json:"country_from"`
+	PhotoURL    string `json:"photo_url"`
+	Content     string `json:"content"`
+	ProjectName string `json:"project_name"`
+}
+
+// FeaturedTestimonial holds lightweight testimonial data embedded in home-config.
+type FeaturedTestimonial struct {
+	ID        uint64 `json:"id"`
+	Nickname  string `json:"nickname"`
+	AvatarURL string `json:"avatar_url"`
+	Rating    uint8  `json:"rating"`
+	Content   string `json:"content"`
+}
+
 // ProjectShowcaseConfig holds the project showcase section settings.
 type ProjectShowcaseConfig struct {
-	SectionTitle    string   `json:"section_title"`
-	SectionSubtitle string   `json:"section_subtitle"`
-	FeaturedSlugs   []string `json:"featured_slugs"`
+	SectionTitle    string            `json:"section_title"`
+	SectionSubtitle string            `json:"section_subtitle"`
+	FeaturedSlugs   []string          `json:"featured_slugs"`
+	FeaturedProjects []FeaturedProject `json:"featured_projects"`
 }
 
 // CaseShowcaseConfig holds the case showcase section settings.
 type CaseShowcaseConfig struct {
-	SectionTitle    string   `json:"section_title"`
-	SectionSubtitle string   `json:"section_subtitle"`
-	FeaturedCaseIDs []uint64 `json:"featured_case_ids"`
+	SectionTitle    string         `json:"section_title"`
+	SectionSubtitle string         `json:"section_subtitle"`
+	FeaturedCaseIDs []uint64       `json:"featured_case_ids"`
+	FeaturedCases   []FeaturedCase `json:"featured_cases"`
 }
 
 // TestimonialShowcaseConfig holds the testimonial showcase section settings.
 type TestimonialShowcaseConfig struct {
-	SectionTitle           string   `json:"section_title"`
-	SectionSubtitle        string   `json:"section_subtitle"`
-	FeaturedTestimonialIDs []uint64 `json:"featured_testimonial_ids"`
+	SectionTitle           string               `json:"section_title"`
+	SectionSubtitle        string               `json:"section_subtitle"`
+	FeaturedTestimonialIDs []uint64             `json:"featured_testimonial_ids"`
+	FeaturedTestimonials   []FeaturedTestimonial `json:"featured_testimonials"`
 }
 
 // HomeConfigData holds the parsed homepage configuration data.
@@ -76,15 +112,19 @@ type HomeConfigData struct {
 	TrustItems         []TrustItem                `json:"hero_trust"`
 }
 
-// Get returns the homepage configuration with parsed hero_slides and advantage_items.
+// Get returns the homepage configuration with parsed sections and embedded featured items.
 func (s *HomeConfigService) Get() (*HomeConfigData, error) {
 	data := &HomeConfigData{}
 
 	if heroCfg, err := s.repo.FindByKey("hero_slides"); err == nil {
-		json.Unmarshal(heroCfg.ConfigValue, &data.HeroSlides)
+		if err := json.Unmarshal(heroCfg.ConfigValue, &data.HeroSlides); err != nil {
+			logging.Logger.Warn("home_config: failed to unmarshal hero_slides", "error", err)
+		}
 	}
 	if advCfg, err := s.repo.FindByKey("advantage_items"); err == nil {
-		json.Unmarshal(advCfg.ConfigValue, &data.AdvantageItems)
+		if err := json.Unmarshal(advCfg.ConfigValue, &data.AdvantageItems); err != nil {
+			logging.Logger.Warn("home_config: failed to unmarshal advantage_items", "error", err)
+		}
 	}
 	if advSecCfg, err := s.repo.FindByKey("advantage_section"); err == nil {
 		var asc AdvantageSectionConfig
@@ -95,26 +135,136 @@ func (s *HomeConfigService) Get() (*HomeConfigData, error) {
 	if projCfg, err := s.repo.FindByKey("project_showcase"); err == nil {
 		var psc ProjectShowcaseConfig
 		if err := json.Unmarshal(projCfg.ConfigValue, &psc); err == nil {
+			s.loadFeaturedProjects(&psc)
 			data.ProjectShowcase = &psc
 		}
 	}
 	if caseCfg, err := s.repo.FindByKey("case_showcase"); err == nil {
 		var csc CaseShowcaseConfig
 		if err := json.Unmarshal(caseCfg.ConfigValue, &csc); err == nil {
+			s.loadFeaturedCases(&csc)
 			data.CaseShowcase = &csc
 		}
 	}
 	if testimonialCfg, err := s.repo.FindByKey("testimonial_showcase"); err == nil {
 		var tsc TestimonialShowcaseConfig
 		if err := json.Unmarshal(testimonialCfg.ConfigValue, &tsc); err == nil {
+			s.loadFeaturedTestimonials(&tsc)
 			data.TestimonialShowcase = &tsc
 		}
 	}
 	if trustCfg, err := s.repo.FindByKey("hero_trust"); err == nil {
-		json.Unmarshal(trustCfg.ConfigValue, &data.TrustItems)
+		if err := json.Unmarshal(trustCfg.ConfigValue, &data.TrustItems); err != nil {
+			logging.Logger.Warn("home_config: failed to unmarshal hero_trust", "error", err)
+		}
 	}
 
 	return data, nil
+}
+
+func (s *HomeConfigService) loadFeaturedProjects(psc *ProjectShowcaseConfig) {
+	if len(psc.FeaturedSlugs) == 0 || s.projectRepo == nil {
+		return
+	}
+	projects, err := s.projectRepo.FindBySlugsLight(psc.FeaturedSlugs)
+	if err != nil {
+		logging.Logger.Warn("home_config: failed to load featured projects", "error", err)
+		return
+	}
+	items := make([]FeaturedProject, 0, len(projects))
+	for _, p := range projects {
+		items = append(items, FeaturedProject{
+			Name:         p.Name,
+			Slug:         p.Slug,
+			Tagline:      p.Tagline,
+			CoverImage:   p.CoverImage,
+			OverviewText: p.OverviewText,
+		})
+	}
+	psc.FeaturedProjects = items
+}
+
+func (s *HomeConfigService) loadFeaturedCases(csc *CaseShowcaseConfig) {
+	if len(csc.FeaturedCaseIDs) == 0 || s.caseRepo == nil {
+		return
+	}
+	cases, err := s.caseRepo.FindByIDs(csc.FeaturedCaseIDs)
+	if err != nil {
+		logging.Logger.Warn("home_config: failed to load featured cases", "error", err)
+		return
+	}
+	// Preserve configured order
+	orderMap := make(map[uint64]int)
+	for i, id := range csc.FeaturedCaseIDs {
+		orderMap[id] = i
+	}
+	items := make([]FeaturedCase, len(cases))
+	for i, c := range cases {
+		projectName := ""
+		if c.Project != nil {
+			projectName = c.Project.Name
+		}
+		items[i] = FeaturedCase{
+			ID:          c.ID,
+			Slug:        c.Slug,
+			Name:        c.Name,
+			CountryFrom: c.CountryFrom,
+			PhotoURL:    c.PhotoURL,
+			Content:     c.Content,
+			ProjectName: projectName,
+		}
+	}
+	// Sort by configured order
+	sortByOrder(items, func(item FeaturedCase) int {
+		if idx, ok := orderMap[item.ID]; ok {
+			return idx
+		}
+		return len(orderMap)
+	})
+	csc.FeaturedCases = items
+}
+
+func (s *HomeConfigService) loadFeaturedTestimonials(tsc *TestimonialShowcaseConfig) {
+	if len(tsc.FeaturedTestimonialIDs) == 0 || s.testimonialRepo == nil {
+		return
+	}
+	testimonials, err := s.testimonialRepo.FindByIDs(tsc.FeaturedTestimonialIDs)
+	if err != nil {
+		logging.Logger.Warn("home_config: failed to load featured testimonials", "error", err)
+		return
+	}
+	orderMap := make(map[uint64]int)
+	for i, id := range tsc.FeaturedTestimonialIDs {
+		orderMap[id] = i
+	}
+	items := make([]FeaturedTestimonial, len(testimonials))
+	for i, t := range testimonials {
+		items[i] = FeaturedTestimonial{
+			ID:        t.ID,
+			Nickname:  t.Nickname,
+			AvatarURL: t.AvatarURL,
+			Rating:    t.Rating,
+			Content:   t.Content,
+		}
+	}
+	sortByOrder(items, func(item FeaturedTestimonial) int {
+		if idx, ok := orderMap[item.ID]; ok {
+			return idx
+		}
+		return len(orderMap)
+	})
+	tsc.FeaturedTestimonials = items
+}
+
+func sortByOrder[T any](items []T, keyFn func(T) int) {
+	// insertion sort — items are small (typically < 10)
+	for i := 1; i < len(items); i++ {
+		j := i
+		for j > 0 && keyFn(items[j]) < keyFn(items[j-1]) {
+			items[j], items[j-1] = items[j-1], items[j]
+			j--
+		}
+	}
 }
 
 // SiteConfig holds all site-wide settings.

@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"mygo-immigration/backend/internal/logging"
 	"strings"
 	"sync"
 
@@ -216,7 +217,11 @@ func (s *NavService) lookupProjectSlug(id uint64) string {
 	}
 	projectSlugMu.RUnlock()
 
-	projects, _, _ := s.projectRepo.FindAll(1, 1000, "", "")
+	projects, _, err := s.projectRepo.FindAll(1, 1000, "", "")
+	if err != nil {
+		logging.Logger.Warn("nav: failed to lookup project slugs", "error", err)
+		return ""
+	}
 
 	projectSlugMu.Lock()
 	for _, p := range projects {
@@ -240,7 +245,11 @@ func (s *NavService) lookupPageSlug(id uint64) string {
 	}
 	pageSlugMu.RUnlock()
 
-	pages, _ := s.pageRepo.FindAll("", "", "")
+	pages, err := s.pageRepo.FindAll("", "", "")
+	if err != nil {
+		logging.Logger.Warn("nav: failed to lookup page slugs", "error", err)
+		return ""
+	}
 
 	pageSlugMu.Lock()
 	for _, p := range pages {

@@ -183,3 +183,106 @@ cd frontend && npx nuxi typecheck                     # 前端类型检查
 3. **变更前影响检查**: 修改任何公共接口（函数签名、API 路由、DTO 结构体、Vue composable/props/emits）时，必须先用 Grep 搜索所有引用点，列出影响报告并等待用户确认后，才能开始改代码。
 4. **防止回退**: 新增功能时不得破坏已有功能。改动完成后必须确认相关已有功能不受影响。
 5. **编译验证**: 每次后端改动完成后运行 `go build ./...` 验证编译通过。
+
+## API 接口规范 (2026-05-20 制定)
+
+**所有新增/修改接口必须严格遵循此规范。**
+
+### 1. 前后台接口隔离
+
+| 端 | 路由前缀 | 鉴权 | 说明 |
+|----|---------|------|------|
+| 前台（公开） | `/api/v1/<resource>` | 无需 auth | 仅供前台页面使用 |
+| 后台（管理） | `/api/v1/admin/<resource>` | 需 JWT + RBAC | 仅供后台页面使用 |
+
+**禁止事项:**
+- 前台页面不得调用 `/admin/` 前缀接口
+- 后台页面不得调用前台接口（无 `/admin/` 前缀）
+- admin 和 public 不得共用同一个 handler（即使逻辑相同，也需分离为两个方法）
+
+### 2. 响应格式规范
+
+**分页列表** → `PaginatedResponse` → `{code, data, message, pagination}`
+```go
+c.JSON(http.StatusOK, dto.SuccessPaginated(items, page, perPage, total))
+// pagination: { page, per_page, total }
+```
+
+**全量列表（?all=true）** → `Response` → `{code, data, message}`
+```go
+c.JSON(http.StatusOK, dto.Success(items))
+// data 为原始数组，不包装 pagination
+```
+
+**单条查询** → `Response` → `{code, data, message}`
+
+**创建/更新/删除** → `Response` → `{code, data, message}`
+
+### 3. ?all=true 模式
+
+- 所有 admin 列表接口必须同时支持分页和 `?all=true` 全量查询
+- `?all=true` 返回 `dto.Success(items)`（非分页），前端 `useApi()` 解包为原始数组
+- 不带 `?all=true` 时默认分页，返回 `dto.SuccessPaginated`，前端 `useApi()` 解包为 `{items, total, page, perPage}`
+
+Handler 模板：
+```go
+func (h *Handler) AdminListXXX(c *gin.Context) {
+    if c.Query("all") == "true" {
+        items, _, err := h.svc.XXX.List(1, 1000, ...)
+        // ...
+        c.JSON(http.StatusOK, dto.Success(items))
+        return
+    }
+    page, perPage := parsePagination(c)
+    items, total, err := h.svc.XXX.List(page, perPage, ...)
+    c.JSON(http.StatusOK, dto.SuccessPaginated(items, page, perPage, total))
+}
+```
+
+### 4. 前端 API 调用规则
+
+| 端 | 调用方式 | 解包行为 |
+|----|---------|---------|
+| 前台页面 | `useFetch` / `$fetch` 直接调用 | 手动访问 `response.data` |
+| 后台页面 | `useApi()` composable | 自动解包：paginated→`{items,total}`，非分页→原始数据 |
+
+**后台页面 `?all=true` 调用模板**：
+```typescript
+const api = useApi()
+const data = await api<ItemType[]>('/admin/resource?all=true')
+// data 为 ItemType[]，直接使用，无需 .items
+```
+
+### 5. 路由注册顺序
+
+- 字面量路由在参数化路由之前注册（如 `/projects/compare` 在 `/projects/:slug` 之前）
+- 公开路由和 admin 路由分属不同 `gin.RouterGroup`
+
+### 6. 现有接口状态速查
+
+| 接口 | 分页? | ?all=true? | Handler 方法 |
+|------|-------|-------------|-------------|
+| `GET /projects` | ✓ | — | `ListProjects` |
+| `GET /faqs` | ✗ (全量) | — | `ListFAQs` |
+| `GET /cases` | ✗ (全量) | — | `ListCases` |
+| `GET /testimonials` | ✗ (全量) | — | `ListAllTestimonials` |
+| `GET /lawyers` | ✗ (全量) | — | `ListLawyers` |
+| `GET /home-config` | ✗ | — | `GetHomeConfig` (公共) |
+| `GET /site-config` | ✗ | — | `GetSiteConfig` (公共) |
+| `GET /navigation` | ✗ (树) | — | `GetNavigation` |
+| `GET /admin/projects` | ✓ | ✓ | `AdminListProjects` |
+| `GET /admin/faqs` | ✓ | ✗ | `AdminListFAQs` |
+| `GET /admin/pages` | ✓ | ✓ | `AdminListPages` |
+| `GET /admin/cases` | ✓ | ✓ | `AdminListCases` |
+| `GET /admin/lawyers` | ✓ | ✓ | `AdminListLawyers` |
+| `GET /admin/testimonials` | ✗ (全量) | — | `AdminListTestimonials` |
+| `GET /admin/leads` | ✓ | ✗ | `AdminListLeads` |
+| `GET /admin/users` | ✓ | ✗ | `AdminListUsers` |
+| `GET /admin/media` | ✓ | ✗ | `ListMedia` |
+| `GET /admin/navigation` | ✗ (树) | — | `AdminListNavigationTree` |
+| `GET /admin/home-config` | ✗ | — | `GetAdminHomeConfig` |
+| `GET /admin/site-config` | ✗ | — | `GetSiteConfig` |
+| `GET /admin/compare-fields` | ✗ | — | `ListCompareFields` |
+| `GET /admin/dashboard/stats` | ✗ | — | `DashboardStats` |
+
+**新增接口时，将新条目追加到此表。**

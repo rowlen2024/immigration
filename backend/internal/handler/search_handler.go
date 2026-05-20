@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"mygo-immigration/backend/internal/dto"
+	"mygo-immigration/backend/internal/logging"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,7 +18,8 @@ func (h *Handler) Search(c *gin.Context) {
 
 	results, err := h.svc.Search.Search(q)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in Search", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 

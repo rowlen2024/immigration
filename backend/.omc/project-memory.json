@@ -18,8 +18,8 @@
     "runtime": null
   },
   "build": {
-    "buildCommand": "cd \"D:\\mygo\\src\\web\\immigration\\backend\" && go build ./... 2>&1",
-    "testCommand": "go build ./... && go test ./internal/... -run TestFAQ 2>&1 | tail -5",
+    "buildCommand": "cd /d/mygo/src/web/immigration/backend && go build ./...",
+    "testCommand": "go test ./... -v 2>&1 | tail -50",
     "lintCommand": null,
     "devCommand": null,
     "scripts": {}
@@ -92,14 +92,14 @@
   "hotPaths": [
     {
       "path": "",
-      "accessCount": 31,
-      "lastAccessed": 1778922297304,
+      "accessCount": 45,
+      "lastAccessed": 1779289189731,
       "type": "directory"
     },
     {
       "path": "internal\\router\\router.go",
-      "accessCount": 28,
-      "lastAccessed": 1778920265289,
+      "accessCount": 30,
+      "lastAccessed": 1779288395935,
       "type": "file"
     },
     {
@@ -110,14 +110,20 @@
     },
     {
       "path": "internal\\service\\project_svc.go",
-      "accessCount": 20,
-      "lastAccessed": 1778989639363,
+      "accessCount": 21,
+      "lastAccessed": 1779286607304,
       "type": "file"
     },
     {
       "path": "internal\\service\\service.go",
+      "accessCount": 18,
+      "lastAccessed": 1779284448117,
+      "type": "file"
+    },
+    {
+      "path": "internal\\service\\nav_svc.go",
       "accessCount": 17,
-      "lastAccessed": 1778906434534,
+      "lastAccessed": 1779288333335,
       "type": "file"
     },
     {
@@ -127,39 +133,33 @@
       "type": "file"
     },
     {
-      "path": "internal\\service\\nav_svc.go",
-      "accessCount": 16,
-      "lastAccessed": 1778394796866,
-      "type": "file"
-    },
-    {
-      "path": "internal\\database\\mysql.go",
-      "accessCount": 13,
-      "lastAccessed": 1778905957881,
-      "type": "file"
-    },
-    {
       "path": "internal\\handler\\page_handler.go",
-      "accessCount": 13,
-      "lastAccessed": 1778920136674,
+      "accessCount": 15,
+      "lastAccessed": 1779282556571,
       "type": "file"
     },
     {
       "path": "internal\\repository\\interfaces.go",
-      "accessCount": 13,
-      "lastAccessed": 1778920220666,
+      "accessCount": 15,
+      "lastAccessed": 1779288381511,
+      "type": "file"
+    },
+    {
+      "path": "internal\\database\\mysql.go",
+      "accessCount": 14,
+      "lastAccessed": 1779284459823,
       "type": "file"
     },
     {
       "path": "internal\\handler\\project_handler.go",
-      "accessCount": 11,
-      "lastAccessed": 1778989624735,
+      "accessCount": 14,
+      "lastAccessed": 1779286607363,
       "type": "file"
     },
     {
       "path": "internal\\repository\\project_repo.go",
-      "accessCount": 11,
-      "lastAccessed": 1778989669862,
+      "accessCount": 14,
+      "lastAccessed": 1779286701881,
       "type": "file"
     },
     {
@@ -176,8 +176,26 @@
     },
     {
       "path": "internal\\dto\\response.go",
+      "accessCount": 10,
+      "lastAccessed": 1779288355308,
+      "type": "file"
+    },
+    {
+      "path": "internal\\repository",
+      "accessCount": 10,
+      "lastAccessed": 1779288372056,
+      "type": "directory"
+    },
+    {
+      "path": "internal\\service\\home_config_svc.go",
+      "accessCount": 10,
+      "lastAccessed": 1779289197324,
+      "type": "file"
+    },
+    {
+      "path": "internal\\repository\\repository.go",
       "accessCount": 9,
-      "lastAccessed": 1778906512360,
+      "lastAccessed": 1779284448212,
       "type": "file"
     },
     {
@@ -187,16 +205,22 @@
       "type": "file"
     },
     {
-      "path": "internal\\repository\\repository.go",
+      "path": "internal\\handler\\case_handler.go",
       "accessCount": 8,
-      "lastAccessed": 1778920182141,
+      "lastAccessed": 1779282469069,
       "type": "file"
     },
     {
-      "path": "internal\\repository",
+      "path": "internal\\handler\\faq_handler.go",
       "accessCount": 8,
-      "lastAccessed": 1778920189379,
-      "type": "directory"
+      "lastAccessed": 1779282556177,
+      "type": "file"
+    },
+    {
+      "path": "internal\\handler\\nav_handler.go",
+      "accessCount": 8,
+      "lastAccessed": 1779288333278,
+      "type": "file"
     },
     {
       "path": "internal\\handler\\user_handler.go",
@@ -211,12 +235,6 @@
       "type": "file"
     },
     {
-      "path": "internal\\service\\home_config_svc.go",
-      "accessCount": 6,
-      "lastAccessed": 1777881442343,
-      "type": "file"
-    },
-    {
       "path": "internal\\model\\page.go",
       "accessCount": 6,
       "lastAccessed": 1778393635228,
@@ -226,12 +244,6 @@
       "path": "internal\\handler\\page_handler_test.go",
       "accessCount": 6,
       "lastAccessed": 1778394620073,
-      "type": "file"
-    },
-    {
-      "path": "internal\\handler\\faq_handler.go",
-      "accessCount": 6,
-      "lastAccessed": 1778764350240,
       "type": "file"
     },
     {
@@ -271,15 +283,15 @@
       "type": "file"
     },
     {
-      "path": "internal\\handler\\nav_handler.go",
+      "path": "internal\\model\\navigation.go",
       "accessCount": 5,
-      "lastAccessed": 1777961780163,
+      "lastAccessed": 1779288320171,
       "type": "file"
     },
     {
       "path": "internal\\handler\\home_handler.go",
-      "accessCount": 4,
-      "lastAccessed": 1777881442390,
+      "accessCount": 5,
+      "lastAccessed": 1779289197307,
       "type": "file"
     },
     {
@@ -289,15 +301,21 @@
       "type": "file"
     },
     {
-      "path": "internal\\model\\navigation.go",
-      "accessCount": 4,
-      "lastAccessed": 1777961796457,
-      "type": "file"
-    },
-    {
       "path": "internal\\handler\\handler.go",
       "accessCount": 4,
       "lastAccessed": 1778906512336,
+      "type": "file"
+    },
+    {
+      "path": "internal\\model\\project.go",
+      "accessCount": 4,
+      "lastAccessed": 1779284448273,
+      "type": "file"
+    },
+    {
+      "path": "internal\\repository\\nav_repo.go",
+      "accessCount": 4,
+      "lastAccessed": 1779288355372,
       "type": "file"
     },
     {
@@ -313,27 +331,9 @@
       "type": "file"
     },
     {
-      "path": "internal\\handler\\case_handler.go",
-      "accessCount": 3,
-      "lastAccessed": 1777817404573,
-      "type": "file"
-    },
-    {
       "path": "internal\\handler\\media_handler.go",
       "accessCount": 3,
       "lastAccessed": 1777817417090,
-      "type": "file"
-    },
-    {
-      "path": "internal\\repository\\nav_repo.go",
-      "accessCount": 3,
-      "lastAccessed": 1777947431457,
-      "type": "file"
-    },
-    {
-      "path": "internal\\model\\project.go",
-      "accessCount": 3,
-      "lastAccessed": 1778398805084,
       "type": "file"
     },
     {

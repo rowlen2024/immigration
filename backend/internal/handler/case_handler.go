@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"mygo-immigration/backend/internal/dto"
+	"mygo-immigration/backend/internal/logging"
 	"mygo-immigration/backend/internal/model"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +24,8 @@ func (h *Handler) GetCase(c *gin.Context) {
 func (h *Handler) ListCases(c *gin.Context) {
 	cases, err := h.svc.Case.List()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in ListCases", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -31,12 +33,24 @@ func (h *Handler) ListCases(c *gin.Context) {
 }
 
 func (h *Handler) AdminListCases(c *gin.Context) {
-	page, perPage := parsePagination(c)
 	search := c.Query("search")
 
+	if c.Query("all") == "true" {
+		cases, _, err := h.svc.Case.AdminList(1, 1000, search)
+		if err != nil {
+			logging.Logger.Error("failed in AdminListCases", "error", err)
+			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+			return
+		}
+		c.JSON(http.StatusOK, dto.Success(cases))
+		return
+	}
+
+	page, perPage := parsePagination(c)
 	cases, total, err := h.svc.Case.AdminList(page, perPage, search)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in AdminListCases", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -50,9 +64,11 @@ func (h *Handler) CreateCase(c *gin.Context) {
 		return
 	}
 
+	caseModel.ID = 0 // ensure DB auto-increment is used
 	created, err := h.svc.Case.Create(&caseModel)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in CreateCase", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -74,7 +90,8 @@ func (h *Handler) UpdateCase(c *gin.Context) {
 
 	updated, err := h.svc.Case.Update(id, &caseModel)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in UpdateCase", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -89,7 +106,8 @@ func (h *Handler) DeleteCase(c *gin.Context) {
 	}
 
 	if err := h.svc.Case.Delete(id); err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in DeleteCase", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -106,7 +124,8 @@ func (h *Handler) ListProjectCases(c *gin.Context) {
 
 	cases, err := h.svc.Case.ListByProject(projectID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in ListProjectCases", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -126,11 +145,13 @@ func (h *Handler) CreateProjectCase(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request"))
 		return
 	}
+	caseModel.ID = 0 // ensure DB auto-increment is used
 	caseModel.ProjectID = &projectID
 
 	created, err := h.svc.Case.Create(&caseModel)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in CreateProjectCase", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -153,7 +174,8 @@ func (h *Handler) UpdateProjectCase(c *gin.Context) {
 
 	updated, err := h.svc.Case.Update(caseID, &caseModel)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in UpdateProjectCase", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
@@ -169,7 +191,8 @@ func (h *Handler) DeleteProjectCase(c *gin.Context) {
 	}
 
 	if err := h.svc.Case.HardDelete(caseID); err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Error(500, err.Error()))
+		logging.Logger.Error("failed in DeleteProjectCase", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 

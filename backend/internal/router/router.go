@@ -30,6 +30,7 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		api.GET("/projects", h.ListProjects)
 		api.GET("/projects/:slug", h.GetProject)
 		api.GET("/projects/compare", h.CompareProjects)
+		api.GET("/faqs/projects", h.ListFAQProjects)
 		api.GET("/faqs", h.ListFAQs)
 		api.GET("/pages", h.ListPages)
 		api.GET("/pages/*slug", h.GetPage)
@@ -124,6 +125,8 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			admin.PUT("/lawyers/:id", middleware.RBAC("content:write"), h.UpdateLawyer)
 			admin.DELETE("/lawyers/:id", middleware.RBAC("content:write"), h.DeleteLawyer)
 
+			admin.GET("/testimonials", middleware.RBAC("admin:read"), h.AdminListTestimonials)
+
 			admin.GET("/compare-fields", middleware.RBAC("admin:read"), h.ListCompareFields)
 			admin.GET("/leads", middleware.RBAC("leads:read"), h.AdminListLeads)
 			admin.PUT("/leads/:id", middleware.RBAC("leads:read"), h.UpdateLead)
@@ -136,9 +139,10 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			admin.GET("/media", middleware.RBAC("content:write"), h.ListMedia)
 			admin.DELETE("/media/:id", middleware.RBAC("content:write"), h.DeleteMedia)
 
-			admin.GET("/home-config", middleware.RBAC("admin:read"), h.GetHomeConfig)
+			admin.GET("/home-config", middleware.RBAC("admin:read"), h.GetAdminHomeConfig)
 			admin.PUT("/home-config", middleware.RBAC("content:write"), h.UpdateHomeConfig)
 
+			admin.GET("/site-config", middleware.RBAC("admin:read"), h.GetSiteConfig)
 			admin.PUT("/site-config", middleware.RBAC("content:write"), h.UpdateSiteConfig)
 
 			admin.GET("/navigation", middleware.RBAC("admin:read"), h.AdminListNavigationTree)

@@ -5,30 +5,59 @@
       <el-button type="primary" @click="openAdd">新增律师</el-button>
     </div>
 
-    <el-table :data="lawyers" stripe v-loading="loading" class="admin-table">
-      <el-table-column label="照片" width="90">
-        <template #default="{ row }">
-          <img v-if="row.photo_url" :src="row.photo_url" class="lawyer-thumb" />
-          <span v-else class="no-photo">—</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="name" label="姓名" width="100" />
-      <el-table-column prop="title" label="身份" min-width="140" />
-      <el-table-column label="标签" min-width="200">
-        <template #default="{ row }">
-          <el-tag v-for="tag in row.tags" :key="tag" size="small" class="tag-chip">{{ tag }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="sort_order" label="排序" width="70" />
-      <el-table-column label="操作" width="220">
-        <template #default="{ row, $index }">
-          <el-button size="small" @click="moveUp($index)" :disabled="$index === 0">↑</el-button>
-          <el-button size="small" @click="moveDown($index)" :disabled="$index === lawyers.length - 1">↓</el-button>
-          <el-button size="small" @click="openEdit(row)">编辑</el-button>
-          <el-button size="small" type="danger" @click="removeLawyer(row.id)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <div class="admin-toolbar">
+      <el-input
+        v-model="searchQuery"
+        placeholder="搜索姓名..."
+        :prefix-icon="Search"
+        clearable
+        class="admin-search-input"
+        @input="onSearch"
+      />
+      <el-button :icon="Refresh" circle @click="searchQuery='';loadList()" :loading="loading" />
+    </div>
+
+    <div class="admin-table-wrap">
+      <el-table :data="lawyers" stripe v-loading="loading" class="admin-table">
+        <el-table-column label="照片" width="90">
+          <template #default="{ row }">
+            <img v-if="row.photo_url" :src="row.photo_url" class="lawyer-thumb" />
+            <span v-else class="no-photo">—</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="name" label="姓名" width="100" />
+        <el-table-column prop="title" label="身份" min-width="140" />
+        <el-table-column label="标签" min-width="200">
+          <template #default="{ row }">
+            <el-tag v-for="tag in row.tags" :key="tag" size="small" class="tag-chip">{{ tag }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="sort_order" label="排序" width="70" />
+        <el-table-column label="操作" width="140" fixed="right">
+          <template #default="{ row }">
+            <div class="table-actions">
+              <button class="action-btn" @click="openEdit(row)">编辑</button>
+              <el-popconfirm title="确定删除该律师？" confirm-button-text="删除" cancel-button-text="取消" @confirm="removeLawyer(row.id)">
+                <template #reference>
+                  <button class="action-btn danger">删除</button>
+                </template>
+              </el-popconfirm>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+
+    <div v-if="!loading && lawyers.length === 0" class="admin-empty-state">
+      <div class="empty-icon" v-html="getIconSvg('users', 48)"></div>
+      <div class="empty-title">暂无律师</div>
+      <div class="empty-desc">点击上方按钮添加第一位律师</div>
+      <el-button type="primary" @click="openAdd">新增律师</el-button>
+    </div>
+
+    <div class="admin-pagination-wrap" v-if="total > pageSize">
+      <el-pagination v-model:current-page="page" :page-size="pageSize" :total="total" layout="total, prev, pager, next" @current-change="loadList" />
+    </div>
 
     <el-drawer
       v-model="dialogVisible"
@@ -55,6 +84,9 @@
             <el-button size="small" @click="form.tags.push('')">+ 添加标签</el-button>
           </div>
         </el-form-item>
+        <el-form-item label="排序">
+          <el-input-number v-model="form.sort_order" :min="0" />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -66,6 +98,10 @@
 
 <script setup lang="ts">
 definePageMeta({ layout: 'admin', middleware: ['auth'] });
+import { Search, Refresh } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
+import { getIconSvg } from '~/composables/lucideIcons';
+import { useNotify } from '~/composables/useNotify';
 import ImageInput from '~/components/admin/ImageInput.vue';
 
 interface Lawyer {
@@ -77,31 +113,54 @@ interface Lawyer {
   sort_order: number;
 }
 
+const notify = useNotify();
+
 const lawyers = ref<Lawyer[]>([]);
 const loading = ref(true);
+const page = ref(1);
+const pageSize = ref(10);
+const total = ref(0);
 
 const dialogVisible = ref(false);
 const editingId = ref<number | null>(null);
-const form = ref<{ photo_url: string; name: string; title: string; tags: string[] }>({
+const form = ref<{ photo_url: string; name: string; title: string; tags: string[]; sort_order: number }>({
   photo_url: '',
   name: '',
   title: '',
   tags: [''],
+  sort_order: 0,
 });
 
-const load = async () => {
+const searchQuery = ref('');
+
+let searchTimer: ReturnType<typeof setTimeout>;
+const onSearch = () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    page.value = 1;
+    loadList();
+  }, 300);
+};
+
+const loadList = async () => {
   loading.value = true;
   try {
     const api = useApi();
-    const data = await api<Lawyer[]>('/admin/lawyers');
-    if (Array.isArray(data)) lawyers.value = data;
-  } catch { /* ignore */ }
-  finally { loading.value = false; }
+    let url = `/admin/lawyers?page=${page.value}&per_page=${pageSize.value}`;
+    if (searchQuery.value) url += `&search=${encodeURIComponent(searchQuery.value)}`;
+    const data = await api<{ items: Lawyer[]; total: number }>(url);
+    lawyers.value = data.items ?? [];
+    total.value = data.total ?? 0;
+  } catch {
+    lawyers.value = [];
+  } finally {
+    loading.value = false;
+  }
 };
 
 function openAdd() {
   editingId.value = null;
-  form.value = { photo_url: '', name: '', title: '', tags: [''] };
+  form.value = { photo_url: '', name: '', title: '', tags: [''], sort_order: 0 };
   dialogVisible.value = true;
 }
 
@@ -112,6 +171,7 @@ function openEdit(row: Lawyer) {
     name: row.name,
     title: row.title,
     tags: row.tags.length > 0 ? [...row.tags] : [''],
+    sort_order: row.sort_order,
   };
   dialogVisible.value = true;
 }
@@ -125,62 +185,28 @@ async function saveLawyer() {
     const api = useApi();
     if (editingId.value) {
       await api(`/admin/lawyers/${editingId.value}`, { method: 'PUT', body: form.value });
-      ElMessage.success('已更新');
+      notify.success('已更新');
     } else {
       await api('/admin/lawyers', { method: 'POST', body: form.value });
-      ElMessage.success('已添加');
+      notify.success('已添加');
     }
     dialogVisible.value = false;
-    await load();
-  } catch { ElMessage.error('操作失败'); }
+    await loadList();
+  } catch (e) { notify.error(e, '操作失败'); }
 }
 
 async function removeLawyer(id: number) {
   try {
-    await ElMessageBox.confirm('确定删除该律师？', '确认', { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' });
     const api = useApi();
     await api(`/admin/lawyers/${id}`, { method: 'DELETE' });
-    ElMessage.success('已删除');
-    await load();
-  } catch { /* cancelled */ }
+    notify.success('已删除');
+    await loadList();
+  } catch (e) { notify.error(e, '操作失败'); }
 }
 
-async function moveUp(index: number) {
-  if (index === 0) return;
-  const items = [...lawyers.value];
-  [items[index], items[index - 1]] = [items[index - 1], items[index]];
-  lawyers.value = items;
-  await syncSort();
-}
-
-async function moveDown(index: number) {
-  if (index === lawyers.value.length - 1) return;
-  const items = [...lawyers.value];
-  [items[index], items[index + 1]] = [items[index + 1], items[index]];
-  lawyers.value = items;
-  await syncSort();
-}
-
-async function syncSort() {
-  try {
-    const api = useApi();
-    for (let i = 0; i < lawyers.value.length; i++) {
-      const item = lawyers.value[i];
-      await api(`/admin/lawyers/${item.id}`, {
-        method: 'PUT',
-        body: {
-          photo_url: item.photo_url,
-          name: item.name,
-          title: item.title,
-          tags: item.tags,
-          sort_order: i + 1,
-        },
-      });
-    }
-  } catch { ElMessage.error('排序更新失败'); }
-}
-
-onMounted(load);
+onMounted(() => {
+  loadList();
+});
 </script>
 
 <style scoped>

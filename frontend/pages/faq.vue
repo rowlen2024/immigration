@@ -108,7 +108,7 @@ const fetchFaqs = async () => {
 const projectFilters = ref<{ id: number; slug: string; label: string }[]>([]);
 const fetchProjects = async () => {
   try {
-    const res = await $fetch<any>('/api/v1/projects?per_page=100');
+    const res = await $fetch<any>('/api/v1/faqs/projects');
     const list = res?.data ?? [];
     projectFilters.value = list.map((p: any) => ({ id: p.id, slug: p.slug, label: p.name }));
   } catch { /* keep filters empty if projects API fails */ }

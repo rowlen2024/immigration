@@ -132,7 +132,7 @@
             :slug="item.slug"
             :name="item.name"
             :country="item.country_from"
-            :project="item.project?.name"
+            :project="item.project_name"
             :summary="stripHtml(item.content)"
             :image="item.photo_url"
           />
@@ -253,35 +253,11 @@ const defaultSlides: HeroSlide[] = [
 
 const heroSlides = ref<HeroSlide[]>(defaultSlides);
 
-// Fetch home config and projects
+// Fetch home config (now includes featured projects/cases/testimonials embedded)
 const { data: homeConfig, pending: pendingHome } = await useFetch('/api/v1/home-config', {
   onResponseError() {
     // Use defaults if API fails
   },
-});
-
-const { data: projectsData, pending: pendingProjects, error: errorProjectsRaw } = await useFetch<{
-  data?: Array<{ name: string; slug: string; tagline: string; overview_text: string; cover_image: string }>;
-}>('/api/v1/projects', {
-  onResponseError() {
-    // Use defaults if API fails
-  },
-});
-
-interface CaseItem {
-  id: number;
-  slug: string;
-  name: string;
-  country_from: string;
-  photo_url: string;
-  content: string;
-  project?: { name: string };
-}
-
-const { data: casesData, pending: pendingCases, error: errorCasesRaw } = await useFetch<{
-  data?: CaseItem[];
-}>('/api/v1/cases', {
-  onResponseError() {},
 });
 
 interface LawyerItem {
@@ -291,18 +267,6 @@ interface LawyerItem {
   title: string;
   tags: string[];
 }
-
-interface TestimonialItem {
-  id: number;
-  nickname: string;
-  avatar_url: string;
-  rating: number;
-  content: string;
-}
-
-const { data: testimonialsData } = await useFetch<{ data?: TestimonialItem[] }>('/api/v1/testimonials', {
-  onResponseError() {},
-});
 
 const { data: lawyersData } = await useFetch<{ data?: LawyerItem[] }>('/api/v1/lawyers', {
   onResponseError() {},
@@ -314,13 +278,13 @@ const lawyers = computed<LawyerItem[]>(() => {
 });
 
 const pending = computed(() => ({
-  projects: pendingProjects.value,
-  cases: pendingCases.value,
+  projects: pendingHome.value,
+  cases: pendingHome.value,
 }));
 
 const error = computed(() => ({
-  projects: errorProjectsRaw.value ? '加载失败，请刷新重试' : null,
-  cases: errorCasesRaw.value ? '加载失败，请刷新重试' : null,
+  projects: null,
+  cases: null,
 }));
 
 // Override slides from API if available
@@ -377,25 +341,21 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').slice(0, 80);
 }
 
-const featuredCases = computed<CaseItem[]>(() => {
-  const apiData = casesData.value as { data?: CaseItem[] } | null;
-  const all = apiData?.data ?? [];
-  if (all.length === 0) return [];
+interface FeaturedCaseData {
+  id: number;
+  slug: string;
+  name: string;
+  country_from: string;
+  photo_url: string;
+  content: string;
+  project_name: string;
+}
 
-  const featured = caseShowcaseConfig.value?.featured_case_ids;
-  if (featured && featured.length > 0) {
-    const orderMap = new Map(featured.map((id: number, i: number) => [id, i]));
-    return all
-      .filter((c) => orderMap.has(c.id))
-      .sort((a, b) => {
-        const ai = orderMap.get(a.id);
-        const bi = orderMap.get(b.id);
-        if (ai !== undefined && bi !== undefined) return ai - bi;
-        return 0;
-      });
-  }
-
-  return all;
+const featuredCases = computed<FeaturedCaseData[]>(() => {
+  const config = homeConfig.value as unknown as Record<string, unknown> | null;
+  const data = config?.data as Record<string, unknown> | undefined;
+  const showcase = data?.case_showcase as { featured_cases?: FeaturedCaseData[] } | undefined;
+  return showcase?.featured_cases ?? [];
 });
 
 const testimonialShowcaseConfig = computed(() => {
@@ -416,25 +376,19 @@ const testimonialShowcaseConfig = computed(() => {
 const testimonialTitle = computed(() => testimonialShowcaseConfig.value?.section_title || '客户评价');
 const testimonialSubtitle = computed(() => testimonialShowcaseConfig.value?.section_subtitle || '');
 
-const featuredTestimonials = computed<TestimonialItem[]>(() => {
-  const apiData = testimonialsData.value as { data?: TestimonialItem[] } | null;
-  const all = apiData?.data ?? [];
-  if (all.length === 0) return [];
+interface FeaturedTestimonialData {
+  id: number;
+  nickname: string;
+  avatar_url: string;
+  rating: number;
+  content: string;
+}
 
-  const featured = testimonialShowcaseConfig.value?.featured_testimonial_ids;
-  if (featured && featured.length > 0) {
-    const orderMap = new Map(featured.map((id: number, i: number) => [id, i]));
-    return all
-      .filter((t) => orderMap.has(t.id))
-      .sort((a, b) => {
-        const ai = orderMap.get(a.id);
-        const bi = orderMap.get(b.id);
-        if (ai !== undefined && bi !== undefined) return ai - bi;
-        return 0;
-      });
-  }
-
-  return all;
+const featuredTestimonials = computed<FeaturedTestimonialData[]>(() => {
+  const config = homeConfig.value as unknown as Record<string, unknown> | null;
+  const data = config?.data as Record<string, unknown> | undefined;
+  const showcase = data?.testimonial_showcase as { featured_testimonials?: FeaturedTestimonialData[] } | undefined;
+  return showcase?.featured_testimonials ?? [];
 });
 
 const advantageSection = computed(() => {
@@ -519,14 +473,22 @@ interface ProjectCard {
   link: string;
 }
 
-const projectCards = computed<ProjectCard[]>(() => {
-  const apiProjects = (projectsData.value as unknown as {
-    data?: Array<{ name: string; slug: string; tagline: string; overview_text: string; cover_image: string }>;
-  })?.data;
+interface FeaturedProjectData {
+  name: string;
+  slug: string;
+  tagline: string;
+  cover_image: string;
+  overview_text: string;
+}
 
-  if (apiProjects && apiProjects.length > 0) {
-    const featured = showcaseConfig.value?.featured_slugs;
-    let items: ProjectCard[] = apiProjects.map((p) => ({
+const projectCards = computed<ProjectCard[]>(() => {
+  const config = homeConfig.value as unknown as Record<string, unknown> | null;
+  const data = config?.data as Record<string, unknown> | undefined;
+  const showcase = data?.project_showcase as { featured_projects?: FeaturedProjectData[] } | undefined;
+  const items = showcase?.featured_projects;
+
+  if (items && items.length > 0) {
+    return items.map((p) => ({
       slug: p.slug,
       title: p.name,
       description: p.tagline || p.overview_text || '',
@@ -534,20 +496,6 @@ const projectCards = computed<ProjectCard[]>(() => {
       features: [],
       link: `/projects/${p.slug}`,
     }));
-
-    if (featured && featured.length > 0) {
-      const orderMap = new Map(featured.map((s: string, i: number) => [s, i]));
-      items.sort((a, b) => {
-        const ai = orderMap.get(a.slug);
-        const bi = orderMap.get(b.slug);
-        if (ai !== undefined && bi !== undefined) return ai - bi;
-        if (ai !== undefined) return -1;
-        if (bi !== undefined) return 1;
-        return 0;
-      });
-    }
-
-    return items;
   }
 
   return [
