@@ -59,6 +59,14 @@ func (r *NavRepo) HasChildren(parentID uint64) (bool, error) {
 	return count > 0, err
 }
 
+func (r *NavRepo) FindByParentID(parentID uint64) ([]model.Navigation, error) {
+	var items []model.Navigation
+	err := r.db.Where("parent_id = ? AND deleted_at IS NULL", parentID).
+		Order("sort_order asc, id asc").
+		Find(&items).Error
+	return items, err
+}
+
 func (r *NavRepo) CountByProjectID(projectID uint64) (int64, error) {
 	var count int64
 	err := r.db.Model(&model.Navigation{}).

@@ -1,7 +1,7 @@
 {
-  "tool_name": "Read",
-  "tool_input_preview": "{\"file_path\":\"D:\\\\mygo\\\\src\\\\web\\\\immigration\\\\backend\\\\frontend\\\\pages\\\\admin\\\\navigation.vue\"}",
-  "error": "File does not exist. Note: your current working directory is D:\\mygo\\src\\web\\immigration\\backend.",
-  "timestamp": "2026-05-20T14:45:20.240Z",
+  "tool_name": "PowerShell",
+  "tool_input_preview": "{\"command\":\"Set-Location \\\"D:\\\\mygo\\\\src\\\\immigration\\\\backend\\\"; go test ./... -v -count=1 2>&1\",\"timeout\":120000,\"description\":\"运行后端测试\"}",
+  "error": "Exit code 1\ngo : # mygo-immigration/backend/internal/service [mygo-immigration/backend/internal/service.test]\r\nAt line:1 char:49\r\n+ ... ion \"D:\\mygo\\src\\immigration\\backend\"; go test ./... -v -count=1 2>&1\r\n+                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (# mygo-immigrat...l/service.test]:String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\ninternal\\service\\faq_svc_test.go:69:23: cannot use repo...",
+  "timestamp": "2026-05-21T02:16:25.124Z",
   "retry_count": 1
 }

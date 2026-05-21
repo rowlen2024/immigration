@@ -274,7 +274,7 @@ const defaultForm = (): {
   link_type: 'custom',
   project_id: null,
   page_id: null,
-  parent_id: null,
+  parent_id: ROOT_PARENT_ID,
   sort_order: 0,
   status: true,
   display_position: 'header',
@@ -333,12 +333,17 @@ const rules = computed<FormRules>(() => ({
     : [],
 }));
 
+const ROOT_PARENT_ID = 0;
+
 const parentOptions = computed(() => {
   const filterOut = (items: NavItem[]): NavItem[] =>
     items
       .filter((item) => item.id !== editingId.value)
       .map((item) => ({ ...item, children: filterOut(item.children || []) }));
-  return filterOut(treeData.value);
+  return [
+    { id: ROOT_PARENT_ID, label: '根节点（顶级）', link: null, link_type: 'custom', project_id: null, page_id: null, parent_id: null, sort_order: 0, status: true, children: [] as NavItem[] },
+    ...filterOut(treeData.value),
+  ];
 });
 
 const filterTree = (items: NavItem[]): NavItem[] => {
@@ -422,7 +427,7 @@ const openEdit = (row: NavItem) => {
     link_type: row.link_type || 'custom',
     project_id: row.project_id,
     page_id: row.page_id,
-    parent_id: row.parent_id,
+    parent_id: row.parent_id ?? ROOT_PARENT_ID,
     sort_order: row.sort_order,
     status: row.status,
     display_position: row.display_position || 'header',
@@ -440,7 +445,7 @@ const handleSave = async () => {
     const body: Record<string, any> = {
       label: form.label,
       link_type: form.link_type,
-      parent_id: form.parent_id,
+      parent_id: form.parent_id === ROOT_PARENT_ID ? null : form.parent_id,
       sort_order: form.sort_order,
       status: form.status,
       display_position: form.display_position,

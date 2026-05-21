@@ -101,6 +101,16 @@ func (s *NavService) Update(id uint64, nav *model.Navigation) (*model.Navigation
 		if d+1 > 3 {
 			return nil, fmt.Errorf("导航最大层级为3级")
 		}
+		// 若父级发生变更，还需校验整棵子树不会超出三级
+		if existing.ParentID == nil || *nav.ParentID != *existing.ParentID {
+			subtreeDepth, err := s.getSubtreeMaxDepth(id)
+			if err != nil {
+				return nil, fmt.Errorf("获取子树深度失败")
+			}
+			if d+subtreeDepth > 3 {
+				return nil, fmt.Errorf("导航最大层级为3级，移动此节点将导致子节点超出层级限制")
+			}
+		}
 	}
 	nav.ID = id
 	nav.CreatedAt = existing.CreatedAt
@@ -291,6 +301,29 @@ func (s *NavService) getDepth(navID *uint64) (int, error) {
 		depth++
 	}
 	return depth, nil
+}
+
+// getSubtreeMaxDepth 计算以 nodeID 为根的子树最大相对深度。
+// 叶子节点返回 1，有一层子节点返回 2，有孙节点返回 3。
+func (s *NavService) getSubtreeMaxDepth(nodeID uint64) (int, error) {
+	children, err := s.repo.FindByParentID(nodeID)
+	if err != nil {
+		return 0, err
+	}
+	if len(children) == 0 {
+		return 1, nil
+	}
+	maxChildDepth := 0
+	for _, child := range children {
+		childDepth, err := s.getSubtreeMaxDepth(child.ID)
+		if err != nil {
+			return 0, err
+		}
+		if childDepth > maxChildDepth {
+			maxChildDepth = childDepth
+		}
+	}
+	return 1 + maxChildDepth, nil
 }
 
 func (s *NavService) isDescendantOf(parentID uint64, targetID uint64) bool {

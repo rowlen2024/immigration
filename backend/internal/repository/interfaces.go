@@ -78,6 +78,7 @@ type NavigationRepository interface {
 	Update(nav *model.Navigation) error
 	Delete(id uint64) error
 	HasChildren(parentID uint64) (bool, error)
+	FindByParentID(parentID uint64) ([]model.Navigation, error)
 	CountByProjectID(projectID uint64) (int64, error)
 	CountByPageID(pageID uint64) (int64, error)
 }

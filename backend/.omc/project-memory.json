@@ -92,8 +92,8 @@
   "hotPaths": [
     {
       "path": "",
-      "accessCount": 45,
-      "lastAccessed": 1779289189731,
+      "accessCount": 46,
+      "lastAccessed": 1779330603197,
       "type": "directory"
     },
     {
@@ -115,15 +115,15 @@
       "type": "file"
     },
     {
-      "path": "internal\\service\\service.go",
-      "accessCount": 18,
-      "lastAccessed": 1779284448117,
+      "path": "internal\\service\\nav_svc.go",
+      "accessCount": 21,
+      "lastAccessed": 1779330377963,
       "type": "file"
     },
     {
-      "path": "internal\\service\\nav_svc.go",
-      "accessCount": 17,
-      "lastAccessed": 1779288333335,
+      "path": "internal\\service\\service.go",
+      "accessCount": 18,
+      "lastAccessed": 1779284448117,
       "type": "file"
     },
     {
@@ -295,6 +295,12 @@
       "type": "file"
     },
     {
+      "path": "internal\\repository\\nav_repo.go",
+      "accessCount": 5,
+      "lastAccessed": 1779330379650,
+      "type": "file"
+    },
+    {
       "path": "internal\\repository\\home_config_repo.go",
       "accessCount": 4,
       "lastAccessed": 1777947430640,
@@ -310,12 +316,6 @@
       "path": "internal\\model\\project.go",
       "accessCount": 4,
       "lastAccessed": 1779284448273,
-      "type": "file"
-    },
-    {
-      "path": "internal\\repository\\nav_repo.go",
-      "accessCount": 4,
-      "lastAccessed": 1779288355372,
       "type": "file"
     },
     {
