@@ -1,15 +1,17 @@
-package service
+﻿package service
 
 import (
 	"errors"
 	"strings"
 	"testing"
 
+	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
 )
 
 // mockPageRepo implements repository.PageRepository for testing.
 type mockPageRepo struct {
+	findByIDFn           func(id uint64) (*model.Page, error)
 	findBySlugFn          func(slug string) (*model.Page, error)
 	findAllFn             func(pageType, search, status string) ([]model.Page, error)
 	findByProjectIDFn     func(projectID uint64) ([]model.Page, error)
@@ -19,6 +21,13 @@ type mockPageRepo struct {
 	updateFn              func(page *model.Page) error
 	deleteFn              func(id uint64) error
 	searchFn              func(keyword string) ([]model.Page, error)
+}
+
+func (m *mockPageRepo) FindByID(id uint64) (*model.Page, error) {
+	if m.findByIDFn != nil {
+		return m.findByIDFn(id)
+	}
+	return nil, errors.New("not found")
 }
 
 func (m *mockPageRepo) FindBySlug(slug string) (*model.Page, error) {
@@ -228,6 +237,9 @@ func TestPage_Create_MissingSlug(t *testing.T) {
 func TestPage_Update_Success(t *testing.T) {
 	var savedContent string
 	repo := &mockPageRepo{
+		findByIDFn: func(id uint64) (*model.Page, error) {
+			return &model.Page{ID: id, Slug: "existing", Title: "Old", Content: ""}, nil
+		},
 		updateFn: func(page *model.Page) error {
 			savedContent = page.Content
 			return nil
@@ -236,7 +248,7 @@ func TestPage_Update_Success(t *testing.T) {
 
 	svc := NewPageService(repo)
 
-	page, err := svc.Update(1, &model.Page{Title: "Updated", Slug: "updated", Content: "<p>Safe</p><script>bad</script>"})
+	page, err := svc.Update(1, dto.UpdatePageRequest{Title: "Updated", Slug: "updated", Content: "<p>Safe</p><script>bad</script>"})
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -252,7 +264,7 @@ func TestPage_Update_NilPage(t *testing.T) {
 	repo := &mockPageRepo{}
 	svc := NewPageService(repo)
 
-	_, err := svc.Update(1, nil)
+	_, err := svc.Update(1, dto.UpdatePageRequest{})
 	if err == nil {
 		t.Fatal("expected error for nil page in update")
 	}
@@ -262,7 +274,7 @@ func TestPage_Update_ZeroID(t *testing.T) {
 	repo := &mockPageRepo{}
 	svc := NewPageService(repo)
 
-	_, err := svc.Update(0, &model.Page{Title: "T", Slug: "s", Content: "c"})
+	_, err := svc.Update(0, dto.UpdatePageRequest{Title: "T", Slug: "s", Content: "c"})
 	if err == nil {
 		t.Fatal("expected error for zero id")
 	}
@@ -277,7 +289,7 @@ func TestPage_Update_RepoError(t *testing.T) {
 
 	svc := NewPageService(repo)
 
-	_, err := svc.Update(1, &model.Page{Title: "T", Slug: "s", Content: "c"})
+	_, err := svc.Update(1, dto.UpdatePageRequest{Title: "T", Slug: "s", Content: "c"})
 	if err == nil {
 		t.Fatal("expected error from repo")
 	}

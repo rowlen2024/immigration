@@ -101,18 +101,23 @@ func (s *FAQService) Create(faq *model.FAQ) (*model.FAQ, error) {
 }
 
 // Update updates an existing FAQ entry.
-func (s *FAQService) Update(id uint64, faq *model.FAQ) (*model.FAQ, error) {
-	if faq == nil {
-		return nil, errors.New("faq is nil")
-	}
+func (s *FAQService) Update(id uint64, req dto.UpdateFAQRequest) (*model.FAQ, error) {
 	if id == 0 {
 		return nil, errors.New("faq id is required")
 	}
-	faq.ID = id
-	if err := s.repo.Update(faq); err != nil {
+	existing, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("faq not found: %w", err)
+	}
+	existing.ProjectID = req.ProjectID
+	existing.Question = req.Question
+	existing.Answer = req.Answer
+	existing.IsGlobal = req.IsGlobal
+	existing.SortOrder = req.SortOrder
+	if err := s.repo.Update(existing); err != nil {
 		return nil, fmt.Errorf("failed to update faq: %w", err)
 	}
-	return faq, nil
+	return existing, nil
 }
 
 // Delete removes an FAQ entry by ID.

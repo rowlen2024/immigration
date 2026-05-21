@@ -37,7 +37,9 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="template" label="模板" width="100" />
+        <el-table-column prop="template" label="模板" width="100">
+          <template #default="{ row }">{{ row.template || '—' }}</template>
+        </el-table-column>
         <el-table-column prop="page_type" label="类型" width="80">
           <template #default="{ row }">
             <span>{{ row.page_type === 'news' ? '新闻' : '默认' }}</span>

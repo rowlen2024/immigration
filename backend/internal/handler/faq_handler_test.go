@@ -18,17 +18,32 @@ import (
 
 // handlerMockFAQRepo implements repository.FAQRepository.
 type handlerMockFAQRepo struct {
-	findAllFn func(params repository.FAQQueryParams) ([]repository.FAQWithProject, int64, error)
-	createFn  func(faq *model.FAQ) error
-	updateFn  func(faq *model.FAQ) error
-	deleteFn  func(id uint64) error
+	findByIDFn            func(id uint64) (*model.FAQ, error)
+	findAllFn             func(params repository.FAQQueryParams) ([]repository.FAQWithProject, int64, error)
+	findDistinctProjectsFn func() ([]model.Project, error)
+	createFn              func(faq *model.FAQ) error
+	updateFn              func(faq *model.FAQ) error
+	deleteFn              func(id uint64) error
+	searchFn              func(keyword string) ([]model.FAQ, error)
 }
 
+func (m *handlerMockFAQRepo) FindByID(id uint64) (*model.FAQ, error) {
+	if m.findByIDFn != nil {
+		return m.findByIDFn(id)
+	}
+	return nil, nil
+}
 func (m *handlerMockFAQRepo) FindAll(params repository.FAQQueryParams) ([]repository.FAQWithProject, int64, error) {
 	if m.findAllFn != nil {
 		return m.findAllFn(params)
 	}
 	return nil, 0, nil
+}
+func (m *handlerMockFAQRepo) FindDistinctProjects() ([]model.Project, error) {
+	if m.findDistinctProjectsFn != nil {
+		return m.findDistinctProjectsFn()
+	}
+	return nil, nil
 }
 func (m *handlerMockFAQRepo) Create(faq *model.FAQ) error {
 	if m.createFn != nil {
@@ -48,7 +63,12 @@ func (m *handlerMockFAQRepo) Delete(id uint64) error {
 	}
 	return nil
 }
-func (m *handlerMockFAQRepo) Search(keyword string) ([]model.FAQ, error) { return nil, nil }
+func (m *handlerMockFAQRepo) Search(keyword string) ([]model.FAQ, error) {
+	if m.searchFn != nil {
+		return m.searchFn(keyword)
+	}
+	return nil, nil
+}
 
 func TestFAQHandler_ListFAQs(t *testing.T) {
 	mockRepo := &handlerMockFAQRepo{

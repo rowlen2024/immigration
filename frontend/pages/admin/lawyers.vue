@@ -25,14 +25,23 @@
             <span v-else class="no-photo">—</span>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="姓名" width="100" />
-        <el-table-column prop="title" label="身份" min-width="140" />
+        <el-table-column prop="name" label="姓名" width="100">
+          <template #default="{ row }">{{ row.name || '—' }}</template>
+        </el-table-column>
+        <el-table-column prop="title" label="身份" min-width="140">
+          <template #default="{ row }">{{ row.title || '—' }}</template>
+        </el-table-column>
         <el-table-column label="标签" min-width="200">
           <template #default="{ row }">
-            <el-tag v-for="tag in row.tags" :key="tag" size="small" class="tag-chip">{{ tag }}</el-tag>
+            <template v-if="row.tags?.length">
+              <el-tag v-for="tag in row.tags" :key="tag" size="small" class="tag-chip">{{ tag }}</el-tag>
+            </template>
+            <span v-else class="text-muted">—</span>
           </template>
         </el-table-column>
-        <el-table-column prop="sort_order" label="排序" width="70" />
+        <el-table-column prop="sort_order" label="排序" width="70">
+          <template #default="{ row }">{{ row.sort_order ?? '—' }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">

@@ -6,7 +6,6 @@ import (
 
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/logging"
-	"mygo-immigration/backend/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -67,7 +66,7 @@ func (h *Handler) AdminGetLawyer(c *gin.Context) {
 
 // POST /api/v1/admin/lawyers
 func (h *Handler) CreateLawyer(c *gin.Context) {
-	var input service.CreateLawyerInput
+	var input dto.CreateLawyerInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request body"))
 		return
@@ -93,7 +92,7 @@ func (h *Handler) UpdateLawyer(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid id"))
 		return
 	}
-	var input service.CreateLawyerInput
+	var input dto.CreateLawyerInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request body"))
 		return

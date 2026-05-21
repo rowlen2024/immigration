@@ -24,7 +24,9 @@
             <div class="row-title">{{ row.name }}</div>
           </template>
         </el-table-column>
-        <el-table-column prop="country_from" label="来源国家" min-width="120" />
+        <el-table-column prop="country_from" label="来源国家" min-width="120">
+          <template #default="{ row }">{{ row.country_from || '—' }}</template>
+        </el-table-column>
         <el-table-column label="封面图" width="80">
           <template #default="{ row }">
             <img v-if="row.photo_url" :src="row.photo_url" class="thumb-preview" />
@@ -33,10 +35,12 @@
         </el-table-column>
         <el-table-column prop="project" label="项目" width="160" >
           <template #default="{ row }">
-            <div class="row-title">{{ row.project.name }}</div>
+            <div class="row-title">{{ row.project?.name || '—' }}</div>
           </template>
         </el-table-column>
-        <el-table-column prop="sort_order" label="排序" width="70" />
+        <el-table-column prop="sort_order" label="排序" width="70">
+          <template #default="{ row }">{{ row.sort_order ?? '—' }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">

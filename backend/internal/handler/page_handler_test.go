@@ -1,4 +1,4 @@
-package handler
+﻿package handler
 
 import (
 	"encoding/json"
@@ -16,7 +16,15 @@ import (
 
 // handlerMockPageRepo implements repository.PageRepository.
 type handlerMockPageRepo struct {
-	findBySlug func(slug string) (*model.Page, error)
+	findByIDFn  func(id uint64) (*model.Page, error)
+	findBySlug  func(slug string) (*model.Page, error)
+}
+
+func (m *handlerMockPageRepo) FindByID(id uint64) (*model.Page, error) {
+	if m.findByIDFn != nil {
+		return m.findByIDFn(id)
+	}
+	return nil, nil
 }
 
 func (m *handlerMockPageRepo) FindBySlug(slug string) (*model.Page, error) {

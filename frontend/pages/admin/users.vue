@@ -15,7 +15,9 @@
             <div class="row-title">{{ row.username }}</div>
           </template>
         </el-table-column>
-        <el-table-column prop="display_name" label="显示名称" min-width="140" />
+        <el-table-column prop="display_name" label="显示名称" min-width="140">
+          <template #default="{ row }">{{ row.display_name || '—' }}</template>
+        </el-table-column>
         <el-table-column prop="role" label="角色" width="110">
           <template #default="{ row }">
             <span :class="['status-pill', row.role === 'admin' ? 'danger' : row.role === 'editor' ? 'warning' : 'info']">

@@ -1,4 +1,4 @@
-package service
+﻿package service
 
 import (
 	"errors"
@@ -13,6 +13,8 @@ type searchMockFAQRepo struct {
 	searchFn func(keyword string) ([]model.FAQ, error)
 }
 
+func (m *searchMockFAQRepo) FindByID(id uint64) (*model.FAQ, error) { return nil, nil }
+func (m *searchMockFAQRepo) FindDistinctProjects() ([]model.Project, error) { return nil, nil }
 func (m *searchMockFAQRepo) FindAll(params repository.FAQQueryParams) ([]repository.FAQWithProject, int64, error) {
 	return nil, 0, nil
 }
@@ -31,6 +33,7 @@ type searchMockPageRepo struct {
 	searchFn func(keyword string) ([]model.Page, error)
 }
 
+func (m *searchMockPageRepo) FindByID(id uint64) (*model.Page, error) { return nil, nil }
 func (m *searchMockPageRepo) FindBySlug(slug string) (*model.Page, error)      { return nil, nil }
 func (m *searchMockPageRepo) FindAll(pageType, search, status string) ([]model.Page, error) { return nil, nil }
 func (m *searchMockPageRepo) FindAllPublished() ([]model.Page, error)           { return nil, nil }

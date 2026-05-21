@@ -92,8 +92,8 @@
   "hotPaths": [
     {
       "path": "",
-      "accessCount": 46,
-      "lastAccessed": 1779330603197,
+      "accessCount": 49,
+      "lastAccessed": 1779360032379,
       "type": "directory"
     },
     {
@@ -121,15 +121,15 @@
       "type": "file"
     },
     {
-      "path": "internal\\service\\service.go",
-      "accessCount": 18,
-      "lastAccessed": 1779284448117,
+      "path": "internal\\service\\page_svc_test.go",
+      "accessCount": 19,
+      "lastAccessed": 1779360784983,
       "type": "file"
     },
     {
-      "path": "internal\\service\\page_svc_test.go",
-      "accessCount": 16,
-      "lastAccessed": 1778394374868,
+      "path": "internal\\service\\service.go",
+      "accessCount": 18,
+      "lastAccessed": 1779284448117,
       "type": "file"
     },
     {
@@ -199,6 +199,12 @@
       "type": "file"
     },
     {
+      "path": "internal\\service\\user_svc_test.go",
+      "accessCount": 9,
+      "lastAccessed": 1779360738126,
+      "type": "file"
+    },
+    {
       "path": "cmd\\server\\main.go",
       "accessCount": 8,
       "lastAccessed": 1777864475549,
@@ -235,15 +241,15 @@
       "type": "file"
     },
     {
-      "path": "internal\\model\\page.go",
-      "accessCount": 6,
-      "lastAccessed": 1778393635228,
+      "path": "internal\\handler\\page_handler_test.go",
+      "accessCount": 7,
+      "lastAccessed": 1779360419050,
       "type": "file"
     },
     {
-      "path": "internal\\handler\\page_handler_test.go",
+      "path": "internal\\model\\page.go",
       "accessCount": 6,
-      "lastAccessed": 1778394620073,
+      "lastAccessed": 1778393635228,
       "type": "file"
     },
     {
@@ -268,12 +274,6 @@
       "path": "internal\\handler\\auth_handler_test.go",
       "accessCount": 5,
       "lastAccessed": 1777817353900,
-      "type": "file"
-    },
-    {
-      "path": "internal\\service\\user_svc_test.go",
-      "accessCount": 5,
-      "lastAccessed": 1777817366413,
       "type": "file"
     },
     {
@@ -316,6 +316,12 @@
       "path": "internal\\model\\project.go",
       "accessCount": 4,
       "lastAccessed": 1779284448273,
+      "type": "file"
+    },
+    {
+      "path": "internal\\service\\project_svc_test.go",
+      "accessCount": 4,
+      "lastAccessed": 1779360792979,
       "type": "file"
     },
     {
@@ -376,12 +382,6 @@
       "path": "internal\\handler\\project_handler_test.go",
       "accessCount": 1,
       "lastAccessed": 1777860567721,
-      "type": "file"
-    },
-    {
-      "path": "internal\\service\\project_svc_test.go",
-      "accessCount": 1,
-      "lastAccessed": 1777860599404,
       "type": "file"
     },
     {

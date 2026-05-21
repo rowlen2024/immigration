@@ -122,7 +122,7 @@ const fetchFooterNav = async () => {
 
 const footerGridStyle = computed(() => {
   const count = footerNav.value.length || 2;
-  return { '--footer-cols': `1.5fr ${Array(count).fill('1fr').join(' ')}` };
+  return { '--footer-cols': `2fr ${Array(count).fill('1fr').join(' ')}` };
 });
 
 const hasQRCodes = computed(() => {
@@ -156,13 +156,14 @@ onMounted(() => {
   padding: 0 24px;
   display: grid;
   grid-template-columns: var(--footer-cols, 1.5fr 1fr 1fr);
-  gap: 70px;
+  gap: 16px;
 }
 
 .footer-brand {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  padding-right: 48px;
 }
 
 .footer-logo {

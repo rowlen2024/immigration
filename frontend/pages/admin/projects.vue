@@ -40,8 +40,12 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="investment_amount" label="投资金额" width="130" />
-        <el-table-column prop="processing_period" label="办理周期" width="120" />
+        <el-table-column prop="investment_amount" label="投资金额" width="130">
+          <template #default="{ row }">{{ row.investment_amount || '—' }}</template>
+        </el-table-column>
+        <el-table-column prop="processing_period" label="办理周期" width="120">
+          <template #default="{ row }">{{ row.processing_period || '—' }}</template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <span :class="['status-pill', row.status === 1 ? 'published' : 'draft']">
@@ -215,7 +219,9 @@
             <el-button type="primary" size="small" @click="openSubDialog('requirement')">添加条件</el-button>
           </div>
           <el-table :data="subData.requirements" border size="small">
-            <el-table-column prop="label" label="条件描述" min-width="180" />
+            <el-table-column prop="label" label="条件描述" min-width="180">
+              <template #default="{ row: r }">{{ r.label || '—' }}</template>
+            </el-table-column>
             <el-table-column label="必需" width="70">
               <template #default="{ row: r }">
                 <span :class="['status-pill', r.is_required ? 'published' : 'draft']">
@@ -223,7 +229,9 @@
                 </span>
               </template>
             </el-table-column>
-            <el-table-column prop="sort_order" label="排序" width="60" />
+            <el-table-column prop="sort_order" label="排序" width="60">
+              <template #default="{ row: r }">{{ r.sort_order ?? '—' }}</template>
+            </el-table-column>
             <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row: r }">
                 <div class="table-actions">
@@ -244,10 +252,18 @@
             <el-button type="primary" size="small" @click="openSubDialog('costItem')">添加费用</el-button>
           </div>
           <el-table :data="subData.costItems" border size="small">
-            <el-table-column prop="name" label="费用名称" min-width="140" />
-            <el-table-column prop="amount" label="金额" width="100" />
-            <el-table-column prop="note" label="说明" min-width="160" />
-            <el-table-column prop="sort_order" label="排序" width="60" />
+            <el-table-column prop="name" label="费用名称" min-width="140">
+              <template #default="{ row: r }">{{ r.name || '—' }}</template>
+            </el-table-column>
+            <el-table-column prop="amount" label="金额" width="100">
+              <template #default="{ row: r }">{{ r.amount || '—' }}</template>
+            </el-table-column>
+            <el-table-column prop="note" label="说明" min-width="160">
+              <template #default="{ row: r }">{{ r.note || '—' }}</template>
+            </el-table-column>
+            <el-table-column prop="sort_order" label="排序" width="60">
+              <template #default="{ row: r }">{{ r.sort_order ?? '—' }}</template>
+            </el-table-column>
             <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row: r }">
                 <div class="table-actions">
@@ -268,11 +284,21 @@
             <el-button type="primary" size="small" @click="openSubDialog('timelinePhase')">添加步骤</el-button>
           </div>
           <el-table :data="subData.timelinePhases" border size="small">
-            <el-table-column prop="phase_number" label="步骤号" width="70" />
-            <el-table-column prop="title" label="标题" min-width="130" />
-            <el-table-column prop="description" label="描述" min-width="160" />
-            <el-table-column prop="duration" label="周期" width="90" />
-            <el-table-column prop="sort_order" label="排序" width="60" />
+            <el-table-column prop="phase_number" label="步骤号" width="70">
+              <template #default="{ row: r }">{{ r.phase_number ?? '—' }}</template>
+            </el-table-column>
+            <el-table-column prop="title" label="标题" min-width="130">
+              <template #default="{ row: r }">{{ r.title || '—' }}</template>
+            </el-table-column>
+            <el-table-column prop="description" label="描述" min-width="160">
+              <template #default="{ row: r }">{{ r.description || '—' }}</template>
+            </el-table-column>
+            <el-table-column prop="duration" label="周期" width="90">
+              <template #default="{ row: r }">{{ r.duration || '—' }}</template>
+            </el-table-column>
+            <el-table-column prop="sort_order" label="排序" width="60">
+              <template #default="{ row: r }">{{ r.sort_order ?? '—' }}</template>
+            </el-table-column>
             <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row: r }">
                 <div class="table-actions">
@@ -303,9 +329,15 @@
                 <span v-else>{{ r.icon }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="title" label="标题" min-width="130" />
-            <el-table-column prop="description" label="描述" min-width="160" />
-            <el-table-column prop="sort_order" label="排序" width="60" />
+            <el-table-column prop="title" label="标题" min-width="130">
+              <template #default="{ row: r }">{{ r.title || '—' }}</template>
+            </el-table-column>
+            <el-table-column prop="description" label="描述" min-width="160">
+              <template #default="{ row: r }">{{ r.description || '—' }}</template>
+            </el-table-column>
+            <el-table-column prop="sort_order" label="排序" width="60">
+              <template #default="{ row: r }">{{ r.sort_order ?? '—' }}</template>
+            </el-table-column>
             <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row: r }">
                 <div class="table-actions">
@@ -326,11 +358,21 @@
             <el-button type="primary" size="small" @click="openSubDialog('caseItem')">添加案例</el-button>
           </div>
           <el-table :data="subData.cases" border size="small" max-height="360">
-            <el-table-column prop="name" label="名称" min-width="120" />
-            <el-table-column prop="country_from" label="来源国" width="80" />
-            <el-table-column prop="investment_amount" label="投资金额" width="100" />
-            <el-table-column prop="processing_period" label="处理周期" width="90" />
-            <el-table-column prop="sort_order" label="排序" width="60" />
+            <el-table-column prop="name" label="名称" min-width="120">
+              <template #default="{ row: r }">{{ r.name || '—' }}</template>
+            </el-table-column>
+            <el-table-column prop="country_from" label="来源国" width="80">
+              <template #default="{ row: r }">{{ r.country_from || '—' }}</template>
+            </el-table-column>
+            <el-table-column prop="investment_amount" label="投资金额" width="100">
+              <template #default="{ row: r }">{{ r.investment_amount || '—' }}</template>
+            </el-table-column>
+            <el-table-column prop="processing_period" label="处理周期" width="90">
+              <template #default="{ row: r }">{{ r.processing_period || '—' }}</template>
+            </el-table-column>
+            <el-table-column prop="sort_order" label="排序" width="60">
+              <template #default="{ row: r }">{{ r.sort_order ?? '—' }}</template>
+            </el-table-column>
             <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row: r }">
                 <div class="table-actions">
@@ -357,14 +399,20 @@
                 <span v-else style="color:#c0c4cc">—</span>
               </template>
             </el-table-column>
-            <el-table-column prop="nickname" label="昵称" width="120" />
+            <el-table-column prop="nickname" label="昵称" width="120">
+              <template #default="{ row: r }">{{ r.nickname || '—' }}</template>
+            </el-table-column>
             <el-table-column label="星级" width="140">
               <template #default="{ row }">
                 <el-rate v-model="row.rating" disabled show-score size="small" />
               </template>
             </el-table-column>
-            <el-table-column prop="content" label="评价内容" min-width="200" show-overflow-tooltip />
-            <el-table-column prop="sort_order" label="排序" width="60" />
+            <el-table-column prop="content" label="评价内容" min-width="200" show-overflow-tooltip>
+              <template #default="{ row: r }">{{ r.content || '—' }}</template>
+            </el-table-column>
+            <el-table-column prop="sort_order" label="排序" width="60">
+              <template #default="{ row: r }">{{ r.sort_order ?? '—' }}</template>
+            </el-table-column>
             <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row: r }">
                 <div class="table-actions">
@@ -387,7 +435,7 @@
           <el-table :data="subNews" border size="small" max-height="360">
             <el-table-column label="标题" min-width="180">
               <template #default="{ row }">
-                <span>{{ row.title }}</span>
+                <span>{{ row.title || '—' }}</span>
               </template>
             </el-table-column>
             <el-table-column label="状态" width="80">

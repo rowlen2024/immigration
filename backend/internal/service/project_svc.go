@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"mygo-immigration/backend/internal/config"
+	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
 )
@@ -210,35 +211,61 @@ func (s *ProjectService) Create(project *model.Project) (*model.Project, error) 
 }
 
 // Update updates an existing project.
-func (s *ProjectService) Update(id uint64, project *model.Project) (*model.Project, error) {
-	if project == nil {
-		return nil, errors.New("project is nil")
-	}
+func (s *ProjectService) Update(id uint64, req dto.UpdateProjectRequest) (*model.Project, error) {
 	if id == 0 {
 		return nil, errors.New("project id is required")
 	}
 
-	// Check slug uniqueness (independent of nav references)
-	existing, err := s.repo.FindBySlug(project.Slug)
-	if err == nil && existing != nil && existing.ID != id {
-		return nil, fmt.Errorf("slug %s is already in use", project.Slug)
+	existing, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("project not found: %w", err)
 	}
 
-	if s.navRepo != nil {
-		count, err := s.navRepo.CountByProjectID(id)
-		if err != nil {
-			return nil, fmt.Errorf("failed to check navigation references: %w", err)
+	// 检查 slug 唯一性（如果 slug 变更了）
+	if req.Slug != "" && req.Slug != existing.Slug {
+		other, err := s.repo.FindBySlug(req.Slug)
+		if err == nil && other != nil && other.ID != id {
+			return nil, fmt.Errorf("slug %s 已被使用", req.Slug)
 		}
-		if count > 0 && (existing == nil || existing.ID != id) {
-			return nil, fmt.Errorf("%d 个导航项引用了此项目，请先解除引用", count)
+		if s.navRepo != nil {
+			count, err := s.navRepo.CountByProjectID(id)
+			if err != nil {
+				return nil, fmt.Errorf("failed to check navigation references: %w", err)
+			}
+			if count > 0 {
+				return nil, fmt.Errorf("%d 个导航项引用了此项目，请先解除引用", count)
+			}
 		}
 	}
 
-	project.ID = id
-	if err := s.repo.Update(project); err != nil {
+	existing.Slug = req.Slug
+	existing.Name = req.Name
+	existing.Country = req.Country
+	existing.FlagEmoji = req.FlagEmoji
+	existing.Tagline = req.Tagline
+	existing.InvestmentAmount = req.InvestmentAmount
+	existing.InvestmentValue = req.InvestmentValue
+	existing.InvestmentCurrency = req.InvestmentCurrency
+	existing.ProcessingPeriod = req.ProcessingPeriod
+	existing.TargetCrowd = req.TargetCrowd
+	existing.OverviewTitle = req.OverviewTitle
+	existing.OverviewText = req.OverviewText
+	existing.PolicyTitle = req.PolicyTitle
+	existing.PolicyText = req.PolicyText
+	existing.CostsTotal = req.CostsTotal
+	existing.CostsNote = req.CostsNote
+	existing.CtaText = req.CtaText
+	existing.HeroTitle = req.HeroTitle
+	existing.HeroDesc = req.HeroDesc
+	existing.HeroGradient = req.HeroGradient
+	existing.CoverImage = req.CoverImage
+	existing.SortOrder = req.SortOrder
+	existing.Status = req.Status
+
+	if err := s.repo.Update(existing); err != nil {
 		return nil, fmt.Errorf("failed to update project: %w", err)
 	}
-	return project, nil
+	return existing, nil
 }
 
 // Delete performs a soft delete on a project by ID.

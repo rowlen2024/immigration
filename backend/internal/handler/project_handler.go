@@ -120,13 +120,13 @@ func (h *Handler) UpdateProject(c *gin.Context) {
 		return
 	}
 
-	var project model.Project
-	if err := c.ShouldBindJSON(&project); err != nil {
+	var req dto.UpdateProjectRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request"))
 		return
 	}
 
-	updated, err := h.svc.Project.Update(id, &project)
+	updated, err := h.svc.Project.Update(id, req)
 	if err != nil {
 		logging.Logger.Error("failed in UpdateProject", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))

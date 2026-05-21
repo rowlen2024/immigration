@@ -11,6 +11,15 @@ type ProjectRepo struct {
 	db *gorm.DB
 }
 
+func (r *ProjectRepo) FindByID(id uint64) (*model.Project, error) {
+	var project model.Project
+	err := r.db.First(&project, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &project, nil
+}
+
 func (r *ProjectRepo) FindBySlug(slug string) (*model.Project, error) {
 	var project model.Project
 	err := r.db.

@@ -23,6 +23,15 @@ func (r *CaseRepo) FindByProjectID(projectID uint64) ([]model.Case, error) {
 	return cases, nil
 }
 
+func (r *CaseRepo) FindByID(id uint64) (*model.Case, error) {
+	var c model.Case
+	err := r.db.Preload("Project").First(&c, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
+}
+
 func (r *CaseRepo) FindBySlug(slug string) (*model.Case, error) {
 	var c model.Case
 	err := r.db.Preload("Project").Where("slug = ?", slug).First(&c).Error

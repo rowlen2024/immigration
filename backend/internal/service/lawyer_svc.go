@@ -1,9 +1,10 @@
-package service
+﻿package service
 
 import (
 	"fmt"
 	"strings"
 
+	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
 )
@@ -88,7 +89,7 @@ type CreateLawyerInput struct {
 	SortOrder int      `json:"sort_order"`
 }
 
-func (s *LawyerService) Create(input *CreateLawyerInput) (*LawyerResponse, error) {
+func (s *LawyerService) Create(input *dto.CreateLawyerInput) (*LawyerResponse, error) {
 	item := &model.Lawyer{
 		PhotoURL:  input.PhotoURL,
 		Name:      input.Name,
@@ -103,7 +104,7 @@ func (s *LawyerService) Create(input *CreateLawyerInput) (*LawyerResponse, error
 	return &resp, nil
 }
 
-func (s *LawyerService) Update(id uint64, input *CreateLawyerInput) (*LawyerResponse, error) {
+func (s *LawyerService) Update(id uint64, input *dto.CreateLawyerInput) (*LawyerResponse, error) {
 	item, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, fmt.Errorf("lawyer not found: %w", err)

@@ -1,14 +1,16 @@
-package service
+﻿package service
 
 import (
 	"errors"
 	"testing"
 
+	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
 )
 
 // mockProjectRepo implements repository.ProjectRepository for testing.
 type mockProjectRepo struct {
+	findByIDFn    func(id uint64) (*model.Project, error)
 	findBySlugFn  func(slug string) (*model.Project, error)
 	findAllFn     func(page, perPage int, search, status string) ([]model.Project, int64, error)
 	findBySlugsFn func(slugs []string) ([]model.Project, error)
@@ -18,6 +20,13 @@ type mockProjectRepo struct {
 	findNewsFn    func(projectID uint64) ([]model.Page, error)
 	addNewsFn     func(projectID uint64, pageIDs []uint64) error
 	removeNewsFn  func(projectID, pageID uint64) error
+}
+
+func (m *mockProjectRepo) FindByID(id uint64) (*model.Project, error) {
+	if m.findByIDFn != nil {
+		return m.findByIDFn(id)
+	}
+	return nil, errors.New("not found")
 }
 
 func (m *mockProjectRepo) FindBySlug(slug string) (*model.Project, error) {
@@ -292,6 +301,9 @@ func TestProject_Create_RepoError(t *testing.T) {
 func TestProject_Update_Success(t *testing.T) {
 	var updatedProject *model.Project
 	repo := &mockProjectRepo{
+		findByIDFn: func(id uint64) (*model.Project, error) {
+			return &model.Project{ID: id, Slug: "existing-slug", Name: "Old Name"}, nil
+		},
 		updateFn: func(project *model.Project) error {
 			updatedProject = project
 			return nil
@@ -300,7 +312,7 @@ func TestProject_Update_Success(t *testing.T) {
 
 	svc := NewProjectService(repo)
 
-	project, err := svc.Update(5, &model.Project{Name: "Updated Name", Slug: "updated-slug"})
+	project, err := svc.Update(5, dto.UpdateProjectRequest{Name: "Updated Name", Slug: "updated-slug"})
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -319,7 +331,7 @@ func TestProject_Update_NilProject(t *testing.T) {
 	repo := &mockProjectRepo{}
 	svc := NewProjectService(repo)
 
-	_, err := svc.Update(1, nil)
+	_, err := svc.Update(1, dto.UpdateProjectRequest{})
 	if err == nil {
 		t.Fatal("expected error for nil project in update")
 	}
@@ -329,7 +341,7 @@ func TestProject_Update_ZeroID(t *testing.T) {
 	repo := &mockProjectRepo{}
 	svc := NewProjectService(repo)
 
-	_, err := svc.Update(0, &model.Project{Name: "Test", Slug: "test"})
+	_, err := svc.Update(0, dto.UpdateProjectRequest{Name: "Test", Slug: "test"})
 	if err == nil {
 		t.Fatal("expected error for zero id")
 	}
@@ -344,7 +356,7 @@ func TestProject_Update_RepoError(t *testing.T) {
 
 	svc := NewProjectService(repo)
 
-	_, err := svc.Update(1, &model.Project{Name: "Test", Slug: "test"})
+	_, err := svc.Update(1, dto.UpdateProjectRequest{Name: "Test", Slug: "test"})
 	if err == nil {
 		t.Fatal("expected error from repo")
 	}

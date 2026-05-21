@@ -1,4 +1,4 @@
-package service
+﻿package service
 
 import (
 	"errors"
@@ -12,11 +12,27 @@ import (
 
 // mockFAQRepo implements repository.FAQRepository for testing.
 type mockFAQRepo struct {
-	findAllFn func(params repository.FAQQueryParams) ([]repository.FAQWithProject, int64, error)
-	createFn  func(faq *model.FAQ) error
-	updateFn  func(faq *model.FAQ) error
-	deleteFn  func(id uint64) error
-	searchFn  func(keyword string) ([]model.FAQ, error)
+	findByIDFn            func(id uint64) (*model.FAQ, error)
+	findAllFn             func(params repository.FAQQueryParams) ([]repository.FAQWithProject, int64, error)
+	findDistinctProjectsFn func() ([]model.Project, error)
+	createFn              func(faq *model.FAQ) error
+	updateFn              func(faq *model.FAQ) error
+	deleteFn              func(id uint64) error
+	searchFn              func(keyword string) ([]model.FAQ, error)
+}
+
+func (m *mockFAQRepo) FindByID(id uint64) (*model.FAQ, error) {
+	if m.findByIDFn != nil {
+		return m.findByIDFn(id)
+	}
+	return nil, errors.New("not found")
+}
+
+func (m *mockFAQRepo) FindDistinctProjects() ([]model.Project, error) {
+	if m.findDistinctProjectsFn != nil {
+		return m.findDistinctProjectsFn()
+	}
+	return nil, nil
 }
 
 func (m *mockFAQRepo) FindAll(params repository.FAQQueryParams) ([]repository.FAQWithProject, int64, error) {
@@ -149,6 +165,9 @@ func TestFAQ_Create_MissingAnswer(t *testing.T) {
 func TestFAQ_Update_Success(t *testing.T) {
 	updated := false
 	repo := &mockFAQRepo{
+		findByIDFn: func(id uint64) (*model.FAQ, error) {
+			return &model.FAQ{ID: id, Question: "Old Q", Answer: "Old A"}, nil
+		},
 		updateFn: func(faq *model.FAQ) error {
 			updated = true
 			return nil
@@ -157,7 +176,7 @@ func TestFAQ_Update_Success(t *testing.T) {
 
 	svc := NewFAQService(repo)
 
-	faq, err := svc.Update(1, &model.FAQ{Question: "Updated Q", Answer: "Updated A"})
+	faq, err := svc.Update(1, dto.UpdateFAQRequest{Question: "Updated Q", Answer: "Updated A"})
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -173,7 +192,7 @@ func TestFAQ_Update_NilFAQ(t *testing.T) {
 	repo := &mockFAQRepo{}
 	svc := NewFAQService(repo)
 
-	_, err := svc.Update(1, nil)
+	_, err := svc.Update(1, dto.UpdateFAQRequest{})
 	if err == nil {
 		t.Fatal("expected error for nil faq in update")
 	}
@@ -183,7 +202,7 @@ func TestFAQ_Update_ZeroID(t *testing.T) {
 	repo := &mockFAQRepo{}
 	svc := NewFAQService(repo)
 
-	_, err := svc.Update(0, &model.FAQ{Question: "Q", Answer: "A"})
+	_, err := svc.Update(0, dto.UpdateFAQRequest{Question: "Q", Answer: "A"})
 	if err == nil {
 		t.Fatal("expected error for zero id")
 	}
@@ -396,7 +415,7 @@ func TestFAQ_Update_RepoError(t *testing.T) {
 
 	svc := NewFAQService(repo)
 
-	_, err := svc.Update(1, &model.FAQ{Question: "Q", Answer: "A"})
+	_, err := svc.Update(1, dto.UpdateFAQRequest{Question: "Q", Answer: "A"})
 	if err == nil {
 		t.Fatal("expected error from repo")
 	}

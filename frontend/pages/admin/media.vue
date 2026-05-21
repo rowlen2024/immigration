@@ -48,7 +48,7 @@
         </el-table-column>
         <el-table-column label="URL" min-width="240">
           <template #default="{ row }">
-            <div class="media-url-cell" :title="row.url">{{ row.url }}</div>
+            <div class="media-url-cell" :title="row.url">{{ row.url || '—' }}</div>
           </template>
         </el-table-column>
         <el-table-column label="大小" width="100">

@@ -10,9 +10,9 @@
       </thead>
       <tbody>
         <tr v-for="(row, index) in rows" :key="index">
-          <td class="col-item">{{ row.item }}</td>
-          <td class="col-amount">{{ row.amount }}</td>
-          <td class="col-note">{{ row.note }}</td>
+          <td class="col-item">{{ row.item || '—' }}</td>
+          <td class="col-amount">{{ row.amount || '—' }}</td>
+          <td class="col-note">{{ row.note || '—' }}</td>
         </tr>
       </tbody>
     </table>

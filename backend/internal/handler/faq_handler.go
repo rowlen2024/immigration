@@ -96,13 +96,13 @@ func (h *Handler) UpdateFAQ(c *gin.Context) {
 		return
 	}
 
-	var faq model.FAQ
-	if err := c.ShouldBindJSON(&faq); err != nil {
+	var req dto.UpdateFAQRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request"))
 		return
 	}
 
-	updated, err := h.svc.FAQ.Update(id, &faq)
+	updated, err := h.svc.FAQ.Update(id, req)
 	if err != nil {
 		logging.Logger.Error("failed in UpdateFAQ", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))

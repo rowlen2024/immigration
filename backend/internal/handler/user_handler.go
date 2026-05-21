@@ -9,13 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type createUserRequest struct {
-	Username    string `json:"username" binding:"required"`
-	Password    string `json:"password" binding:"required"`
-	DisplayName string `json:"display_name"`
-	Role        string `json:"role"`
-}
-
 func (h *Handler) AdminListUsers(c *gin.Context) {
 	page, perPage := parsePagination(c)
 
@@ -30,7 +23,7 @@ func (h *Handler) AdminListUsers(c *gin.Context) {
 }
 
 func (h *Handler) AdminCreateUser(c *gin.Context) {
-	var req createUserRequest
+	var req dto.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request"))
 		return
@@ -53,13 +46,13 @@ func (h *Handler) AdminUpdateUser(c *gin.Context) {
 		return
 	}
 
-	var updates map[string]interface{}
-	if err := c.ShouldBindJSON(&updates); err != nil {
+	var req dto.UpdateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request"))
 		return
 	}
 
-	user, err := h.svc.User.Update(id, updates)
+	user, err := h.svc.User.Update(id, req)
 	if err != nil {
 		logging.Logger.Error("failed in AdminUpdateUser", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))

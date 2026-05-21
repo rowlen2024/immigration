@@ -22,9 +22,15 @@
             <div class="row-title">{{ row.name }}</div>
           </template>
         </el-table-column>
-        <el-table-column prop="phone" label="电话" width="140" />
-        <el-table-column prop="email" label="邮箱" min-width="180" />
-        <el-table-column prop="interested_project" label="感兴趣项目" width="150" />
+        <el-table-column prop="phone" label="电话" width="140">
+          <template #default="{ row }">{{ row.phone || '—' }}</template>
+        </el-table-column>
+        <el-table-column prop="email" label="邮箱" min-width="180">
+          <template #default="{ row }">{{ row.email || '—' }}</template>
+        </el-table-column>
+        <el-table-column prop="interested_project" label="感兴趣项目" width="150">
+          <template #default="{ row }">{{ row.interested_project || '—' }}</template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <span :class="['status-pill', statusPillClass(row.status)]">
@@ -32,7 +38,9 @@
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="170" />
+        <el-table-column prop="created_at" label="创建时间" width="170">
+          <template #default="{ row }">{{ row.created_at || '—' }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="90" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click.stop="openDetail(row)">详情</el-button>

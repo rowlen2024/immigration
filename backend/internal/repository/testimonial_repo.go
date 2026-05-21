@@ -10,6 +10,15 @@ type TestimonialRepo struct {
 	db *gorm.DB
 }
 
+func (r *TestimonialRepo) FindByID(id uint64) (*model.Testimonial, error) {
+	var t model.Testimonial
+	err := r.db.First(&t, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
+
 func (r *TestimonialRepo) FindByProjectID(projectID uint64) ([]model.Testimonial, error) {
 	var items []model.Testimonial
 	err := r.db.

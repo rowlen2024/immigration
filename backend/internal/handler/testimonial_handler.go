@@ -90,12 +90,12 @@ func (h *Handler) UpdateProjectTestimonial(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid testimonial id"))
 		return
 	}
-	var item model.Testimonial
-	if err := c.ShouldBindJSON(&item); err != nil {
+	var req dto.UpdateTestimonialRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request"))
 		return
 	}
-	updated, err := h.svc.Testimonial.Update(tid, &item)
+	updated, err := h.svc.Testimonial.Update(tid, req)
 	if err != nil {
 		logging.Logger.Error("failed in UpdateProjectTestimonial", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))

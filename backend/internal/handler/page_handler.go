@@ -107,13 +107,13 @@ func (h *Handler) UpdatePage(c *gin.Context) {
 		return
 	}
 
-	var page model.Page
-	if err := c.ShouldBindJSON(&page); err != nil {
+	var req dto.UpdatePageRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request"))
 		return
 	}
 
-	updated, err := h.svc.Page.Update(id, &page)
+	updated, err := h.svc.Page.Update(id, req)
 	if err != nil {
 		logging.Logger.Error("failed in UpdatePage", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))

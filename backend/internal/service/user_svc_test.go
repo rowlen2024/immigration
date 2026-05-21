@@ -1,9 +1,10 @@
-package service
+﻿package service
 
 import (
 	"errors"
 	"testing"
 
+	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
 )
 
@@ -238,73 +239,54 @@ func TestUser_Create_RepoError(t *testing.T) {
 }
 
 func TestUser_Update_Success(t *testing.T) {
-	var patchID uint64
-	var patchUpdates map[string]interface{}
+	var updated *model.User
 	repo := &userSvcMockUserRepo{
-		patchUpdateFn: func(id uint64, updates map[string]interface{}) error {
-			patchID = id
-			patchUpdates = updates
-			return nil
-		},
 		findByIDFn: func(id uint64) (*model.User, error) {
-			return &model.User{ID: id, Username: "updateduser"}, nil
+			return &model.User{ID: id, Username: "existinguser"}, nil
+		},
+		updateFn: func(user *model.User) error {
+			updated = user
+			return nil
 		},
 	}
 
 	svc := &UserService{repo: repo}
 
-	user, err := svc.Update(5, map[string]interface{}{
-		"display_name": "Updated Display",
-		"role":         "editor",
-	})
+	user, err := svc.Update(5, dto.UpdateUserRequest{DisplayName: "Updated Display", Role: "editor"})
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
 	if user.ID != 5 {
 		t.Errorf("expected ID 5, got %d", user.ID)
 	}
-	if user.Username != "updateduser" {
-		t.Errorf("expected username 'updateduser', got '%s'", user.Username)
+	if user.Username != "existinguser" {
+		t.Errorf("expected username 'existinguser', got '%s'", user.Username)
 	}
-	if patchID != 5 {
-		t.Errorf("expected patch ID 5, got %d", patchID)
-	}
-	if patchUpdates["display_name"] != "Updated Display" {
-		t.Errorf("expected display_name update, got %v", patchUpdates["display_name"])
+	if updated.DisplayName != "Updated Display" {
+		t.Errorf("expected display_name 'Updated Display', got '%s'", updated.DisplayName)
 	}
 }
 
 func TestUser_Update_WithPassword(t *testing.T) {
-	var patchUpdates map[string]interface{}
+	var updated *model.User
 	repo := &userSvcMockUserRepo{
-		patchUpdateFn: func(id uint64, updates map[string]interface{}) error {
-			patchUpdates = updates
-			return nil
-		},
 		findByIDFn: func(id uint64) (*model.User, error) {
 			return &model.User{ID: id, Username: "user"}, nil
+		},
+		updateFn: func(user *model.User) error {
+			updated = user
+			return nil
 		},
 	}
 
 	svc := &UserService{repo: repo}
 
-	_, err := svc.Update(1, map[string]interface{}{
-		"password": "newpassword",
-	})
+	_, err := svc.Update(1, dto.UpdateUserRequest{Password: "newpassword"})
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
-	// "password" key should be hashed into "password_hash"
-	if _, ok := patchUpdates["password"]; ok {
-		t.Error("expected 'password' key to be removed and replaced with 'password_hash'")
-	}
-	if hash, ok := patchUpdates["password_hash"]; !ok {
-		t.Error("expected 'password_hash' key in updates")
-	} else {
-		hashStr, _ := hash.(string)
-		if len(hashStr) < 20 {
-			t.Errorf("expected bcrypt hash to be long, got %d chars", len(hashStr))
-		}
+	if len(updated.PasswordHash) < 20 {
+		t.Errorf("expected bcrypt hash to be long, got %d chars", len(updated.PasswordHash))
 	}
 }
 
@@ -312,32 +294,39 @@ func TestUser_Update_ZeroID(t *testing.T) {
 	repo := &userSvcMockUserRepo{}
 	svc := &UserService{repo: repo}
 
-	_, err := svc.Update(0, map[string]interface{}{"role": "editor"})
+	_, err := svc.Update(0, dto.UpdateUserRequest{Role: "editor"})
 	if err == nil {
 		t.Fatal("expected error for zero id")
 	}
 }
 
-func TestUser_Update_EmptyUpdates(t *testing.T) {
-	repo := &userSvcMockUserRepo{}
+func TestUser_Update_NotFound(t *testing.T) {
+	repo := &userSvcMockUserRepo{
+		findByIDFn: func(id uint64) (*model.User, error) {
+			return nil, errors.New("not found")
+		},
+	}
 	svc := &UserService{repo: repo}
 
-	_, err := svc.Update(1, map[string]interface{}{})
+	_, err := svc.Update(1, dto.UpdateUserRequest{Role: "editor"})
 	if err == nil {
-		t.Fatal("expected error for empty updates")
+		t.Fatal("expected error for non-existent user")
 	}
 }
 
 func TestUser_Update_RepoError(t *testing.T) {
 	repo := &userSvcMockUserRepo{
-		patchUpdateFn: func(id uint64, updates map[string]interface{}) error {
+		findByIDFn: func(id uint64) (*model.User, error) {
+			return &model.User{ID: id, Username: "user"}, nil
+		},
+		updateFn: func(user *model.User) error {
 			return errors.New("db error")
 		},
 	}
 
 	svc := &UserService{repo: repo}
 
-	_, err := svc.Update(1, map[string]interface{}{"role": "editor"})
+	_, err := svc.Update(1, dto.UpdateUserRequest{Role: "editor"})
 	if err == nil {
 		t.Fatal("expected error from repo")
 	}

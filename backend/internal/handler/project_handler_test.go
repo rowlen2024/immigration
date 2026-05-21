@@ -1,4 +1,4 @@
-package handler
+﻿package handler
 
 import (
 	"encoding/json"
@@ -27,6 +27,7 @@ type handlerMockProjectRepo struct {
 	removeNews  func(projectID, pageID uint64) error
 }
 
+func (m *handlerMockProjectRepo) FindByID(id uint64) (*model.Project, error) { return nil, nil }
 func (m *handlerMockProjectRepo) FindBySlug(slug string) (*model.Project, error) {
 	if m.findBySlug != nil {
 		return m.findBySlug(slug)

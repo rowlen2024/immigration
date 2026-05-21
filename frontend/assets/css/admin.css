@@ -331,6 +331,15 @@
   margin-bottom: 8px;
 }
 
+/* 防止空单元格导致表格列宽塌陷错位 */
+.admin-table-wrap .el-table__body td .cell {
+  min-height: 1.2em;
+}
+.admin-table-wrap .el-table__body td .cell:empty::after {
+  content: '\00a0';
+  display: inline;
+}
+
 /* Table overrides for borderless style */
 .admin-table-wrap .el-table {
   --el-table-border-color: var(--color-border-light);

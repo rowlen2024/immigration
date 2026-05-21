@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
 
@@ -63,31 +64,39 @@ func (s *UserService) Create(username, password, displayName, role string) (*mod
 	return user, nil
 }
 
-// Update applies partial updates to a user. If the "password" key is present, it is bcrypt-hashed.
-func (s *UserService) Update(id uint64, updates map[string]interface{}) (*model.User, error) {
+// Update applies partial updates to a user. If password is set, it is bcrypt-hashed.
+func (s *UserService) Update(id uint64, req dto.UpdateUserRequest) (*model.User, error) {
 	if id == 0 {
 		return nil, errors.New("user id is required")
 	}
-	if len(updates) == 0 {
-		return nil, errors.New("no updates provided")
+
+	existing, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("user not found: %w", err)
 	}
 
-	if password, ok := updates["password"]; ok {
-		if pwStr, ok := password.(string); ok && pwStr != "" {
-			hash, err := bcrypt.GenerateFromPassword([]byte(pwStr), bcrypt.DefaultCost)
-			if err != nil {
-				return nil, fmt.Errorf("failed to hash password: %w", err)
-			}
-			updates["password_hash"] = string(hash)
+	if req.DisplayName != "" {
+		existing.DisplayName = req.DisplayName
+	}
+	if req.Role != "" {
+		existing.Role = req.Role
+	}
+	if req.Status != 0 {
+		existing.Status = req.Status
+	}
+	if req.Password != "" {
+		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, fmt.Errorf("failed to hash password: %w", err)
 		}
-		delete(updates, "password")
+		existing.PasswordHash = string(hash)
 	}
 
-	if err := s.repo.PatchUpdate(id, updates); err != nil {
+	if err := s.repo.Update(existing); err != nil {
 		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
 
-	return s.repo.FindByID(id)
+	return existing, nil
 }
 
 // FindByUsername returns a user by username (used by auth).

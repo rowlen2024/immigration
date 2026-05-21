@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
 
@@ -107,19 +108,27 @@ func (s *CaseService) Create(c *model.Case) (*model.Case, error) {
 	return c, nil
 }
 
-func (s *CaseService) Update(id uint64, c *model.Case) (*model.Case, error) {
-	if c == nil {
-		return nil, errors.New("case is nil")
-	}
+func (s *CaseService) Update(id uint64, req dto.UpdateCaseRequest) (*model.Case, error) {
 	if id == 0 {
 		return nil, errors.New("case id is required")
 	}
-	c.ID = id
-	c.Content = caseContentSanitizer.Sanitize(c.Content)
-	if err := s.repo.Update(c); err != nil {
+	existing, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("case not found: %w", err)
+	}
+	existing.Name = req.Name
+	existing.CountryFrom = req.CountryFrom
+	existing.ProjectID = req.ProjectID
+	existing.InvestmentAmount = req.InvestmentAmount
+	existing.InvestmentValue = req.InvestmentValue
+	existing.ProcessingPeriod = req.ProcessingPeriod
+	existing.Content = caseContentSanitizer.Sanitize(req.Content)
+	existing.PhotoURL = req.PhotoURL
+	existing.SortOrder = req.SortOrder
+	if err := s.repo.Update(existing); err != nil {
 		return nil, fmt.Errorf("failed to update case: %w", err)
 	}
-	return c, nil
+	return existing, nil
 }
 
 func (s *CaseService) Delete(id uint64) error {

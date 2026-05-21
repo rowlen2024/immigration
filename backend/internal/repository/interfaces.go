@@ -16,6 +16,7 @@ type UserRepository interface {
 
 // ProjectRepository defines the interface for project data access.
 type ProjectRepository interface {
+	FindByID(id uint64) (*model.Project, error)
 	FindBySlug(slug string) (*model.Project, error)
 	FindAll(page, perPage int, search, status string) ([]model.Project, int64, error)
 	FindBySlugs(slugs []string) ([]model.Project, error)
@@ -38,6 +39,7 @@ type FAQQueryParams struct {
 
 // FAQRepository defines the interface for FAQ data access.
 type FAQRepository interface {
+	FindByID(id uint64) (*model.FAQ, error)
 	FindAll(params FAQQueryParams) ([]FAQWithProject, int64, error)
 	FindDistinctProjects() ([]model.Project, error)
 	Create(faq *model.FAQ) error
@@ -85,13 +87,14 @@ type NavigationRepository interface {
 
 // CaseRepository defines the interface for case data access.
 type CaseRepository interface {
+	FindByID(id uint64) (*model.Case, error)
 	FindByProjectID(projectID uint64) ([]model.Case, error)
 	FindAll(search string) ([]model.Case, error)
+	FindBySlug(slug string) (*model.Case, error)
 	Create(c *model.Case) error
 	Update(c *model.Case) error
 	Delete(id uint64) error
 	HardDelete(id uint64) error
-	FindBySlug(slug string) (*model.Case, error)
 }
 
 // CompareConfigRepository defines the interface for compare config data access.
@@ -135,6 +138,7 @@ type ProjectAdvantageRepository interface {
 
 // TestimonialRepository defines the interface for testimonial data access.
 type TestimonialRepository interface {
+	FindByID(id uint64) (*model.Testimonial, error)
 	FindByProjectID(projectID uint64) ([]model.Testimonial, error)
 	FindAll() ([]model.Testimonial, error)
 	Create(t *model.Testimonial) error

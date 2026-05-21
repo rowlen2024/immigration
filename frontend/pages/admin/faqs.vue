@@ -40,7 +40,9 @@
             <div class="row-title">{{ row.question }}</div>
           </template>
         </el-table-column>
-        <el-table-column prop="project_name" label="所属项目" width="160" />
+        <el-table-column prop="project_name" label="所属项目" width="160">
+          <template #default="{ row }">{{ row.project_name || '—' }}</template>
+        </el-table-column>
         <el-table-column prop="is_global" label="全局" width="80">
           <template #default="{ row }">
             <span :class="['status-pill', row.is_global ? 'published' : 'draft']">
@@ -48,7 +50,9 @@
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="sort_order" label="排序" width="70" />
+        <el-table-column prop="sort_order" label="排序" width="70">
+          <template #default="{ row }">{{ row.sort_order ?? '—' }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">

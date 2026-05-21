@@ -17,6 +17,15 @@ type FAQRepo struct {
 	db *gorm.DB
 }
 
+func (r *FAQRepo) FindByID(id uint64) (*model.FAQ, error) {
+	var faq model.FAQ
+	err := r.db.First(&faq, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &faq, nil
+}
+
 func (r *FAQRepo) FindAll(params FAQQueryParams) ([]FAQWithProject, int64, error) {
 	var results []FAQWithProject
 	var total int64

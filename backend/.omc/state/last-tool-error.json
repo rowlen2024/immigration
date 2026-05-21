@@ -1,7 +1,7 @@
 {
   "tool_name": "PowerShell",
-  "tool_input_preview": "{\"command\":\"Set-Location \\\"D:\\\\mygo\\\\src\\\\immigration\\\\backend\\\"; go test ./... -v -count=1 2>&1\",\"timeout\":120000,\"description\":\"运行后端测试\"}",
-  "error": "Exit code 1\ngo : # mygo-immigration/backend/internal/service [mygo-immigration/backend/internal/service.test]\r\nAt line:1 char:49\r\n+ ... ion \"D:\\mygo\\src\\immigration\\backend\"; go test ./... -v -count=1 2>&1\r\n+                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (# mygo-immigrat...l/service.test]:String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\ninternal\\service\\faq_svc_test.go:69:23: cannot use repo...",
-  "timestamp": "2026-05-21T02:16:25.124Z",
+  "tool_input_preview": "{\"command\":\"Set-Location D:\\\\mygo\\\\src\\\\immigration\\\\backend; go test ./internal/... 2>&1\",\"timeout\":300000,\"description\":\"Run full test suite\"}",
+  "error": "Exit code 1\n?   \tmygo-immigration/backend/internal/config\t[no test files]\n?   \tmygo-immigration/backend/internal/database\t[no test files]\n?   \tmygo-immigration/backend/internal/dto\t[no test files]\n--- FAIL: TestAuthHandler_Login_Failure_InvalidCredentials (0.00s)\npanic: runtime error: invalid memory address or nil pointer dereference [recovered, repanicked]\n[signal 0xc0000005 code=0x0 addr=0x0 pc=0x7ff7d6688e78]\n\ngoroutine 9 [running]:\ntesting.tRunner.func1.2({0x7ff7d6ee3d40, 0x7ff7d7987f40})\n\tD...",
+  "timestamp": "2026-05-21T10:53:42.239Z",
   "retry_count": 1
 }

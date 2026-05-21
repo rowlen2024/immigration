@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
 )
@@ -49,27 +50,32 @@ func (s *TestimonialService) Create(projectID uint64, t *model.Testimonial) (*mo
 	return t, nil
 }
 
-func (s *TestimonialService) Update(id uint64, t *model.Testimonial) (*model.Testimonial, error) {
-	if t == nil {
-		return nil, errors.New("testimonial is nil")
-	}
+func (s *TestimonialService) Update(id uint64, req dto.UpdateTestimonialRequest) (*model.Testimonial, error) {
 	if id == 0 {
 		return nil, errors.New("testimonial id is required")
 	}
-	if strings.TrimSpace(t.Nickname) == "" {
+	existing, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("testimonial not found: %w", err)
+	}
+	if strings.TrimSpace(req.Nickname) == "" {
 		return nil, errors.New("nickname is required")
 	}
-	if strings.TrimSpace(t.Content) == "" {
+	if strings.TrimSpace(req.Content) == "" {
 		return nil, errors.New("content is required")
 	}
-	if t.Rating < 1 || t.Rating > 5 {
-		t.Rating = 5
+	if req.Rating < 1 || req.Rating > 5 {
+		req.Rating = 5
 	}
-	t.ID = id
-	if err := s.repo.Update(t); err != nil {
+	existing.AvatarURL = req.AvatarURL
+	existing.Nickname = req.Nickname
+	existing.Rating = req.Rating
+	existing.Content = req.Content
+	existing.SortOrder = req.SortOrder
+	if err := s.repo.Update(existing); err != nil {
 		return nil, fmt.Errorf("failed to update testimonial: %w", err)
 	}
-	return t, nil
+	return existing, nil
 }
 
 func (s *TestimonialService) HardDelete(id uint64) error {

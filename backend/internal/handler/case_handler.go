@@ -82,13 +82,13 @@ func (h *Handler) UpdateCase(c *gin.Context) {
 		return
 	}
 
-	var caseModel model.Case
-	if err := c.ShouldBindJSON(&caseModel); err != nil {
+	var req dto.UpdateCaseRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request"))
 		return
 	}
 
-	updated, err := h.svc.Case.Update(id, &caseModel)
+	updated, err := h.svc.Case.Update(id, req)
 	if err != nil {
 		logging.Logger.Error("failed in UpdateCase", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
@@ -166,13 +166,13 @@ func (h *Handler) UpdateProjectCase(c *gin.Context) {
 		return
 	}
 
-	var caseModel model.Case
-	if err := c.ShouldBindJSON(&caseModel); err != nil {
+	var req dto.UpdateCaseRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request"))
 		return
 	}
 
-	updated, err := h.svc.Case.Update(caseID, &caseModel)
+	updated, err := h.svc.Case.Update(caseID, req)
 	if err != nil {
 		logging.Logger.Error("failed in UpdateProjectCase", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))

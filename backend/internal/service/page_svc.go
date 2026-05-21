@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
 
@@ -132,33 +133,53 @@ func (s *PageService) Create(page *model.Page) (*model.Page, error) {
 }
 
 // Update updates an existing page, sanitizing the content field against XSS.
-func (s *PageService) Update(id uint64, page *model.Page) (*model.Page, error) {
-	if page == nil {
-		return nil, errors.New("page is nil")
-	}
+func (s *PageService) Update(id uint64, req dto.UpdatePageRequest) (*model.Page, error) {
 	if id == 0 {
 		return nil, errors.New("page id is required")
 	}
 
-	if s.navRepo != nil {
+	existing, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("page not found: %w", err)
+	}
+
+	// 检查 slug 唯一性（如果 slug 变更了）
+	if req.Slug != "" && req.Slug != existing.Slug {
+		other, err := s.repo.FindBySlug(req.Slug)
+		if err == nil && other != nil && other.ID != id {
+			return nil, fmt.Errorf("slug %s 已被使用", req.Slug)
+		}
+	}
+
+	// 如果页面被导航引用，不允许修改 slug
+	if req.Slug != "" && req.Slug != existing.Slug && s.navRepo != nil {
 		count, err := s.navRepo.CountByPageID(id)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check navigation references: %w", err)
 		}
 		if count > 0 {
-			oldBySlug, slugErr := s.repo.FindBySlug(page.Slug)
-			if slugErr != nil || oldBySlug == nil || oldBySlug.ID != id {
-				return nil, fmt.Errorf("%d 个导航项引用了此页面，请先解除引用", count)
-			}
+			return nil, fmt.Errorf("%d 个导航项引用了此页面，请先解除引用", count)
 		}
 	}
 
-	page.ID = id
-	page.Content = sanitizer.Sanitize(page.Content)
-	if err := s.repo.Update(page); err != nil {
+	if req.Slug != "" {
+		existing.Slug = req.Slug
+	}
+	existing.ProjectID = req.ProjectID
+	existing.Title = req.Title
+	existing.Content = sanitizer.Sanitize(req.Content)
+	existing.CoverImage = req.CoverImage
+	existing.MetaTitle = req.MetaTitle
+	existing.MetaDescription = req.MetaDescription
+	existing.Template = req.Template
+	existing.PageType = req.PageType
+	existing.Status = req.Status
+	existing.SortOrder = req.SortOrder
+
+	if err := s.repo.Update(existing); err != nil {
 		return nil, fmt.Errorf("failed to update page: %w", err)
 	}
-	return page, nil
+	return existing, nil
 }
 
 // Delete removes a page by ID.

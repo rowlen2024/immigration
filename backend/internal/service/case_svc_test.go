@@ -4,11 +4,13 @@ import (
 	"errors"
 	"testing"
 
+	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
 )
 
 // mockCaseRepo implements repository.CaseRepository for testing.
 type mockCaseRepo struct {
+	findByIDFn        func(id uint64) (*model.Case, error)
 	findByProjectIDFn func(projectID uint64) ([]model.Case, error)
 	findAllFn         func(search string) ([]model.Case, error)
 	createFn          func(c *model.Case) error
@@ -16,6 +18,13 @@ type mockCaseRepo struct {
 	deleteFn          func(id uint64) error
 	hardDeleteFn      func(id uint64) error
 	findBySlugFn      func(slug string) (*model.Case, error)
+}
+
+func (m *mockCaseRepo) FindByID(id uint64) (*model.Case, error) {
+	if m.findByIDFn != nil {
+		return m.findByIDFn(id)
+	}
+	return nil, nil
 }
 
 func (m *mockCaseRepo) FindByProjectID(projectID uint64) ([]model.Case, error) {
@@ -153,6 +162,9 @@ func TestCase_Create_MissingName(t *testing.T) {
 func TestCase_Update_Success(t *testing.T) {
 	updated := false
 	repo := &mockCaseRepo{
+		findByIDFn: func(id uint64) (*model.Case, error) {
+			return &model.Case{ID: id, Slug: "existing-slug"}, nil
+		},
 		updateFn: func(c *model.Case) error {
 			updated = true
 			return nil
@@ -161,7 +173,7 @@ func TestCase_Update_Success(t *testing.T) {
 
 	svc := NewCaseService(repo)
 
-	c, err := svc.Update(1, &model.Case{Name: "Updated Case"})
+	c, err := svc.Update(1, dto.UpdateCaseRequest{Name: "Updated Case"})
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -173,13 +185,17 @@ func TestCase_Update_Success(t *testing.T) {
 	}
 }
 
-func TestCase_Update_NilCase(t *testing.T) {
-	repo := &mockCaseRepo{}
+func TestCase_Update_NotFound(t *testing.T) {
+	repo := &mockCaseRepo{
+		findByIDFn: func(id uint64) (*model.Case, error) {
+			return nil, errors.New("not found")
+		},
+	}
 	svc := NewCaseService(repo)
 
-	_, err := svc.Update(1, nil)
+	_, err := svc.Update(1, dto.UpdateCaseRequest{Name: "Test"})
 	if err == nil {
-		t.Fatal("expected error for nil case in update")
+		t.Fatal("expected error for non-existent case")
 	}
 }
 
@@ -187,7 +203,7 @@ func TestCase_Update_ZeroID(t *testing.T) {
 	repo := &mockCaseRepo{}
 	svc := NewCaseService(repo)
 
-	_, err := svc.Update(0, &model.Case{Name: "Test"})
+	_, err := svc.Update(0, dto.UpdateCaseRequest{Name: "Test"})
 	if err == nil {
 		t.Fatal("expected error for zero id")
 	}
@@ -195,6 +211,9 @@ func TestCase_Update_ZeroID(t *testing.T) {
 
 func TestCase_Update_RepoError(t *testing.T) {
 	repo := &mockCaseRepo{
+		findByIDFn: func(id uint64) (*model.Case, error) {
+			return &model.Case{ID: id, Slug: "existing"}, nil
+		},
 		updateFn: func(c *model.Case) error {
 			return errors.New("db error")
 		},
@@ -202,7 +221,7 @@ func TestCase_Update_RepoError(t *testing.T) {
 
 	svc := NewCaseService(repo)
 
-	_, err := svc.Update(1, &model.Case{Name: "Test"})
+	_, err := svc.Update(1, dto.UpdateCaseRequest{Name: "Test"})
 	if err == nil {
 		t.Fatal("expected error from repo")
 	}
