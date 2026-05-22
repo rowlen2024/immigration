@@ -38,7 +38,7 @@ export const useSiteConfig = () => {
 
   // 客户端强制刷新（绕过 Nuxt payload 缓存）
   const refreshSiteConfig = () => {
-    $fetch('/api/v1/site-config').then(v => { data.value = v }).catch(() => {})
+    $fetch('/api/v1/site-config').then(v => { data.value = (v as any)?.data ?? v }).catch(() => {})
   }
 
   return { siteConfig, refreshSiteConfig, data }

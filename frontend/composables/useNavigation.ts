@@ -155,7 +155,7 @@ export const useNavigation = (position: NavPosition = 'header') => {
 
   // 客户端强制刷新（绕过 Nuxt payload 缓存）
   const refreshNavigation = () => {
-    $fetch('/api/v1/navigation', { query: { position } }).then(v => { data.value = v }).catch(() => {})
+    $fetch('/api/v1/navigation', { query: { position } }).then(v => { data.value = (v as any)?.data ?? v }).catch(() => {})
   }
 
   return { navItems, getBreadcrumb, refreshNavigation, data };
