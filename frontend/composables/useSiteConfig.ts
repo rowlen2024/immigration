@@ -28,32 +28,13 @@ interface SiteConfig {
   footer_tagline: string;
 }
 
-const siteConfig = ref<SiteConfig | null>(null);
-let fetchPromise: Promise<void> | null = null;
-
 export const useSiteConfig = () => {
-  const fetch = async () => {
-    if (siteConfig.value) return;
-    if (fetchPromise) {
-      await fetchPromise;
-      return;
-    }
+  const { data } = useFetch('/api/v1/site-config', {
+    key: 'site-config',
+    transform: (response: any) => response?.data ?? response,
+  })
 
-    fetchPromise = (async () => {
-      try {
-        const api = useApi();
-        siteConfig.value = await api<SiteConfig>('/site-config');
-      } catch {
-        siteConfig.value = null;
-      }
-    })();
+  const siteConfig = computed<SiteConfig | null>(() => (data.value as SiteConfig) ?? null)
 
-    await fetchPromise;
-    fetchPromise = null;
-  };
-
-  return {
-    siteConfig: readonly(siteConfig),
-    fetch,
-  };
-};
+  return { siteConfig }
+}

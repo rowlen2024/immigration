@@ -159,7 +159,7 @@
 <script setup lang="ts">
 useSeo({ title: '联系我们' });
 
-const { siteConfig, fetch: fetchSiteConfig } = useSiteConfig();
+const { siteConfig } = useSiteConfig();
 
 interface ProjectOption {
   slug: string;
@@ -263,7 +263,6 @@ const resetForm = () => {
 };
 
 onMounted(() => {
-  fetchSiteConfig();
   fetchProjects();
 });
 </script>

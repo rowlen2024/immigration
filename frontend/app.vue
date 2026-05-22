@@ -5,10 +5,8 @@
 </template>
 
 <script setup lang="ts">
-const { siteConfig, fetch: fetchSiteConfig } = useSiteConfig();
+const { siteConfig } = useSiteConfig();
 const route = useRoute();
-
-onMounted(() => { fetchSiteConfig(); });
 
 const isPublicPage = computed(() => !route.path.startsWith('/admin'));
 

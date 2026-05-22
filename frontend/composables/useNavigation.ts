@@ -11,7 +11,9 @@ interface BreadcrumbItem {
   link?: string;
 }
 
-const FALLBACK_NAV: NavItem[] = [
+type NavPosition = 'header' | 'footer'
+
+const FALLBACK_HEADER: NavItem[] = [
   {
     id: 1, label: '美国EB-5', link: '/projects/eb5', status: true,
     children: [
@@ -53,9 +55,26 @@ const FALLBACK_NAV: NavItem[] = [
   },
 ];
 
-const navItems = ref<NavItem[]>([]);
-const fetched = ref(false);
-const pending = ref(false);
+const FALLBACK_FOOTER: NavItem[] = [
+  {
+    id: 1, label: '移民项目', link: '', status: true,
+    children: [
+      { id: 11, label: '美国EB-5投资移民', link: '/projects/eb5', children: [], status: true },
+      { id: 12, label: '香港投资移民', link: '/projects/cies', children: [], status: true },
+      { id: 13, label: '巴拿马购房移民', link: '/projects/panama', children: [], status: true },
+      { id: 14, label: '项目对比', link: '/compare', children: [], status: true },
+    ],
+  },
+  {
+    id: 2, label: '关于我们', link: '', status: true,
+    children: [
+      { id: 21, label: '公司简介', link: '/about', children: [], status: true },
+      { id: 22, label: '成功案例', link: '/cases', children: [], status: true },
+      { id: 23, label: '常见问题', link: '/faq', children: [], status: true },
+      { id: 24, label: '联系我们', link: '/contact', children: [], status: true },
+    ],
+  },
+];
 
 const findNode = (items: NavItem[], path: string): NavItem | null => {
   for (const item of items) {
@@ -79,13 +98,13 @@ const collectAncestors = (
   return null;
 };
 
-const buildBreadcrumb = (path: string, label?: string, parentCrumb?: BreadcrumbItem): BreadcrumbItem[] => {
+const buildBreadcrumb = (navItems: NavItem[], path: string, label?: string): BreadcrumbItem[] => {
   const cleanPath = path.replace(/#.*$/, '');
 
-  const node = findNode(navItems.value, cleanPath);
+  const node = findNode(navItems, cleanPath);
 
   if (node) {
-    const ancestors = collectAncestors(navItems.value, node) || [];
+    const ancestors = collectAncestors(navItems, node) || [];
     const items: BreadcrumbItem[] = [];
     for (const a of ancestors) {
       items.push({ label: a.label, link: a.link || undefined });
@@ -103,7 +122,7 @@ const buildBreadcrumb = (path: string, label?: string, parentCrumb?: BreadcrumbI
   while (segments.length > 0) {
     segments.pop();
     const parentPath = '/' + segments.join('/');
-    const parentResult = buildBreadcrumb(parentPath, undefined, parentCrumb);
+    const parentResult = buildBreadcrumb(navItems, parentPath, undefined);
     if (parentResult.length > 0) {
       const lastSegment = path.split('/').filter(Boolean).pop() || '';
       parentResult.push({ label: label || lastSegment });
@@ -113,37 +132,26 @@ const buildBreadcrumb = (path: string, label?: string, parentCrumb?: BreadcrumbI
 
   const lastSeg = path.split('/').filter(Boolean).pop() || '';
   if (!lastSeg) return [];
-  if (parentCrumb) return [parentCrumb];
   return [{ label: label || lastSeg }];
 };
 
-export const useNavigation = () => {
-  const fetchNav = async () => {
-    if (fetched.value || pending.value) return;
-    pending.value = true;
-    try {
-      const api = useApi();
-      const data = await api<NavItem[]>('/navigation?position=header');
-      if (data && (data as NavItem[]).length > 0) {
-        navItems.value = data as NavItem[];
-      } else {
-        navItems.value = FALLBACK_NAV;
-      }
-    } catch {
-      navItems.value = FALLBACK_NAV;
-    }
-    fetched.value = true;
-    pending.value = false;
+export const useNavigation = (position: NavPosition = 'header') => {
+  const { data } = useFetch('/api/v1/navigation', {
+    key: `navigation-${position}`,
+    query: { position },
+    transform: (response: any) => response?.data ?? response,
+  })
+
+  const fallback = position === 'footer' ? FALLBACK_FOOTER : FALLBACK_HEADER
+
+  const navItems = computed<NavItem[]>(() => {
+    const items = data.value as NavItem[] | null
+    return (items && items.length > 0) ? items : fallback
+  })
+
+  const getBreadcrumb = (path: string, label?: string): BreadcrumbItem[] => {
+    return buildBreadcrumb(navItems.value, path, label);
   };
 
-  // First caller triggers fetch
-  if (!fetched.value && import.meta.client) {
-    fetchNav();
-  }
-
-  const getBreadcrumb = (path: string, label?: string, parentCrumb?: BreadcrumbItem): BreadcrumbItem[] => {
-    return buildBreadcrumb(path, label, parentCrumb);
-  };
-
-  return { navItems, fetchNav, getBreadcrumb };
+  return { navItems, getBreadcrumb };
 };

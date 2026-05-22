@@ -73,52 +73,8 @@
 </template>
 
 <script setup lang="ts">
-const { siteConfig, fetch: fetchSiteConfig } = useSiteConfig();
-
-interface NavItem {
-  id: number;
-  label: string;
-  link: string;
-  children: NavItem[];
-  status: boolean;
-}
-
-const FALLBACK_FOOTER: NavItem[] = [
-  {
-    id: 1, label: '移民项目', link: '', status: true,
-    children: [
-      { id: 11, label: '美国EB-5投资移民', link: '/projects/eb5', children: [], status: true },
-      { id: 12, label: '香港投资移民', link: '/projects/cies', children: [], status: true },
-      { id: 13, label: '巴拿马购房移民', link: '/projects/panama', children: [], status: true },
-      { id: 14, label: '项目对比', link: '/compare', children: [], status: true },
-    ],
-  },
-  {
-    id: 2, label: '关于我们', link: '', status: true,
-    children: [
-      { id: 21, label: '公司简介', link: '/about', children: [], status: true },
-      { id: 22, label: '成功案例', link: '/cases', children: [], status: true },
-      { id: 23, label: '常见问题', link: '/faq', children: [], status: true },
-      { id: 24, label: '联系我们', link: '/contact', children: [], status: true },
-    ],
-  },
-];
-
-const footerNav = ref<NavItem[]>([]);
-
-const fetchFooterNav = async () => {
-  try {
-    const api = useApi();
-    const data = await api<NavItem[]>('/navigation?position=footer');
-    if (data && (data as NavItem[]).length > 0) {
-      footerNav.value = data as NavItem[];
-    } else {
-      footerNav.value = FALLBACK_FOOTER;
-    }
-  } catch {
-    footerNav.value = FALLBACK_FOOTER;
-  }
-};
+const { siteConfig } = useSiteConfig();
+const { navItems: footerNav } = useNavigation('footer');
 
 const footerGridStyle = computed(() => {
   const count = footerNav.value.length || 2;
@@ -137,10 +93,6 @@ const copyrightText = computed(() => {
     .replace('{site_name}', siteConfig.value?.site_name || '北极星移民');
 });
 
-onMounted(() => {
-  fetchFooterNav();
-  fetchSiteConfig();
-});
 </script>
 
 <style scoped>

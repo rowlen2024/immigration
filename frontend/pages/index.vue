@@ -145,14 +145,15 @@
     </section>
 
     <!-- Testimonials Section -->
-    <section v-if="featuredTestimonials.length > 0" class="section testimonial-section">
+    <section class="section testimonial-section">
       <div class="container">
         <div class="section-header">
           <h2 class="decorate-on">{{ testimonialTitle }}<i class="decorate"></i></h2>
           <p v-if="testimonialSubtitle">{{ testimonialSubtitle }}</p>
         </div>
 
-        <TestimonialCarousel :testimonials="featuredTestimonials" />
+        <TestimonialCarousel v-if="featuredTestimonials.length > 0" :testimonials="featuredTestimonials" />
+        <div v-else class="empty-state">暂无客户评价</div>
       </div>
     </section>
 
@@ -254,11 +255,11 @@ const defaultSlides: HeroSlide[] = [
 const heroSlides = ref<HeroSlide[]>(defaultSlides);
 
 // Fetch home config (now includes featured projects/cases/testimonials embedded)
-const { data: homeConfig, pending: pendingHome } = await useFetch('/api/v1/home-config', {
-  onResponseError() {
-    // Use defaults if API fails
+const { data: homeConfig, pending: pendingHome, error: homeConfigError } = await useFetch('/api/v1/home-config', {
+  onResponseError({ error: err }) {
+    console.error('[首页] 获取首页配置失败:', err?.message ?? err)
   },
-});
+})
 
 interface LawyerItem {
   id: number;
@@ -283,8 +284,8 @@ const pending = computed(() => ({
 }));
 
 const error = computed(() => ({
-  projects: null,
-  cases: null,
+  projects: homeConfigError.value ? '加载失败，请刷新重试' : null as string | null,
+  cases: homeConfigError.value ? '加载失败，请刷新重试' : null as string | null,
 }));
 
 // Override slides from API if available

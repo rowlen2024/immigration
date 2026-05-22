@@ -72,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-const { siteConfig, fetch: fetchSiteConfig } = useSiteConfig();
+const { siteConfig } = useSiteConfig();
 
 const showScrollTop = ref(false);
 const copied = ref<string | null>(null);
@@ -112,7 +112,6 @@ function onScroll() {
 }
 
 onMounted(() => {
-  fetchSiteConfig();
   window.addEventListener('scroll', onScroll, { passive: true });
 });
 

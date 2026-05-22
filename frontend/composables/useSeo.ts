@@ -8,6 +8,7 @@ interface SeoOptions {
 
 export const useSeo = (options: SeoOptions) => {
   const { siteConfig } = useSiteConfig();
+  const { getBreadcrumb } = useNavigation();
   const route = useRoute();
   const siteName = computed(() => siteConfig.value?.site_name || '北极星移民');
 
@@ -84,7 +85,6 @@ export const useSeo = (options: SeoOptions) => {
     }
 
     // JSON-LD: BreadcrumbList (auto-derived from navigation)
-    const { getBreadcrumb } = useNavigation();
     const crumbs = computed(() => getBreadcrumb(route.path, options.breadcrumbLabel));
     if (crumbs.value.length > 0) {
       const base = siteConfig.value?.canonical_base || '';

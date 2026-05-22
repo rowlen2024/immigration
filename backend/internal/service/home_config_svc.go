@@ -137,21 +137,33 @@ func (s *HomeConfigService) Get() (*HomeConfigData, error) {
 		if err := json.Unmarshal(projCfg.ConfigValue, &psc); err == nil {
 			s.loadFeaturedProjects(&psc)
 			data.ProjectShowcase = &psc
+		} else {
+			logging.Logger.Warn("home_config: failed to unmarshal project_showcase", "error", err)
 		}
+	} else {
+		logging.Logger.Warn("home_config: project_showcase config not found", "error", err)
 	}
 	if caseCfg, err := s.repo.FindByKey("case_showcase"); err == nil {
 		var csc CaseShowcaseConfig
 		if err := json.Unmarshal(caseCfg.ConfigValue, &csc); err == nil {
 			s.loadFeaturedCases(&csc)
 			data.CaseShowcase = &csc
+		} else {
+			logging.Logger.Warn("home_config: failed to unmarshal case_showcase", "error", err)
 		}
+	} else {
+		logging.Logger.Warn("home_config: case_showcase config not found", "error", err)
 	}
 	if testimonialCfg, err := s.repo.FindByKey("testimonial_showcase"); err == nil {
 		var tsc TestimonialShowcaseConfig
 		if err := json.Unmarshal(testimonialCfg.ConfigValue, &tsc); err == nil {
 			s.loadFeaturedTestimonials(&tsc)
 			data.TestimonialShowcase = &tsc
+		} else {
+			logging.Logger.Warn("home_config: failed to unmarshal testimonial_showcase", "error", err)
 		}
+	} else {
+		logging.Logger.Warn("home_config: testimonial_showcase config not found", "error", err)
 	}
 	if trustCfg, err := s.repo.FindByKey("hero_trust"); err == nil {
 		if err := json.Unmarshal(trustCfg.ConfigValue, &data.TrustItems); err != nil {
