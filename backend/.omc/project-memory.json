@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1777809723741,
-  "projectRoot": "D:\\mygo\\src\\web\\immigration\\backend",
+  "lastScanned": 1779426410588,
+  "projectRoot": "D:\\mygo\\src\\immigration\\backend",
   "techStack": {
     "languages": [
       {
@@ -18,8 +18,8 @@
     "runtime": null
   },
   "build": {
-    "buildCommand": "cd /d/mygo/src/web/immigration/backend && go build ./...",
-    "testCommand": "go test ./... -v 2>&1 | tail -50",
+    "buildCommand": null,
+    "testCommand": null,
     "lintCommand": null,
     "devCommand": null,
     "scripts": {}
@@ -33,10 +33,11 @@
   "structure": {
     "isMonorepo": false,
     "workspaces": [],
-    "mainDirectories": [
-      "docs"
-    ],
-    "gitBranches": null
+    "mainDirectories": [],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
   },
   "customNotes": [],
   "directoryMap": {
@@ -44,36 +45,54 @@
       "path": "cmd",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1777809723726,
+      "lastAccessed": 1779426410573,
       "keyFiles": []
     },
-    "config": {
-      "path": "config",
-      "purpose": "Configuration files",
+    "database": {
+      "path": "database",
+      "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1777809723726,
-      "keyFiles": []
-    },
-    "docs": {
-      "path": "docs",
-      "purpose": "Documentation",
-      "fileCount": 0,
-      "lastAccessed": 1777809723727,
+      "lastAccessed": 1779426410573,
       "keyFiles": []
     },
     "internal": {
       "path": "internal",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1777809723727,
+      "lastAccessed": 1779426410573,
       "keyFiles": []
+    },
+    "uploads": {
+      "path": "uploads",
+      "purpose": null,
+      "fileCount": 7,
+      "lastAccessed": 1779426410573,
+      "keyFiles": [
+        "1778291226273644596.png",
+        "1778292255671177475.png",
+        "1778465693274827582.png",
+        "1778465721358886675.png",
+        "1778487383384258473.png"
+      ]
+    },
+    "database\\migrations": {
+      "path": "database\\migrations",
+      "purpose": "Database migrations",
+      "fileCount": 46,
+      "lastAccessed": 1779426410574,
+      "keyFiles": [
+        "000001_create_users.down.sql",
+        "000001_create_users.up.sql",
+        "000002_create_projects.down.sql"
+      ]
     },
     "internal\\config": {
       "path": "internal\\config",
       "purpose": "Configuration files",
-      "fileCount": 1,
-      "lastAccessed": 1777809723728,
+      "fileCount": 2,
+      "lastAccessed": 1779426410575,
       "keyFiles": [
+        "compare_fields.go",
         "config.go"
       ]
     },
@@ -81,7 +100,7 @@
       "path": "internal\\middleware",
       "purpose": "Middleware",
       "fileCount": 4,
-      "lastAccessed": 1777809723728,
+      "lastAccessed": 1779426410575,
       "keyFiles": [
         "auth.go",
         "cors.go",

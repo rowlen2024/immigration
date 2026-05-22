@@ -153,5 +153,10 @@ export const useNavigation = (position: NavPosition = 'header') => {
     return buildBreadcrumb(navItems.value, path, label);
   };
 
-  return { navItems, getBreadcrumb };
+  // 客户端强制刷新（绕过 Nuxt payload 缓存）
+  const refreshNavigation = () => {
+    $fetch('/api/v1/navigation', { query: { position } }).then(v => { data.value = v }).catch(() => {})
+  }
+
+  return { navItems, getBreadcrumb, refreshNavigation, data };
 };

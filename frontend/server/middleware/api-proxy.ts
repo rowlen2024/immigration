@@ -21,11 +21,11 @@ export default defineEventHandler(async (event) => {
         : undefined,
     })
     const ms = Date.now() - start
-    console.log(`[SSR API] ${event.method} ${event.path} → ${backend} [${ms}ms]`)
+    console.log(`[SSR API] [${start}] ${event.method} ${event.path} → ${backend} [${ms}ms]`)
     return data
   } catch (err: any) {
     const ms = Date.now() - start
-    console.error(`[SSR API] ${event.method} ${event.path} → ${backend} 失败 [${ms}ms]:`, err.message)
+    console.error(`[SSR API] [${start}] ${event.method} ${event.path} → ${backend} 失败 [${ms}ms]:`, err.message)
     throw err
   }
 })

@@ -166,7 +166,12 @@ interface ProjectOption {
   name: string;
 }
 
-const projectOptions = ref<ProjectOption[]>([]);
+const { data: projectListRaw, refresh: refreshProjects } = await useFetch<{ data?: { items?: ProjectOption[] } }>('/api/v1/projects?per_page=100')
+
+const projectOptions = computed(() => {
+  const raw = projectListRaw.value as any
+  return raw?.data?.items ?? []
+})
 
 interface ContactForm {
   name: string;
@@ -188,16 +193,6 @@ const errors = reactive<Record<string, string>>({});
 const submitting = ref(false);
 const submitSuccess = ref(false);
 const submitError = ref<string | null>(null);
-
-const fetchProjects = async () => {
-  try {
-    const api = useApi();
-    const data = await api<{ items: ProjectOption[] }>('/projects?per_page=100');
-    if (data?.items?.length) {
-      projectOptions.value = data.items;
-    }
-  } catch { /* keep empty, dropdown falls back to base options */ }
-};
 
 const validate = (): boolean => {
   const newErrors: Record<string, string> = {};
@@ -263,8 +258,8 @@ const resetForm = () => {
 };
 
 onMounted(() => {
-  fetchProjects();
-});
+  $fetch('/api/v1/projects?per_page=100').then(v => { projectListRaw.value = v }).catch(() => {})
+})
 </script>
 
 <style scoped>

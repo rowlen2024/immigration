@@ -1,7 +1,7 @@
 <template>
   <div class="cms-page">
     <div class="container">
-      <div v-if="pending" class="loading-state">加载中...</div>
+      <div v-if="pending" class="page-skeleton-wrapper"><PageSkeleton variant="content" /></div>
       <div v-else-if="error" class="error-state">
         <template v-if="error === 'NOT_FOUND'">
           <h1 class="not-found-title">404</h1>
@@ -59,7 +59,7 @@ interface CmsPage {
 }
 
 
-const { data, pending, error: fetchError } = await useFetch(
+const { data, pending, error: fetchError, refresh } = await useFetch(
   () => `/api/v1/pages/${slug.value}`,
   {
     transform: (response) => {
@@ -86,6 +86,10 @@ useSeo({
   description: page.value?.meta_description || '',
   breadcrumbLabel: page.value?.title,
 });
+
+onMounted(() => {
+  $fetch(`/api/v1/pages/${slug.value}`).then(v => { data.value = v }).catch(() => {})
+})
 </script>
 
 <style scoped>

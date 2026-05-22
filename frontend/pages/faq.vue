@@ -27,8 +27,10 @@
       </div>
 
       <!-- FAQ List -->
-      <div v-if="pending" class="loading-state">加载中...</div>
-      <div v-else-if="error" class="error-state">加载常见问题失败，请稍后重试</div>
+      <div v-if="pending" class="page-skeleton-wrapper">
+        <PageSkeleton variant="list" :count="6" />
+      </div>
+      <div v-else-if="faqError" class="error-state">{{ faqError }}</div>
       <div v-else class="faq-list">
         <ProjectFAQAccordion :items="items" />
       </div>
@@ -75,44 +77,49 @@ interface FaqItem {
   sort_order: number;
 }
 
-const items = ref<FaqItem[]>([]);
-const totalItems = ref(0);
-const pending = ref(true);
-const error = ref<string | null>(null);
+// 获取筛选按钮所用的项目列表
+const { data: projectsRaw, refresh: refreshProjects } = await useFetch('/api/v1/faqs/projects', {
+  onResponseError() { /* keep filters empty if API fails */ },
+})
 
-const fetchFaqs = async () => {
-  pending.value = true;
-  error.value = null;
-  try {
+const projectFilters = computed(() => {
+  const list = (projectsRaw.value as any)?.data ?? []
+  return list.map((p: any) => ({ id: p.id, slug: p.slug, label: p.name }))
+})
+
+// 用 getter 函数使 useFetch 在 page/activeFilter 变化时自动重新请求
+const { data: faqRaw, pending, error: fetchError, refresh } = await useFetch(
+  () => {
     const params = new URLSearchParams({
       page: String(page.value),
       per_page: String(perPage),
-    });
+    })
     if (activeFilter.value !== 'all') {
-      const filter = projectFilters.value.find(f => f.slug === activeFilter.value);
-      if (filter) {
-        params.set('project_id', String(filter.id));
-      }
+      const filter = projectFilters.value.find(f => f.slug === activeFilter.value)
+      if (filter) params.set('project_id', String(filter.id))
     }
-    const res = await $fetch<any>(`/api/v1/faqs?${params.toString()}`);
-    items.value = res?.data ?? [];
-    totalItems.value = res?.pagination?.total ?? 0;
-  } catch {
-    error.value = '加载常见问题失败，请稍后重试';
-  } finally {
-    pending.value = false;
+    return `/api/v1/faqs?${params.toString()}`
+  },
+  {
+    onResponseError() {
+      // error handled via computed
+    },
   }
-};
+)
 
-// Fetch project list for filter buttons.
-const projectFilters = ref<{ id: number; slug: string; label: string }[]>([]);
-const fetchProjects = async () => {
-  try {
-    const res = await $fetch<any>('/api/v1/faqs/projects');
-    const list = res?.data ?? [];
-    projectFilters.value = list.map((p: any) => ({ id: p.id, slug: p.slug, label: p.name }));
-  } catch { /* keep filters empty if projects API fails */ }
-};
+const items = computed<FaqItem[]>(() => {
+  const raw = faqRaw.value as any
+  return raw?.data ?? []
+})
+
+const totalItems = computed(() => {
+  const raw = faqRaw.value as any
+  return raw?.pagination?.total ?? 0
+})
+
+const faqError = computed(() => {
+  return fetchError.value ? '加载常见问题失败，请稍后重试' : null
+})
 
 const changeFilter = (slug: string) => {
   activeFilter.value = slug;
@@ -148,14 +155,11 @@ useHead(() => {
   };
 });
 
-watch([activeFilter, page], () => {
-  fetchFaqs();
-});
-
+// 客户端刷新确保数据最新
 onMounted(() => {
-  fetchFaqs();
-  fetchProjects();
-});
+  $fetch('/api/v1/faqs?page=1&per_page=10').then(v => { faqRaw.value = v }).catch(() => {})
+  $fetch('/api/v1/faqs/projects').then(v => { projectsRaw.value = v }).catch(() => {})
+})
 </script>
 
 <style scoped>

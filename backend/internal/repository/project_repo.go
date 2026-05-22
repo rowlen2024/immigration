@@ -23,16 +23,16 @@ func (r *ProjectRepo) FindByID(id uint64) (*model.Project, error) {
 func (r *ProjectRepo) FindBySlug(slug string) (*model.Project, error) {
 	var project model.Project
 	err := r.db.
-		Preload("Requirements").
-		Preload("CostItems").
-		Preload("TimelinePhases").
-		Preload("Milestones").
-		Preload("FAQs").
-		Preload("Cases").
+		Preload("Requirements", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
+		Preload("CostItems", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
+		Preload("TimelinePhases", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
+		Preload("Milestones", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
+		Preload("FAQs", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
+		Preload("Cases", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
 		Preload("News").
 		Preload("CompareConfig").
-		Preload("Advantages").
-		Preload("Testimonials").
+		Preload("Advantages", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
+		Preload("Testimonials", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
 		Where("slug = ?", slug).
 		First(&project).Error
 	if err != nil {
@@ -71,13 +71,13 @@ func (r *ProjectRepo) FindBySlugs(slugs []string) ([]model.Project, error) {
 	var projects []model.Project
 	err := r.db.
 		Where("slug IN ?", slugs).
-		Preload("Requirements").
-		Preload("CostItems").
-		Preload("TimelinePhases").
-		Preload("Milestones").
-		Preload("FAQs").
-		Preload("Cases").
-		Preload("Advantages").
+		Preload("Requirements", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
+		Preload("CostItems", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
+		Preload("TimelinePhases", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
+		Preload("Milestones", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
+		Preload("FAQs", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
+		Preload("Cases", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
+		Preload("Advantages", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
 		Find(&projects).Error
 	if err != nil {
 		return nil, err

@@ -3,7 +3,7 @@
     <div class="container">
       <ProjectBreadcrumb :label="`${slugA} vs ${slugB}`" />
 
-      <div v-if="pending" class="loading-state">加载对比数据...</div>
+      <div v-if="pending" class="page-skeleton-wrapper"><PageSkeleton variant="detail" /></div>
       <div v-else-if="error" class="error-state">{{ error }}</div>
       <template v-else-if="comparison">
         <h1 class="page-title">{{ comparison.projectA }} vs {{ comparison.projectB }}</h1>
@@ -107,7 +107,7 @@ interface DetailedComparison {
   summary: string;
 }
 
-const { data, pending, error } = await useFetch<DetailedComparison>(
+const { data, pending, error, refresh } = await useFetch<DetailedComparison>(
   () => `/api/v1/projects/compare?slugs=${slugA.value},${slugB.value}`
 );
 
@@ -179,6 +179,10 @@ const comparison = computed(() => {
       '以上三个移民项目各有特点：EB-5适合希望获得美国身份的高净值家庭；香港CIES适合希望在亚洲金融中心定居的投资者；巴拿马购房移民门槛最低、速度最快，适合寻求快速获得海外身份的投资者。建议根据自身资产规模、移民目的和时间规划综合考虑。',
   };
 });
+
+onMounted(() => {
+  $fetch(`/api/v1/projects/compare?slugs=${slugA.value},${slugB.value}`).then(v => { data.value = v }).catch(() => {})
+})
 </script>
 
 <style scoped>

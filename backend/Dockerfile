@@ -1,4 +1,4 @@
-FROM golang:1.25-alpine AS builder
+FROM crpi-aejpgd9d8unswtqu.cn-shenzhen.personal.cr.aliyuncs.com/immigration/golang:1.25-alpine AS builder
 WORKDIR /build
 COPY go.mod go.sum ./
 RUN go mod download

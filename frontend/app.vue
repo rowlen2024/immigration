@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-const { siteConfig } = useSiteConfig();
+const { siteConfig, refreshSiteConfig } = useSiteConfig();
 const route = useRoute();
 
 const isPublicPage = computed(() => !route.path.startsWith('/admin'));
@@ -139,4 +139,9 @@ useHead(() => {
     ],
   };
 });
+
+// 客户端强制刷新站点配置
+onMounted(() => {
+  refreshSiteConfig()
+})
 </script>

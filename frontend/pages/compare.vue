@@ -89,7 +89,7 @@ interface ProjectOption {
   title: string;
 }
 
-const { data: projectListRaw, pending: projectListPending } = await useFetch<{
+const { data: projectListRaw, pending: projectListPending, refresh: refreshProjectList } = await useFetch<{
   data?: Array<{ slug: string; name: string }>;
 }>('/api/v1/projects', {
   query: { per_page: 100 },
@@ -154,6 +154,7 @@ const onSelect = () => {
 // Trigger initial fetch if both selected from query params
 const route = useRoute();
 onMounted(() => {
+  $fetch('/api/v1/projects?per_page=100').then(v => { projectListRaw.value = v }).catch(() => {})
   const queryA = route.query.a as string | undefined;
   const queryB = route.query.b as string | undefined;
   if (queryA && queryB && queryA !== queryB) {

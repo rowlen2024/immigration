@@ -3,7 +3,7 @@
     <div class="container">
       <ProjectBreadcrumb :label="item?.name" parentLabel="成功案例" parentLink="/cases" />
 
-      <div v-if="pending" class="loading-state">加载中...</div>
+      <div v-if="pending" class="page-skeleton-wrapper"><PageSkeleton variant="detail" /></div>
       <div v-else-if="error" class="error-state">{{ error }}</div>
       <div v-else-if="item" class="case-detail">
         <h1 class="case-title">{{ item.name }}</h1>
@@ -39,13 +39,17 @@
 const route = useRoute();
 const slug = route.params.slug as string;
 
-const { data, pending, error } = await useFetch<{ data: any }>(`/api/v1/cases/${slug}`);
+const { data, pending, error, refresh } = await useFetch<{ data: any }>(`/api/v1/cases/${slug}`);
 
 const item = computed(() => data.value?.data ?? null);
 
 useSeo({
   title: item.value?.name ?? '案例详情',
 });
+
+onMounted(() => {
+  $fetch(`/api/v1/cases/${slug}`).then(v => { data.value = v }).catch(() => {})
+})
 </script>
 
 <style scoped>

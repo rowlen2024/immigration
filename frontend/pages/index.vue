@@ -73,8 +73,8 @@
           <p>{{ sectionSubtitle }}</p>
         </div>
 
-        <div v-if="pending.projects" class="loading-state">
-          <div class="skeleton" style="height:360px;"></div>
+        <div v-if="pending.projects" class="page-skeleton-wrapper">
+          <PageSkeleton variant="cards" :count="3" />
         </div>
         <div v-else-if="error.projects" class="error-state">
           <div class="error-card">
@@ -116,8 +116,8 @@
           <p v-if="caseSubtitle">{{ caseSubtitle }}</p>
         </div>
 
-        <div v-if="pending.cases" class="loading-state">
-          <div class="skeleton" style="height:360px;"></div>
+        <div v-if="pending.cases" class="page-skeleton-wrapper">
+          <PageSkeleton variant="cards" :count="3" />
         </div>
         <div v-else-if="error.cases" class="error-state">
           <div class="error-card">
@@ -255,7 +255,7 @@ const defaultSlides: HeroSlide[] = [
 const heroSlides = ref<HeroSlide[]>(defaultSlides);
 
 // Fetch home config (now includes featured projects/cases/testimonials embedded)
-const { data: homeConfig, pending: pendingHome, error: homeConfigError } = await useFetch('/api/v1/home-config', {
+const { data: homeConfig, pending: pendingHome, error: homeConfigError, refresh: refreshHome } = await useFetch('/api/v1/home-config', {
   onResponseError({ error: err }) {
     console.error('[首页] 获取首页配置失败:', err?.message ?? err)
   },
@@ -269,7 +269,7 @@ interface LawyerItem {
   tags: string[];
 }
 
-const { data: lawyersData } = await useFetch<{ data?: LawyerItem[] }>('/api/v1/lawyers', {
+const { data: lawyersData, refresh: refreshLawyers } = await useFetch<{ data?: LawyerItem[] }>('/api/v1/lawyers', {
   onResponseError() {},
 });
 
@@ -576,6 +576,11 @@ const resetAutoPlay = () => {
 let revealObserver: IntersectionObserver | null = null;
 
 onMounted(() => {
+  // Nuxt 3 refresh() 在 hydration 后不会触发真实网络请求，
+  // 必须用 $fetch 直接拉取最新数据
+  $fetch('/api/v1/home-config').then(v => { homeConfig.value = v }).catch(() => {})
+  $fetch('/api/v1/lawyers').then(v => { lawyersData.value = v }).catch(() => {})
+
   autoTimer = setInterval(() => {
     currentSlide.value = (currentSlide.value + 1) % heroSlides.value.length;
   }, 5000);

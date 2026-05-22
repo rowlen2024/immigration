@@ -6,7 +6,7 @@
       <h1 class="page-title">成功案例</h1>
       <p class="page-subtitle">每一位客户的成功获批，都是我们最大的骄傲</p>
 
-      <div v-if="pending" class="loading-state">加载中...</div>
+      <div v-if="pending" class="page-skeleton-wrapper"><PageSkeleton variant="cards" :count="6" /></div>
       <div v-else-if="error" class="error-state">{{ error }}</div>
       <div v-else class="cases-grid">
         <CaseCard
@@ -48,7 +48,7 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').slice(0, 80);
 }
 
-const { data, pending, error } = await useFetch<{ data: ApiCaseItem[] }>('/api/v1/cases');
+const { data, pending, error, refresh } = await useFetch<{ data: ApiCaseItem[] }>('/api/v1/cases');
 
 const cases = computed(() => {
   const apiData = data.value as { data?: ApiCaseItem[] } | null;
@@ -63,6 +63,10 @@ const cases = computed(() => {
     image: c.photo_url,
   }));
 });
+
+onMounted(() => {
+  $fetch('/api/v1/cases').then(v => { data.value = v }).catch(() => {})
+})
 </script>
 
 <style scoped>

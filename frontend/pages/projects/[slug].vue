@@ -26,7 +26,7 @@
     </nav>
 
     <div class="container">
-      <div v-if="pending" class="loading-state">加载中...</div>
+      <div v-if="pending" class="page-skeleton-wrapper"><PageSkeleton variant="detail" /></div>
       <div v-else-if="error" class="error-state">{{ error }}</div>
       <template v-else>
         <section id="overview" class="detail-section">
@@ -201,7 +201,7 @@ interface ApiProject {
   advantages: ApiAdvantage[];
 }
 
-const { data, pending, error } = await useFetch<{ data: ApiProject }>(`/api/v1/projects/${slug}`);
+const { data, pending, error, refresh } = await useFetch<{ data: ApiProject }>(`/api/v1/projects/${slug}`);
 
 const project = computed(() => {
   const p = data.value?.data;
@@ -374,6 +374,7 @@ function scrollToSection(id: string) {
 let observer: IntersectionObserver | null = null;
 
 onMounted(() => {
+  $fetch(`/api/v1/projects/${slug}`).then(v => { data.value = v }).catch(() => {})
   observer = new IntersectionObserver(
     (entries) => {
       for (const entry of entries) {
