@@ -113,6 +113,60 @@ immigration/
 - **API 调用两种路径**:
   - `useApi()` 自动解包 `{data}` 信封并附加 token，用于所有 admin 页面
   - 公众页面（`projects/[slug].vue`、`[...slug].vue`、`compare.vue`）使用 `useFetch` / `$fetch` 直接调用，**需手动处理信封**：通过 `transform` 回调或访问 `.data` 属性
+
+- **Composable 数据刷新模式（`useFetch` + `onMounted` refresh）** — 新增 composable 必须遵循：
+  - **背景**: SPA 模式下 Nuxt 会对 `useFetch` 结果做 payload 缓存，客户端导航时可能返回过期数据。因此需要在 `onMounted` 时用 `$fetch` 强制刷新绕过缓存。
+  - **模式模板**（参考 `composables/useNavigation.ts`、`composables/useSiteConfig.ts`）：
+    ```typescript
+    // 1. useFetch 负责首屏加载，transform 解包 API 信封
+    const { data } = useFetch('/api/v1/xxx', {
+      key: 'xxx',
+      transform: (response: any) => response?.data ?? response,
+    })
+
+    // 2. 业务数据从 data.value 派生
+    const items = computed(() => (data.value as T[]) ?? [])
+
+    // 3. onMounted 中用 $fetch 强制刷新，绕过 Nuxt payload 缓存
+    //    ⚠️ $fetch 返回的是原始 {code, data, message} 信封，必须手动解包！
+    const refresh = () => {
+      $fetch('/api/v1/xxx').then(v => { data.value = (v as any)?.data ?? v }).catch(() => {})
+    }
+    ```
+  - **关键陷阱**: `useFetch` 的 `transform` 会自动解包，但 `$fetch` 不会。如果 `refresh()` 中写 `data.value = v`（忘了解包），`data.value` 会变成 `{code, data, message}` 对象，导致 `computed` 中 `.length` / 属性访问失败，回退到硬编码降级数据。页面看起来"接口请求了但没渲染"。
+  - **涉及文件**: `useNavigation.ts`、`useSiteConfig.ts`。新增需要 `onMounted` 刷新的 composable 时同步复制此模式。
+
+- **骨架屏加载态（PageSkeleton）** — 新增公众页面必须接入：
+  - **组件**: `components/PageSkeleton.vue`，5 种 variant 对应不同页面类型：
+
+    | variant | 骨架形状 | 适用页面 |
+    |---------|---------|---------|
+    | `hero` | 轮播图 + 信任栏 + 卡片区 | 首页 |
+    | `cards` | 页头 + 卡片网格（3列） | 案例列表、项目列表 |
+    | `list` | 页头 + 筛选标签 + 列表项 | FAQ |
+    | `detail` | 深色 Hero + Tab 栏 + 段落块 | 项目详情、案例详情、对比页 |
+    | `content` | 标题 + 多段文字 | CMS 自定义页面 |
+
+  - **使用模板**（参考 `pages/projects/[slug].vue`、`pages/cases.vue`、`pages/faq.vue`）：
+    ```vue
+    <template>
+      <div v-if="pending" class="page-skeleton-wrapper"><PageSkeleton variant="detail" /></div>
+      <template v-else>
+        <!-- 真实内容 -->
+      </template>
+    </template>
+
+    <script setup lang="ts">
+    const { data, pending, error, refresh } = await useFetch<{ data: XxxType }>('/api/v1/xxx')
+    </script>
+    ```
+  - **关键点**:
+    - `useFetch` 的 `pending` 自动管理加载状态，无需手动 `ref(true)` + `finally(false)`
+    - `variant` 选型要匹配页面结构，让骨架屏布局和真实内容尽量接近，减少 CLS
+    - `cards`/`list` 类型支持 `:count` 控制骨架项数量（默认 3）
+    - 详情页如果数据为空（如 slug 不存在），`pending` 变 `false` 后应走 `v-else` 中的空状态展示
+  - **全局样式**: `global.css` 中 `.page-skeleton-wrapper { padding: 40px 0; }` 控制骨架区域上下间距
+
 - **对比系统**: `/compare`（下拉选择器）和 `/compare/[a]-vs-[b]`（URL 直达，含硬编码降级数据）两种方式并存，修改对比逻辑时需同步两处
 - **项目详情的页内对比**: `projects/[slug].vue` 在 compare_config 存在时单独请求 `/api/v1/projects/compare` 内嵌展示对比表
 - **`?all=true` 参数**: 管理端的项目列表支持此参数以跳过默认过滤，用于下拉选择等场景
