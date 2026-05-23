@@ -77,9 +77,8 @@ func (h *Handler) CreateLawyer(c *gin.Context) {
 	}
 	item, err := h.svc.Lawyer.Create(&input)
 	if err != nil {
-		logging.Logger.Error("failed in CreateLawyer", "error", err)
-		logging.Logger.Error("failed in CreateLawyer", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in CreateLawyer", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, dto.Success(item))
@@ -99,9 +98,8 @@ func (h *Handler) UpdateLawyer(c *gin.Context) {
 	}
 	item, err := h.svc.Lawyer.Update(id, &input)
 	if err != nil {
-		logging.Logger.Error("failed in UpdateLawyer", "error", err)
-		logging.Logger.Error("failed in UpdateLawyer", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in UpdateLawyer", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, dto.Success(item))
@@ -115,9 +113,8 @@ func (h *Handler) DeleteLawyer(c *gin.Context) {
 		return
 	}
 	if err := h.svc.Lawyer.Delete(id); err != nil {
-		logging.Logger.Error("failed in DeleteLawyer", "error", err)
-		logging.Logger.Error("failed in DeleteLawyer", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in DeleteLawyer", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, dto.Success(nil))

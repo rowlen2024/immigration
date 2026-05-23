@@ -414,6 +414,72 @@ func (s *HomeConfigService) RemoveFeaturedTestimonialID(testimonialID uint64) er
 	return s.removeFromJSONArray("testimonial_showcase", "featured_testimonial_ids", testimonialID)
 }
 
+// CleanupFeaturedRefs removes stale case and testimonial IDs from home_config featured lists.
+// Reads once, conditionally writes once per section — fixed 2-4 SQL regardless of stale count.
+func (s *HomeConfigService) CleanupFeaturedRefs(caseIDs, testimonialIDs []uint64) error {
+	if len(caseIDs) > 0 {
+		staleCaseSet := make(map[uint64]bool, len(caseIDs))
+		for _, id := range caseIDs {
+			staleCaseSet[id] = true
+		}
+		cfg, err := s.repo.FindByKey("case_showcase")
+		if err == nil {
+			var m map[string]json.RawMessage
+			if json.Unmarshal(cfg.ConfigValue, &m) == nil {
+				if raw, ok := m["featured_case_ids"]; ok {
+					var ids []uint64
+					if json.Unmarshal(raw, &ids) == nil {
+						cleaned := make([]uint64, 0, len(ids))
+						for _, id := range ids {
+							if !staleCaseSet[id] {
+								cleaned = append(cleaned, id)
+							}
+						}
+						if len(cleaned) < len(ids) {
+							newRaw, _ := json.Marshal(cleaned)
+							m["featured_case_ids"] = newRaw
+							updated, _ := json.Marshal(m)
+							cfg.ConfigValue = updated
+							_ = s.repo.Update(cfg)
+						}
+					}
+				}
+			}
+		}
+	}
+	if len(testimonialIDs) > 0 {
+		staleTestimonialSet := make(map[uint64]bool, len(testimonialIDs))
+		for _, id := range testimonialIDs {
+			staleTestimonialSet[id] = true
+		}
+		cfg, err := s.repo.FindByKey("testimonial_showcase")
+		if err == nil {
+			var m map[string]json.RawMessage
+			if json.Unmarshal(cfg.ConfigValue, &m) == nil {
+				if raw, ok := m["featured_testimonial_ids"]; ok {
+					var ids []uint64
+					if json.Unmarshal(raw, &ids) == nil {
+						cleaned := make([]uint64, 0, len(ids))
+						for _, id := range ids {
+							if !staleTestimonialSet[id] {
+								cleaned = append(cleaned, id)
+							}
+						}
+						if len(cleaned) < len(ids) {
+							newRaw, _ := json.Marshal(cleaned)
+							m["featured_testimonial_ids"] = newRaw
+							updated, _ := json.Marshal(m)
+							cfg.ConfigValue = updated
+							_ = s.repo.Update(cfg)
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
 func sortByOrder[T any](items []T, keyFn func(T) int) {
 	// insertion sort — items are small (typically < 10)
 	for i := 1; i < len(items); i++ {

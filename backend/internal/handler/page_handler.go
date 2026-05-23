@@ -92,8 +92,8 @@ func (h *Handler) CreatePage(c *gin.Context) {
 	page.ID = 0 // ensure DB auto-increment
 	created, err := h.svc.Page.Create(&page)
 	if err != nil {
-		logging.Logger.Error("failed in CreatePage", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in CreatePage", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -115,8 +115,8 @@ func (h *Handler) UpdatePage(c *gin.Context) {
 
 	updated, err := h.svc.Page.Update(id, req)
 	if err != nil {
-		logging.Logger.Error("failed in UpdatePage", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in UpdatePage", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -131,8 +131,8 @@ func (h *Handler) DeletePage(c *gin.Context) {
 	}
 
 	if err := h.svc.Page.Delete(id); err != nil {
-		logging.Logger.Error("failed in DeletePage", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in DeletePage", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 

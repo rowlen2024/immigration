@@ -159,6 +159,20 @@ func (r *ProjectRepo) AddNews(projectID uint64, pageIDs []uint64) error {
 	return nil
 }
 
+// DeleteNewsByProjectID hard-deletes all project_news rows for a project.
+func (r *ProjectRepo) DeleteNewsByProjectID(projectID uint64) error {
+	return r.db.Where("project_id = ?", projectID).Delete(&model.ProjectNews{}).Error
+}
+
+// FindAllCoverImages returns non-empty cover_image values referencing /uploads/ (unscoped).
+func (r *ProjectRepo) FindAllCoverImages() ([]string, error) {
+	var urls []string
+	err := r.db.Unscoped().Model(&model.Project{}).
+		Where("cover_image LIKE ?", "%/uploads/%").
+		Pluck("cover_image", &urls).Error
+	return urls, err
+}
+
 // RemoveNews unlinks a news page from a project.
 func (r *ProjectRepo) RemoveNews(projectID, pageID uint64) error {
 	return r.db.Exec(

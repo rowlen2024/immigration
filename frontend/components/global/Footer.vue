@@ -176,7 +176,7 @@ onMounted(() => {
 
 .footer-qr-img {
   width: 80px;
-  height: 80px;
+  aspect-ratio: 1;
   border-radius: 8px;
   border: 1px solid rgba(200, 150, 62, 0.25);
   background: #fff;

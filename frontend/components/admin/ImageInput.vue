@@ -13,9 +13,10 @@
       </el-upload>
       <el-button @click="pickerVisible = true">浏览</el-button>
     </div>
-    <div v-if="urlValue" class="preview">
-      <img :src="urlValue" alt="预览" @error="previewError = true" v-show="!previewError" />
+    <div v-if="urlValue" class="preview" :style="{ aspectRatio: previewRatio }">
+      <img :src="previewSrc" alt="预览" @error="previewError = true" v-show="!previewError" />
     </div>
+    <p v-if="sizeHint" class="size-hint">{{ sizeHint }}</p>
 
     <MediaPicker
       v-model="pickerVisible"
@@ -25,11 +26,14 @@
 </template>
 
 <script setup lang="ts">
+import { getVariantUrl } from '~/utils/image'
 import MediaPicker from './MediaPicker.vue';
 
 const props = defineProps<{
   modelValue: string;
   placeholder?: string;
+  sizeHint?: string;
+  previewRatio?: string;
 }>();
 
 const emit = defineEmits<{
@@ -39,6 +43,8 @@ const emit = defineEmits<{
 const urlValue = ref(props.modelValue);
 const pickerVisible = ref(false);
 const previewError = ref(false);
+
+const previewSrc = computed(() => getVariantUrl(urlValue.value, 'sm'))
 
 const uploadUrl = '/api/v1/admin/media/upload';
 
@@ -98,7 +104,7 @@ watch(
 .preview {
   margin-top: 8px;
   width: 120px;
-  height: 68px;
+  aspect-ratio: 16 / 9;
   border-radius: 4px;
   overflow: hidden;
   background: #f5f7fa;
@@ -109,5 +115,12 @@ watch(
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.size-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.4;
 }
 </style>

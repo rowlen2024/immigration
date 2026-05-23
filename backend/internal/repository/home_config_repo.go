@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"encoding/json"
 	"mygo-immigration/backend/internal/model"
 
 	"gorm.io/gorm"
@@ -34,4 +35,11 @@ func (r *HomeConfigRepo) Create(cfg *model.HomeConfig) error {
 
 func (r *HomeConfigRepo) Update(cfg *model.HomeConfig) error {
 	return r.db.Omit("created_at").Save(cfg).Error
+}
+
+// FindAllConfigValues returns all config_value JSON from home_configs table.
+func (r *HomeConfigRepo) FindAllConfigValues() ([]json.RawMessage, error) {
+	var values []json.RawMessage
+	err := r.db.Model(&model.HomeConfig{}).Pluck("config_value", &values).Error
+	return values, err
 }

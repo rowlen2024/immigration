@@ -81,6 +81,11 @@ func (r *FAQRepo) Delete(id uint64) error {
 	return r.db.Delete(&model.FAQ{}, id).Error
 }
 
+// DeleteByProjectID soft-deletes all FAQs belonging to a project.
+func (r *FAQRepo) DeleteByProjectID(projectID uint64) error {
+	return r.db.Where("project_id = ?", projectID).Delete(&model.FAQ{}).Error
+}
+
 // FindDistinctProjects returns projects that have at least one FAQ.
 func (r *FAQRepo) FindDistinctProjects() ([]model.Project, error) {
 	var projects []model.Project

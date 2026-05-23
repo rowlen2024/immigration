@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"mygo-immigration/backend/internal/model"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/datatypes"
 )
 
 const uploadDir = "./uploads"
@@ -52,18 +54,49 @@ func (h *Handler) UploadMedia(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "failed to save file"))
 		return
 	}
+	dst.Close()
+	src.Close()
+
+	// Compress the file if > 5MB
+	newPath, newSize, err := h.svc.Media.CompressIfLarge(savePath, file.Size)
+	if err != nil {
+		logging.Logger.Warn("compressIfLarge failed, using original", "error", err)
+	} else {
+		savePath = newPath
+	}
+
+	// Generate JPEG variants (thumb, sm, md, lg)
+	baseName := safeName[:len(safeName)-len(filepath.Ext(safeName))]
+	variants, err := h.svc.Media.GenerateVariants(savePath, baseName)
+	if err != nil {
+		logging.Logger.Warn("generateVariants failed", "error", err)
+		variants = nil
+	}
+
+	variantsJSON, _ := json.Marshal(variants)
+
+	mimeType := file.Header.Get("Content-Type")
+	if strings.HasSuffix(savePath, ".jpg") {
+		mimeType = "image/jpeg"
+	}
+
+	fileSize := uint64(file.Size)
+	if newSize > 0 {
+		fileSize = uint64(newSize)
+	}
 
 	mediaModel := &model.Media{
-		Filename:     safeName,
+		Filename:     filepath.Base(savePath),
 		OriginalName: file.Filename,
-		URL:          "/uploads/" + safeName,
-		MimeType:     file.Header.Get("Content-Type"),
-		SizeBytes:    uint64(file.Size),
+		URL:          "/uploads/" + filepath.Base(savePath),
+		MimeType:     mimeType,
+		SizeBytes:    fileSize,
+		Variants:     datatypes.JSON(variantsJSON),
 	}
 	media, err := h.svc.Media.Upload(mediaModel)
 	if err != nil {
-		logging.Logger.Error("failed in UploadMedia", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in UploadMedia", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -92,10 +125,44 @@ func (h *Handler) DeleteMedia(c *gin.Context) {
 	}
 
 	if err := h.svc.Media.Delete(id); err != nil {
-		logging.Logger.Error("failed in DeleteMedia", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in DeleteMedia", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
 	c.JSON(http.StatusOK, dto.Success(nil))
+}
+
+// FindUnusedMedia returns all media records not referenced by any content.
+func (h *Handler) FindUnusedMedia(c *gin.Context) {
+	unused, err := h.svc.Media.FindUnused()
+	if err != nil {
+		logging.Logger.Error("failed in FindUnusedMedia", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		return
+	}
+	c.JSON(http.StatusOK, dto.Success(unused))
+}
+
+// CleanupUnusedMedia deletes the specified unused media records and their files.
+func (h *Handler) CleanupUnusedMedia(c *gin.Context) {
+	var req struct {
+		IDs []uint64 `json:"ids" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || len(req.IDs) == 0 {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "请提供要清理的媒体ID列表"))
+		return
+	}
+
+	deleted, failed, err := h.svc.Media.CleanupUnused(req.IDs)
+	if err != nil {
+		logging.Logger.Error("failed in CleanupUnusedMedia", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Success(map[string]interface{}{
+		"deleted": deleted,
+		"failed":  failed,
+	}))
 }

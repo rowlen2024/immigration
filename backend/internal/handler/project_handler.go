@@ -60,8 +60,8 @@ func (h *Handler) CompareProjects(c *gin.Context) {
 
 	result, err := h.svc.Project.CompareRows(slugs, fields)
 	if err != nil {
-		logging.Logger.Error("failed in CompareProjects", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in CompareProjects", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -105,8 +105,8 @@ func (h *Handler) CreateProject(c *gin.Context) {
 	project.ID = 0 // ensure DB auto-increment
 	created, err := h.svc.Project.Create(&project)
 	if err != nil {
-		logging.Logger.Error("failed in CreateProject", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in CreateProject", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -128,8 +128,8 @@ func (h *Handler) UpdateProject(c *gin.Context) {
 
 	updated, err := h.svc.Project.Update(id, req)
 	if err != nil {
-		logging.Logger.Error("failed in UpdateProject", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in UpdateProject", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -144,8 +144,8 @@ func (h *Handler) DeleteProject(c *gin.Context) {
 	}
 
 	if err := h.svc.Project.Delete(id); err != nil {
-		logging.Logger.Error("failed in DeleteProject", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in DeleteProject", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -208,8 +208,8 @@ func (h *Handler) AddProjectNews(c *gin.Context) {
 	}
 
 	if err := h.svc.Project.AddNews(projectID, req.PageIDs); err != nil {
-		logging.Logger.Error("failed in AddProjectNews", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in AddProjectNews", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -231,8 +231,8 @@ func (h *Handler) RemoveProjectNews(c *gin.Context) {
 	}
 
 	if err := h.svc.Project.RemoveNews(projectID, pageID); err != nil {
-		logging.Logger.Error("failed in RemoveProjectNews", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in RemoveProjectNews", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 

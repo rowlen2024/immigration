@@ -21,6 +21,7 @@ func (m *searchMockFAQRepo) FindAll(params repository.FAQQueryParams) ([]reposit
 func (m *searchMockFAQRepo) Create(faq *model.FAQ) error                           { return nil }
 func (m *searchMockFAQRepo) Update(faq *model.FAQ) error                           { return nil }
 func (m *searchMockFAQRepo) Delete(id uint64) error                                { return nil }
+func (m *searchMockFAQRepo) DeleteByProjectID(projectID uint64) error               { return nil }
 func (m *searchMockFAQRepo) Search(keyword string) ([]model.FAQ, error) {
 	if m.searchFn != nil {
 		return m.searchFn(keyword)

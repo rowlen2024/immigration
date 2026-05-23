@@ -138,6 +138,8 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			admin.POST("/media/upload", middleware.RBAC("content:write"), h.UploadMedia)
 			admin.GET("/media", middleware.RBAC("content:write"), h.ListMedia)
 			admin.DELETE("/media/:id", middleware.RBAC("content:write"), h.DeleteMedia)
+			admin.GET("/media/unused", middleware.RBAC("content:write"), h.FindUnusedMedia)
+			admin.POST("/media/cleanup", middleware.RBAC("content:write"), h.CleanupUnusedMedia)
 
 			admin.GET("/home-config", middleware.RBAC("admin:read"), h.GetAdminHomeConfig)
 			admin.PUT("/home-config", middleware.RBAC("content:write"), h.UpdateHomeConfig)

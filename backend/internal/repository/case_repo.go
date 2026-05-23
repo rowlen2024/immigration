@@ -75,6 +75,11 @@ func (r *CaseRepo) Delete(id uint64) error {
 	return r.db.Delete(&model.Case{}, id).Error
 }
 
+// DeleteByProjectID soft-deletes all cases belonging to a project.
+func (r *CaseRepo) DeleteByProjectID(projectID uint64) error {
+	return r.db.Where("project_id = ?", projectID).Delete(&model.Case{}).Error
+}
+
 // HardDelete permanently removes a case record (bypasses soft delete).
 func (r *CaseRepo) HardDelete(id uint64) error {
 	return r.db.Unscoped().Delete(&model.Case{}, id).Error
@@ -84,6 +89,24 @@ func (r *CaseRepo) Count() (int64, error) {
 	var c int64
 	err := r.db.Model(&model.Case{}).Count(&c).Error
 	return c, err
+}
+
+// FindAllPhotoURLs returns non-empty photo_url values referencing /uploads/ (unscoped).
+func (r *CaseRepo) FindAllPhotoURLs() ([]string, error) {
+	var urls []string
+	err := r.db.Unscoped().Model(&model.Case{}).
+		Where("photo_url LIKE ?", "%/uploads/%").
+		Pluck("photo_url", &urls).Error
+	return urls, err
+}
+
+// FindAllContents returns content values that contain /uploads/ references (unscoped).
+func (r *CaseRepo) FindAllContents() ([]string, error) {
+	var contents []string
+	err := r.db.Unscoped().Model(&model.Case{}).
+		Where("content LIKE ?", "%/uploads/%").
+		Pluck("content", &contents).Error
+	return contents, err
 }
 
 func (r *CaseRepo) CountByRange(start, end time.Time) (int64, error) {

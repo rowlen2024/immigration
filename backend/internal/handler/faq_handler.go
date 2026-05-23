@@ -81,8 +81,8 @@ func (h *Handler) CreateFAQ(c *gin.Context) {
 	faq.ID = 0 // ensure DB auto-increment
 	created, err := h.svc.FAQ.Create(&faq)
 	if err != nil {
-		logging.Logger.Error("failed in CreateFAQ", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in CreateFAQ", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -104,8 +104,8 @@ func (h *Handler) UpdateFAQ(c *gin.Context) {
 
 	updated, err := h.svc.FAQ.Update(id, req)
 	if err != nil {
-		logging.Logger.Error("failed in UpdateFAQ", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in UpdateFAQ", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -120,8 +120,8 @@ func (h *Handler) DeleteFAQ(c *gin.Context) {
 	}
 
 	if err := h.svc.FAQ.Delete(id); err != nil {
-		logging.Logger.Error("failed in DeleteFAQ", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in DeleteFAQ", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 

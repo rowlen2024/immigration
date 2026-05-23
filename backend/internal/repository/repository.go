@@ -20,6 +20,7 @@ type Repository struct {
 	TimelinePhase  *TimelinePhaseRepo
 	CompareConfig     *CompareConfigRepo
 	ProjectAdvantage  *ProjectAdvantageRepo
+	Milestone         *MilestoneRepo
 	Testimonial       *TestimonialRepo
 }
 
@@ -40,6 +41,7 @@ func New(db *gorm.DB) *Repository {
 		TimelinePhase:  &TimelinePhaseRepo{db: db},
 		CompareConfig:     &CompareConfigRepo{db: db},
 			ProjectAdvantage: &ProjectAdvantageRepo{db: db},
+			Milestone:        &MilestoneRepo{db: db},
 			Testimonial:      &TestimonialRepo{db: db},
 		}
 }

@@ -27,6 +27,7 @@ type ProjectRepository interface {
 	FindNews(projectID uint64) ([]model.Page, error)
 	AddNews(projectID uint64, pageIDs []uint64) error
 	RemoveNews(projectID, pageID uint64) error
+	DeleteNewsByProjectID(projectID uint64) error
 }
 
 // FAQQueryParams holds optional filters for FAQ queries.
@@ -46,6 +47,7 @@ type FAQRepository interface {
 	Create(faq *model.FAQ) error
 	Update(faq *model.FAQ) error
 	Delete(id uint64) error
+	DeleteByProjectID(projectID uint64) error
 	Search(keyword string) ([]model.FAQ, error)
 }
 
@@ -95,6 +97,7 @@ type CaseRepository interface {
 	Create(c *model.Case) error
 	Update(c *model.Case) error
 	Delete(id uint64) error
+	DeleteByProjectID(projectID uint64) error
 	HardDelete(id uint64) error
 }
 
@@ -111,6 +114,7 @@ type RequirementRepository interface {
 	Create(requirement *model.Requirement) error
 	Update(requirement *model.Requirement) error
 	Delete(id uint64) error
+	DeleteByProjectID(projectID uint64) error
 }
 
 // CostItemRepository defines the interface for cost item data access.
@@ -119,6 +123,7 @@ type CostItemRepository interface {
 	Create(costItem *model.CostItem) error
 	Update(costItem *model.CostItem) error
 	Delete(id uint64) error
+	DeleteByProjectID(projectID uint64) error
 }
 
 // TimelinePhaseRepository defines the interface for timeline phase data access.
@@ -127,6 +132,7 @@ type TimelinePhaseRepository interface {
 	Create(phase *model.TimelinePhase) error
 	Update(phase *model.TimelinePhase) error
 	Delete(id uint64) error
+	DeleteByProjectID(projectID uint64) error
 }
 
 // ProjectAdvantageRepository defines the interface for project advantage data access.
@@ -135,6 +141,12 @@ type ProjectAdvantageRepository interface {
 	Create(adv *model.ProjectAdvantage) error
 	Update(adv *model.ProjectAdvantage) error
 	Delete(id uint64) error
+	DeleteByProjectID(projectID uint64) error
+}
+
+// MilestoneRepository defines the interface for milestone data access.
+type MilestoneRepository interface {
+	DeleteByProjectID(projectID uint64) error
 }
 
 // TestimonialRepository defines the interface for testimonial data access.
@@ -144,5 +156,6 @@ type TestimonialRepository interface {
 	FindAll() ([]model.Testimonial, error)
 	Create(t *model.Testimonial) error
 	Update(t *model.Testimonial) error
+	DeleteByProjectID(projectID uint64) error
 	HardDelete(id uint64) error
 }

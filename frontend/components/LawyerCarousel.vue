@@ -12,7 +12,7 @@
           :style="{ flex: `0 0 ${cardWidth}px`, width: `${cardWidth}px` }"
         >
           <div class="lawyer-photo">
-            <img v-if="lawyer.photo_url" :src="lawyer.photo_url" :alt="lawyer.name" loading="lazy" />
+            <ResponsiveImage v-if="lawyer.photo_url" :src="lawyer.photo_url" :alt="lawyer.name" variant="sm" loading="lazy" />
             <div v-else class="lawyer-photo-placeholder"></div>
           </div>
           <div class="lawyer-body">

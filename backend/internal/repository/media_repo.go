@@ -40,3 +40,8 @@ func (r *MediaRepo) Create(media *model.Media) error {
 func (r *MediaRepo) Delete(id uint64) error {
 	return r.db.Delete(&model.Media{}, id).Error
 }
+
+// DeleteByIDPermanently hard-deletes a media record (bypasses soft delete).
+func (r *MediaRepo) DeleteByIDPermanently(id uint64) error {
+	return r.db.Unscoped().Delete(&model.Media{}, id).Error
+}

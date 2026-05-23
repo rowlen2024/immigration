@@ -57,6 +57,20 @@ func (r *TestimonialRepo) Update(t *model.Testimonial) error {
 	return r.db.Omit("created_at").Save(t).Error
 }
 
+// DeleteByProjectID soft-deletes all testimonials belonging to a project.
+func (r *TestimonialRepo) DeleteByProjectID(projectID uint64) error {
+	return r.db.Where("project_id = ?", projectID).Delete(&model.Testimonial{}).Error
+}
+
 func (r *TestimonialRepo) HardDelete(id uint64) error {
 	return r.db.Unscoped().Delete(&model.Testimonial{}, id).Error
+}
+
+// FindAllAvatarURLs returns non-empty avatar_url values referencing /uploads/ (unscoped).
+func (r *TestimonialRepo) FindAllAvatarURLs() ([]string, error) {
+	var urls []string
+	err := r.db.Unscoped().Model(&model.Testimonial{}).
+		Where("avatar_url LIKE ?", "%/uploads/%").
+		Pluck("avatar_url", &urls).Error
+	return urls, err
 }

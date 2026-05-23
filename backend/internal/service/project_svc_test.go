@@ -20,6 +20,7 @@ type mockProjectRepo struct {
 	findNewsFn    func(projectID uint64) ([]model.Page, error)
 	addNewsFn     func(projectID uint64, pageIDs []uint64) error
 	removeNewsFn  func(projectID, pageID uint64) error
+	deleteNewsByProjectIDFn func(projectID uint64) error
 }
 
 func (m *mockProjectRepo) FindByID(id uint64) (*model.Project, error) {
@@ -92,6 +93,13 @@ func (m *mockProjectRepo) AddNews(projectID uint64, pageIDs []uint64) error {
 func (m *mockProjectRepo) RemoveNews(projectID, pageID uint64) error {
 	if m.removeNewsFn != nil {
 		return m.removeNewsFn(projectID, pageID)
+	}
+	return nil
+}
+
+func (m *mockProjectRepo) DeleteNewsByProjectID(projectID uint64) error {
+	if m.deleteNewsByProjectIDFn != nil {
+		return m.deleteNewsByProjectIDFn(projectID)
 	}
 	return nil
 }

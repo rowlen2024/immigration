@@ -14,9 +14,18 @@ import (
 
 // ProjectService handles business logic for immigration projects.
 type ProjectService struct {
-	repo          repository.ProjectRepository
-	navRepo       repository.NavigationRepository
-	homeConfigSvc *HomeConfigService
+	repo              repository.ProjectRepository
+	navRepo           repository.NavigationRepository
+	homeConfigSvc     *HomeConfigService
+	requirementRepo   repository.RequirementRepository
+	costItemRepo      repository.CostItemRepository
+	timelinePhaseRepo repository.TimelinePhaseRepository
+	milestoneRepo     repository.MilestoneRepository
+	advantageRepo     repository.ProjectAdvantageRepository
+	compareConfigRepo repository.CompareConfigRepository
+	caseRepo          repository.CaseRepository
+	testimonialRepo   repository.TestimonialRepository
+	faqRepo           repository.FAQRepository
 }
 
 // NewProjectService creates a new ProjectService with the given repository.
@@ -315,6 +324,86 @@ func (s *ProjectService) Delete(id uint64) error {
 			slug = p.Slug
 		}
 	}
+
+	// Pre-fetch case and testimonial IDs for home_config cleanup
+	var caseIDs []uint64
+	var testimonialIDs []uint64
+	if s.caseRepo != nil {
+		if cases, err := s.caseRepo.FindByProjectID(id); err == nil {
+			for _, c := range cases {
+				caseIDs = append(caseIDs, c.ID)
+			}
+		}
+	}
+	if s.testimonialRepo != nil {
+		if testimonials, err := s.testimonialRepo.FindByProjectID(id); err == nil {
+			for _, t := range testimonials {
+				testimonialIDs = append(testimonialIDs, t.ID)
+			}
+		}
+	}
+
+	// Cascade soft-delete NOT NULL sub-resources
+	if s.requirementRepo != nil {
+		if err := s.requirementRepo.DeleteByProjectID(id); err != nil {
+			logging.Logger.Warn("cascade delete requirements failed", "project_id", id, "error", err)
+		}
+	}
+	if s.costItemRepo != nil {
+		if err := s.costItemRepo.DeleteByProjectID(id); err != nil {
+			logging.Logger.Warn("cascade delete cost_items failed", "project_id", id, "error", err)
+		}
+	}
+	if s.timelinePhaseRepo != nil {
+		if err := s.timelinePhaseRepo.DeleteByProjectID(id); err != nil {
+			logging.Logger.Warn("cascade delete timeline_phases failed", "project_id", id, "error", err)
+		}
+	}
+	if s.milestoneRepo != nil {
+		if err := s.milestoneRepo.DeleteByProjectID(id); err != nil {
+			logging.Logger.Warn("cascade delete milestones failed", "project_id", id, "error", err)
+		}
+	}
+	if s.advantageRepo != nil {
+		if err := s.advantageRepo.DeleteByProjectID(id); err != nil {
+			logging.Logger.Warn("cascade delete project_advantages failed", "project_id", id, "error", err)
+		}
+	}
+	// Hard-delete tables without deleted_at column
+	if s.compareConfigRepo != nil {
+		if err := s.compareConfigRepo.DeleteByProjectID(id); err != nil {
+			logging.Logger.Warn("cascade delete compare_config failed", "project_id", id, "error", err)
+		}
+	}
+	if err := s.repo.DeleteNewsByProjectID(id); err != nil {
+		logging.Logger.Warn("cascade delete project_news failed", "project_id", id, "error", err)
+	}
+
+	// Cascade soft-delete nullable sub-resources
+	if s.caseRepo != nil {
+		if err := s.caseRepo.DeleteByProjectID(id); err != nil {
+			logging.Logger.Warn("cascade delete cases failed", "project_id", id, "error", err)
+		}
+	}
+	if s.testimonialRepo != nil {
+		if err := s.testimonialRepo.DeleteByProjectID(id); err != nil {
+			logging.Logger.Warn("cascade delete testimonials failed", "project_id", id, "error", err)
+		}
+	}
+	if s.faqRepo != nil {
+		if err := s.faqRepo.DeleteByProjectID(id); err != nil {
+			logging.Logger.Warn("cascade delete faqs failed", "project_id", id, "error", err)
+		}
+	}
+
+	// Clean up home_config featured refs before project is gone
+	if s.homeConfigSvc != nil && (len(caseIDs) > 0 || len(testimonialIDs) > 0) {
+		if err := s.homeConfigSvc.CleanupFeaturedRefs(caseIDs, testimonialIDs); err != nil {
+			logging.Logger.Warn("home_config: failed to clean up featured refs after cascade delete",
+				"project_id", id, "case_ids", caseIDs, "testimonial_ids", testimonialIDs, "error", err)
+		}
+	}
+
 	if err := s.repo.Delete(id); err != nil {
 		return fmt.Errorf("failed to delete project: %w", err)
 	}

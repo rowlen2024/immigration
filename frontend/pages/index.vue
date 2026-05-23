@@ -8,8 +8,14 @@
           :key="index"
           class="hero-slide"
           :class="{ active: currentSlide === index }"
-          :style="{ backgroundImage: slide.image ? `url(${slide.image})` : undefined }"
         >
+          <ResponsiveImage
+            v-if="slide.image"
+            :src="slide.image"
+            alt=""
+            variant="lg"
+            class="hero-slide-bg"
+          />
           <div class="hero-slide-gradient"></div>
           <div class="hero-glow hero-glow--gold"></div>
           <div class="hero-glow hero-glow--blue"></div>
@@ -87,7 +93,7 @@
             <div class="card-image" :class="`card-image--${idx % 3}`">
               <div class="card-image-glow"></div>
               <div class="card-image-overlay"></div>
-              <img v-if="project.image" :src="project.image" :alt="project.title" loading="lazy" />
+              <ResponsiveImage v-if="project.image" :src="project.image" :alt="project.title" variant="sm" loading="lazy" />
             </div>
             <div class="card-body">
               <h3 class="card-title">{{ project.title }}</h3>
@@ -190,7 +196,7 @@
         </div>
 
         <div v-if="advantageSection?.image" class="advantage-banner">
-          <img :src="advantageSection.image" alt="优势区域图" loading="lazy" />
+          <ResponsiveImage :src="advantageSection.image" alt="优势区域图" variant="lg" loading="lazy" />
         </div>
       </div>
     </section>
@@ -642,10 +648,17 @@ onUnmounted(() => {
 .hero-slide {
   position: absolute;
   inset: 0;
-  background-size: cover;
-  background-position: center;
   opacity: 0;
   transition: opacity 0.6s ease-in-out;
+}
+
+.hero-slide-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .hero-slide.active {
@@ -1366,6 +1379,8 @@ onUnmounted(() => {
 
 .advantage-banner img {
   width: 100%;
+  max-height: 500px;
+  object-fit: cover;
   display: block;
   border-radius: var(--radius-lg);
 }

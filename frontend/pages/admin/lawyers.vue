@@ -21,7 +21,7 @@
       <el-table :data="lawyers" stripe v-loading="loading" class="admin-table">
         <el-table-column label="照片" width="90">
           <template #default="{ row }">
-            <img v-if="row.photo_url" :src="row.photo_url" class="lawyer-thumb" />
+            <ResponsiveImage v-if="row.photo_url" :src="row.photo_url" variant="thumb" class="lawyer-thumb" />
             <span v-else class="no-photo">—</span>
           </template>
         </el-table-column>
@@ -76,7 +76,7 @@
     >
       <el-form label-position="top">
         <el-form-item label="照片">
-          <ImageInput v-model="form.photo_url" placeholder="照片地址" />
+          <ImageInput v-model="form.photo_url" placeholder="照片地址" size-hint="推荐 600×800px (3:4 竖版)" preview-ratio="3 / 4" />
         </el-form-item>
         <el-form-item label="姓名" required>
           <el-input v-model="form.name" placeholder="律师姓名" />

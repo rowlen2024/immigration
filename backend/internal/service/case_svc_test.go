@@ -17,6 +17,7 @@ type mockCaseRepo struct {
 	updateFn          func(c *model.Case) error
 	deleteFn          func(id uint64) error
 	hardDeleteFn      func(id uint64) error
+	deleteByProjectIDFn func(projectID uint64) error
 	findBySlugFn      func(slug string) (*model.Case, error)
 }
 
@@ -58,6 +59,13 @@ func (m *mockCaseRepo) Update(c *model.Case) error {
 func (m *mockCaseRepo) Delete(id uint64) error {
 	if m.deleteFn != nil {
 		return m.deleteFn(id)
+	}
+	return nil
+}
+
+func (m *mockCaseRepo) DeleteByProjectID(projectID uint64) error {
+	if m.deleteByProjectIDFn != nil {
+		return m.deleteByProjectIDFn(projectID)
 	}
 	return nil
 }

@@ -25,6 +25,7 @@ type handlerMockProjectRepo struct {
 	findNews    func(projectID uint64) ([]model.Page, error)
 	addNews     func(projectID uint64, pageIDs []uint64) error
 	removeNews  func(projectID, pageID uint64) error
+	deleteNewsByProjectID func(projectID uint64) error
 }
 
 func (m *handlerMockProjectRepo) FindByID(id uint64) (*model.Project, error) { return nil, nil }
@@ -82,6 +83,12 @@ func (m *handlerMockProjectRepo) AddNews(projectID uint64, pageIDs []uint64) err
 func (m *handlerMockProjectRepo) RemoveNews(projectID, pageID uint64) error {
 	if m.removeNews != nil {
 		return m.removeNews(projectID, pageID)
+	}
+	return nil
+}
+func (m *handlerMockProjectRepo) DeleteNewsByProjectID(projectID uint64) error {
+	if m.deleteNewsByProjectID != nil {
+		return m.deleteNewsByProjectID(projectID)
 	}
 	return nil
 }

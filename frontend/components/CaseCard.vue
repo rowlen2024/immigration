@@ -3,9 +3,10 @@
     <div class="case-image">
       <div class="case-image-overlay"></div>
       <div class="case-image-goldline"></div>
-      <img
-        :src="image || ''"
+      <ResponsiveImage
+        :src="image"
         :alt="name"
+        variant="sm"
         loading="lazy"
       />
     </div>

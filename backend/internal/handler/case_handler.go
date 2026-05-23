@@ -67,8 +67,8 @@ func (h *Handler) CreateCase(c *gin.Context) {
 	caseModel.ID = 0 // ensure DB auto-increment is used
 	created, err := h.svc.Case.Create(&caseModel)
 	if err != nil {
-		logging.Logger.Error("failed in CreateCase", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in CreateCase", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -90,8 +90,8 @@ func (h *Handler) UpdateCase(c *gin.Context) {
 
 	updated, err := h.svc.Case.Update(id, req)
 	if err != nil {
-		logging.Logger.Error("failed in UpdateCase", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in UpdateCase", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -106,8 +106,8 @@ func (h *Handler) DeleteCase(c *gin.Context) {
 	}
 
 	if err := h.svc.Case.Delete(id); err != nil {
-		logging.Logger.Error("failed in DeleteCase", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in DeleteCase", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -150,8 +150,8 @@ func (h *Handler) CreateProjectCase(c *gin.Context) {
 
 	created, err := h.svc.Case.Create(&caseModel)
 	if err != nil {
-		logging.Logger.Error("failed in CreateProjectCase", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in CreateProjectCase", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -174,8 +174,8 @@ func (h *Handler) UpdateProjectCase(c *gin.Context) {
 
 	updated, err := h.svc.Case.Update(caseID, req)
 	if err != nil {
-		logging.Logger.Error("failed in UpdateProjectCase", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in UpdateProjectCase", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -191,8 +191,8 @@ func (h *Handler) DeleteProjectCase(c *gin.Context) {
 	}
 
 	if err := h.svc.Case.HardDelete(caseID); err != nil {
-		logging.Logger.Error("failed in DeleteProjectCase", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in DeleteProjectCase", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 

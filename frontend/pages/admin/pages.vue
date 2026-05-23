@@ -106,7 +106,7 @@
           <RichEditor v-model="form.content" />
         </el-form-item>
         <el-form-item label="封面图片" prop="cover_image">
-          <ImageInput v-model="form.cover_image" placeholder="封面图片URL" />
+          <ImageInput v-model="form.cover_image" placeholder="封面图片URL" size-hint="推荐 360×240px (3:2 横向)" />
         </el-form-item>
         <el-row :gutter="12">
           <el-col :span="12">

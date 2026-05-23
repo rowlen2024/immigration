@@ -102,6 +102,24 @@ func (r *PageRepo) CountByRange(start, end time.Time) (int64, error) {
 	return c, err
 }
 
+// FindAllCoverImages returns non-empty cover_image values referencing /uploads/ (unscoped).
+func (r *PageRepo) FindAllCoverImages() ([]string, error) {
+	var urls []string
+	err := r.db.Unscoped().Model(&model.Page{}).
+		Where("cover_image LIKE ?", "%/uploads/%").
+		Pluck("cover_image", &urls).Error
+	return urls, err
+}
+
+// FindAllContents returns content values that contain /uploads/ references (unscoped).
+func (r *PageRepo) FindAllContents() ([]string, error) {
+	var contents []string
+	err := r.db.Unscoped().Model(&model.Page{}).
+		Where("content LIKE ?", "%/uploads/%").
+		Pluck("content", &contents).Error
+	return contents, err
+}
+
 func (r *PageRepo) Search(keyword string) ([]model.Page, error) {
 	var pages []model.Page
 	err := r.db.

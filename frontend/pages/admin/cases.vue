@@ -29,7 +29,7 @@
         </el-table-column>
         <el-table-column label="封面图" width="80">
           <template #default="{ row }">
-            <img v-if="row.photo_url" :src="row.photo_url" class="thumb-preview" />
+            <ResponsiveImage v-if="row.photo_url" :src="row.photo_url" variant="thumb" class="thumb-preview" />
             <span v-else class="no-thumb">—</span>
           </template>
         </el-table-column>
@@ -81,7 +81,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="封面图片">
-          <ImageInput v-model="form.photo_url" placeholder="图片 URL 或上传" />
+          <ImageInput v-model="form.photo_url" placeholder="图片 URL 或上传" size-hint="推荐 800×450px (16:9 横向)" />
         </el-form-item>
         <el-form-item label="投资金额" prop="investment_amount">
           <el-input v-model="form.investment_amount" placeholder="如：80万美元" />

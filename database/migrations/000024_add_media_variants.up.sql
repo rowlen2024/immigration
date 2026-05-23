@@ -1,0 +1,1 @@
+ALTER TABLE media ADD COLUMN variants JSON DEFAULT NULL AFTER size_bytes;

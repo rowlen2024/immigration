@@ -24,6 +24,7 @@ type handlerMockFAQRepo struct {
 	createFn              func(faq *model.FAQ) error
 	updateFn              func(faq *model.FAQ) error
 	deleteFn              func(id uint64) error
+	deleteByProjectIDFn   func(projectID uint64) error
 	searchFn              func(keyword string) ([]model.FAQ, error)
 }
 
@@ -60,6 +61,12 @@ func (m *handlerMockFAQRepo) Update(faq *model.FAQ) error {
 func (m *handlerMockFAQRepo) Delete(id uint64) error {
 	if m.deleteFn != nil {
 		return m.deleteFn(id)
+	}
+	return nil
+}
+func (m *handlerMockFAQRepo) DeleteByProjectID(projectID uint64) error {
+	if m.deleteByProjectIDFn != nil {
+		return m.deleteByProjectIDFn(projectID)
 	}
 	return nil
 }

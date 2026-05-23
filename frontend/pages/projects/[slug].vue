@@ -4,7 +4,15 @@
       <ProjectBreadcrumb :label="project.title" />
     </div>
 
-    <section class="detail-hero" :style="heroStyle">
+    <section class="detail-hero" :style="heroFallbackStyle">
+      <ResponsiveImage
+        v-if="project.cover_image"
+        :src="project.cover_image"
+        alt=""
+        variant="lg"
+        class="detail-hero-bg"
+      />
+      <div class="detail-hero-overlay"></div>
       <div class="container">
         <h1 class="detail-title">{{ project.title }}</h1>
         <p class="detail-summary">{{ project.summary }}</p>
@@ -93,7 +101,7 @@
           <h2 class="detail-section-title">最新资讯</h2>
           <div class="news-list">
             <NuxtLink v-for="n in project.news" :key="n.id" :to="`/pages/${n.slug}`" class="news-item">
-              <img v-if="n.cover" :src="n.cover" :alt="n.title" class="news-cover" />
+              <ResponsiveImage v-if="n.cover" :src="n.cover" :alt="n.title" variant="thumb" class="news-cover" />
               <div class="news-body">
                 <h4 class="news-title">{{ n.title }}</h4>
                 <span v-if="n.date" class="news-date">{{ new Date(n.date).toLocaleDateString('zh-CN') }}</span>
@@ -309,10 +317,9 @@ useSeo({
   breadcrumbLabel: project.value.title,
 });
 
-const heroStyle = computed(() => {
-  const img = project.value.cover_image;
-  return img
-    ? { backgroundImage: `linear-gradient(135deg, rgba(15, 36, 64, 0.85), rgba(26, 58, 92, 0.7)), url(${img})` }
+const heroFallbackStyle = computed(() => {
+  return project.value.cover_image
+    ? {}
     : { background: 'linear-gradient(135deg, #1a3a5c, #2d5a8e)' };
 });
 
@@ -445,11 +452,34 @@ onUnmounted(() => {
 }
 
 .detail-hero {
+  position: relative;
   background-size: cover;
   background-position: center;
   padding: 80px 0;
   color: var(--bg-white);
   margin-bottom: 0;
+}
+
+.detail-hero-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 0;
+}
+
+.detail-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(15, 36, 64, 0.85), rgba(26, 58, 92, 0.7));
+  z-index: 1;
+}
+
+.detail-hero .container {
+  position: relative;
+  z-index: 2;
 }
 
 .detail-title {
@@ -563,6 +593,7 @@ onUnmounted(() => {
 .news-cover {
   width: 120px;
   height: 80px;
+  aspect-ratio: 3 / 2;
   object-fit: cover;
   border-radius: 4px;
   flex-shrink: 0;

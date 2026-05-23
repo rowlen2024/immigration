@@ -259,7 +259,7 @@ onUnmounted(() => {
 .tt-qr-img {
   display: block;
   width: 130px;
-  height: 130px;
+  aspect-ratio: 1;
   border-radius: 6px;
   margin: 8px auto 0;
   border: 1px solid #e8e8ef;

@@ -34,7 +34,7 @@
           :class="{ selected: selectedId === item.id }"
           @click="selectedId = item.id"
         >
-          <img :src="item.url" :alt="item.original_name" />
+          <ResponsiveImage :src="item.url" :alt="item.original_name" variant="sm" />
         </div>
         <div v-if="!loading && list.length === 0" class="empty-hint">
           暂无图片
@@ -43,7 +43,7 @@
 
       <div class="picker-detail" v-if="selectedItem">
         <div class="detail-preview">
-          <img :src="selectedItem.url" :alt="selectedItem.original_name" />
+          <ResponsiveImage :src="selectedItem.url" :alt="selectedItem.original_name" variant="md" />
         </div>
         <div class="detail-info">
           <p class="detail-name">{{ selectedItem.original_name || selectedItem.filename }}</p>

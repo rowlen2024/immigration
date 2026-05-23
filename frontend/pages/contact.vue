@@ -455,7 +455,8 @@ onMounted(() => {
 
 .contact-qr-img {
   width: 120px;
-  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
 }

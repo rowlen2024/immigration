@@ -1,87 +1,51 @@
 # Task Plan — MyGo 移民
 
-**更新时间:** 2026-05-20
+**更新时间:** 2026-05-23
 
 ---
 
-## Phase 5: 接口规范化 ✅ (2026-05-20 完成)
+## Phase 6: 后端图片自动缩略图 + 压缩 ✅
 
-**目标:** 规范前后台 API 使用，确保前后台接口严格隔离、响应格式统一。
+**目标:** 上传时自动生成多尺寸变体 + >5MB 压缩
 
-### 完成项
+- [x] 选型：`disintegration/imaging` + `golang.org/x/image/webp`（纯 Go，兼容 CGO_ENABLED=0）
+- [x] 新建 `service/media_thumbnail.go` — `GenerateVariants()` + `CompressIfLarge()`
+- [x] `model/media.go` 新增 `Variants datatypes.JSON` 字段
+- [x] `handler/media_handler.go` 上传流程接入：落盘 → 压缩(>5MB) → 生成变体 → 存 DB
+- [x] `service/media_svc.go` CleanupUnused 同步删除变体文件
+- [x] 迁移 `000024_add_media_variants.up.sql`
 
-- [x] **后台接口补充**: 新增 `GET /admin/cases?all=true`、`GET /admin/testimonials`、`GET /admin/site-config`
-- [x] **响应格式规范化**: `?all=true` 返回 `Success` 非分页；分页返回 `SuccessPaginated`
-- [x] **公共接口修正**: `GET /faqs` 改为非分页；`GetHomeConfig` 分离公共/admin handler
-- [x] **Lawyer 分页**: 新增 repo/service 分页方法，handler 默认分页 + `?all=true`
-- [x] **前端修正**: 6 个 admin 页面的 API 调用改为正确 admin 端点 + 响应类型修正
-- [x] **规范文档**: CLAUDE.md 新增"API 接口规范"章节（含模板代码 + 接口速查表）
-
-### 修改文件（14 个）
-
-| 层 | 文件 | 说明 |
-|----|------|------|
-| handler | `faq_handler.go` | ListFAQs → 非分页 |
-| handler | `project_handler.go` | AdminListProjects ?all=true → Success |
-| handler | `page_handler.go` | AdminListPages ?all=true → Success |
-| handler | `case_handler.go` | AdminListCases 新增 ?all=true |
-| handler | `lawyer_handler.go` | 分页 + ?all=true |
-| handler | `testimonial_handler.go` | 新增 AdminListTestimonials |
-| handler | `home_handler.go` | 新增 GetAdminHomeConfig |
-| repo | `lawyer_repo.go` | 新增 FindPaginated |
-| service | `lawyer_svc.go` | 新增 ListPaginated |
-| router | `router.go` | 新增路由 + handler 绑定 |
-| frontend | `homepage.vue` | 公共接口 → admin 接口 |
-| frontend | `settings.vue` | /site-config → /admin/site-config |
-| frontend | `faqs/cases/navigation/projects/lawyers.vue` | ?all=true 响应类型修正 |
+**变体规格:** thumb(200×200 裁切) / sm(400×300 Fit) / md(800×450 Fit) / lg(1920×800 Fit) — 全部 JPEG Q=80
 
 ---
 
-## Phase 1–4: 前台 UI 优化 ✅ (2026-05-17 完成)
-  - [x] 统一 CSS 变量（合并双套体系，更新色值）
-  - [x] 引入 Noto Serif SC + Noto Sans SC Web 字体
-  - [x] 添加 Type Scale、完整阴影层级、圆角系统、间距系统
-  - [x] 按钮改为金色渐变白字 + 悬浮上浮效果
+## Phase 7: 前端图片变体接入 ✅
 
-- [x] **Phase 2: 组件提取与优化**
-  - [x] 提取 CaseCard 组件（消除 index/cases/projects 三处重复）
-  - [x] 提取 TestimonialCarousel 组件（消除 index/projects 两处重复）
-  - [x] Header Emoji `▼` → SVG chevron 图标
-  - [x] FAQAccordion Emoji `+/−` → SVG 十字图标
+**目标:** 前端按场景加载对应尺寸变体，旧图自动回退原 URL
 
-- [x] **Phase 3: 核心页面视觉升级**
-  - [x] 首页信任条毛玻璃效果 + 金色分隔线
-  - [x] 首页项目卡片图片金色渐变叠加 + pill 标签
-  - [x] FAQ 筛选按钮 pill 样式
-  - [x] 联系表单 focus 金色边框 + 阴影
-  - [x] 评价卡片重新设计（暖色渐变 + 金色竖线 + 验证标签）
+- [x] 新建 `utils/image.ts` — `getVariantUrl(url, variant)` 纯字符串计算
+- [x] 新建 `components/ResponsiveImage.vue` — 变体 404 自动回退原图
+- [x] 共享组件：CaseCard(sm), LawyerCarousel(sm), TestimonialCarousel(thumb), MediaPicker(sm/md), ImageInput(sm)
+- [x] 公众页面：index.vue(Hero lg, 卡片 sm, 横幅 lg), projects/[slug].vue(Hero lg, 新闻 thumb)
+- [x] 管理后台：cases/lawyers/projects/homepage/media 表格缩略图(thumb), 预览(md)
 
-- [x] **Phase 4: 动效打磨与验证**
-  - [x] FAQ 手风琴平滑展开/收起动画
-  - [x] 全局过渡时间统一（design tokens）
-  - [x] 移动端适配（ContactSidebar 底部条、断点系统）
-  - [x] 前端构建验证通过
-  - [x] 后端构建验证通过
+---
 
-## 已修改文件清单
+## Phase 8: Hero 背景回退修复 + CLI 命令行工具 ✅
 
-| 文件 | 操作 | 说明 |
-|------|------|------|
-| `frontend/assets/css/variables.css` | 重写 | 统一设计令牌，新增 type scale / 阴影 / 间距 / 动画变量 |
-| `frontend/assets/css/global.css` | 更新 | 金色渐变按钮、section-header 更新 |
-| `frontend/nuxt.config.ts` | 更新 | 引入 Google Fonts |
-| `frontend/components/CaseCard.vue` | **新建** | 统一案例卡片组件 |
-| `frontend/components/TestimonialCarousel.vue` | **新建** | 统一评价轮播组件 |
-| `frontend/pages/cases.vue` | 更新 | 使用 CaseCard 组件 |
-| `frontend/pages/index.vue` | 更新 | CaseCard + TestimonialCarousel + 卡片/信任条样式 |
-| `frontend/pages/projects/[slug].vue` | 更新 | CaseCard + TestimonialCarousel |
-| `frontend/pages/faq.vue` | 更新 | Pill 筛选按钮 |
-| `frontend/pages/contact.vue` | 更新 | 表单焦点金色效果 |
-| `frontend/components/global/Header.vue` | 更新 | Emoji → SVG 图标 |
-| `frontend/components/project/FAQAccordion.vue` | 更新 | SVG 图标 + 平滑动画 |
+**问题:** CSS background-image 无 @error 回退机制，变体 404 后背景空白
 
-## 延迟项（后续可做）
+- [x] index.vue hero slide: `:style backgroundImage` → `<ResponsiveImage class="hero-slide-bg">`
+- [x] projects/[slug].vue detail hero: 同上，加独立 gradient overlay div
+- [x] 删除未使用的 `getVariantUrl` import
 
-- Hero 动态光晕动效（需显著 JS 改动）
-- 暗色模式支持（需 CSS 双主题）
-- i18n 国际化（需提取硬编码文本）
+**CLI 工具:** `./server generate-variants` 为历史图片批量生成变体
+- [x] cobra 三文件结构：main.go / root.go / generate.go
+- [x] 移除 Dockerfile 多余 binary，单二进制多子命令
+
+---
+
+## 待办
+
+- [ ] 部署后端 → 运行 `docker exec <容器> /app/server generate-variants` 为历史图片生成变体
+- [ ] 后续 PR: 前端升级使用 `<picture>` / `srcset` 进一步提升性能
