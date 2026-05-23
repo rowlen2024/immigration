@@ -453,6 +453,9 @@ onUnmounted(() => {
 
 .detail-hero {
   position: relative;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
   background-size: cover;
   background-position: center;
   padding: 80px 0;
@@ -713,6 +716,7 @@ onUnmounted(() => {
 
 @media (max-width: 767px) {
   .detail-hero {
+    min-height: 280px;
     padding: 48px 0;
   }
 

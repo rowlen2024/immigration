@@ -12,7 +12,8 @@ import (
 type mockCaseRepo struct {
 	findByIDFn        func(id uint64) (*model.Case, error)
 	findByProjectIDFn func(projectID uint64) ([]model.Case, error)
-	findAllFn         func(search string) ([]model.Case, error)
+	findAllFn           func(search string) ([]model.Case, error)
+	findAllPaginatedFn  func(page, perPage int, search string) ([]model.Case, int64, error)
 	createFn          func(c *model.Case) error
 	updateFn          func(c *model.Case) error
 	deleteFn          func(id uint64) error
@@ -40,6 +41,13 @@ func (m *mockCaseRepo) FindAll(search string) ([]model.Case, error) {
 		return m.findAllFn(search)
 	}
 	return nil, nil
+}
+
+func (m *mockCaseRepo) FindAllPaginated(page, perPage int, search string) ([]model.Case, int64, error) {
+	if m.findAllPaginatedFn != nil {
+		return m.findAllPaginatedFn(page, perPage, search)
+	}
+	return nil, 0, nil
 }
 
 func (m *mockCaseRepo) Create(c *model.Case) error {
@@ -301,17 +309,12 @@ func TestCase_Create_RepoError(t *testing.T) {
 }
 
 func TestCase_AdminList_Success(t *testing.T) {
-	sampleCases := []model.Case{
-		{ID: 1, Name: "Case A"},
-		{ID: 2, Name: "Case B"},
-		{ID: 3, Name: "Case C"},
-		{ID: 4, Name: "Case D"},
-		{ID: 5, Name: "Case E"},
-	}
-
 	repo := &mockCaseRepo{
-		findAllFn: func(search string) ([]model.Case, error) {
-			return sampleCases, nil
+		findAllPaginatedFn: func(page, perPage int, search string) ([]model.Case, int64, error) {
+			return []model.Case{
+				{ID: 1, Name: "Case A"},
+				{ID: 2, Name: "Case B"},
+			}, 5, nil
 		},
 	}
 
@@ -327,21 +330,14 @@ func TestCase_AdminList_Success(t *testing.T) {
 	if len(cases) != 2 {
 		t.Errorf("expected 2 cases on page 1 with perPage=2, got %d", len(cases))
 	}
-	if cases[0].ID != 1 || cases[1].ID != 2 {
-		t.Errorf("expected first page to contain cases 1 and 2")
-	}
 }
 
 func TestCase_AdminList_Page2(t *testing.T) {
-	sampleCases := []model.Case{
-		{ID: 1, Name: "Case A"},
-		{ID: 2, Name: "Case B"},
-		{ID: 3, Name: "Case C"},
-	}
-
 	repo := &mockCaseRepo{
-		findAllFn: func(search string) ([]model.Case, error) {
-			return sampleCases, nil
+		findAllPaginatedFn: func(page, perPage int, search string) ([]model.Case, int64, error) {
+			return []model.Case{
+				{ID: 3, Name: "Case C"},
+			}, 3, nil
 		},
 	}
 
@@ -361,8 +357,8 @@ func TestCase_AdminList_Page2(t *testing.T) {
 
 func TestCase_AdminList_BeyondRange(t *testing.T) {
 	repo := &mockCaseRepo{
-		findAllFn: func(search string) ([]model.Case, error) {
-			return []model.Case{{ID: 1, Name: "Case A"}}, nil
+		findAllPaginatedFn: func(page, perPage int, search string) ([]model.Case, int64, error) {
+			return []model.Case{}, 1, nil
 		},
 	}
 
@@ -382,8 +378,8 @@ func TestCase_AdminList_BeyondRange(t *testing.T) {
 
 func TestCase_AdminList_DefaultPagination(t *testing.T) {
 	repo := &mockCaseRepo{
-		findAllFn: func(search string) ([]model.Case, error) {
-			return []model.Case{}, nil
+		findAllPaginatedFn: func(page, perPage int, search string) ([]model.Case, int64, error) {
+			return []model.Case{}, 0, nil
 		},
 	}
 
@@ -396,8 +392,8 @@ func TestCase_AdminList_DefaultPagination(t *testing.T) {
 
 func TestCase_AdminList_RepoError(t *testing.T) {
 	repo := &mockCaseRepo{
-		findAllFn: func(search string) ([]model.Case, error) {
-			return nil, errors.New("db error")
+		findAllPaginatedFn: func(page, perPage int, search string) ([]model.Case, int64, error) {
+			return nil, 0, errors.New("db error")
 		},
 	}
 
@@ -406,5 +402,29 @@ func TestCase_AdminList_RepoError(t *testing.T) {
 	_, _, err := svc.AdminList(1, 10, "")
 	if err == nil {
 		t.Fatal("expected error from repo")
+	}
+}
+
+func TestCase_ListPaginated_Success(t *testing.T) {
+	repo := &mockCaseRepo{
+		findAllPaginatedFn: func(page, perPage int, search string) ([]model.Case, int64, error) {
+			return []model.Case{
+				{ID: 1, Name: "Case A"},
+				{ID: 2, Name: "Case B"},
+			}, 2, nil
+		},
+	}
+
+	svc := NewCaseService(repo)
+
+	cases, total, err := svc.ListPaginated(1, 10)
+	if err != nil {
+		t.Fatalf("expected success, got error: %v", err)
+	}
+	if total != 2 {
+		t.Errorf("expected total 2, got %d", total)
+	}
+	if len(cases) != 2 {
+		t.Errorf("expected 2 cases, got %d", len(cases))
 	}
 }

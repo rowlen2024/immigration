@@ -93,6 +93,7 @@ type CaseRepository interface {
 	FindByID(id uint64) (*model.Case, error)
 	FindByProjectID(projectID uint64) ([]model.Case, error)
 	FindAll(search string) ([]model.Case, error)
+	FindAllPaginated(page, perPage int, search string) ([]model.Case, int64, error)
 	FindBySlug(slug string) (*model.Case, error)
 	Create(c *model.Case) error
 	Update(c *model.Case) error

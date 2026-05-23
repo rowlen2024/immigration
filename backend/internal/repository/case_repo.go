@@ -63,6 +63,28 @@ func (r *CaseRepo) FindAll(search string) ([]model.Case, error) {
 	return cases, nil
 }
 
+func (r *CaseRepo) FindAllPaginated(page, perPage int, search string) ([]model.Case, int64, error) {
+	var cases []model.Case
+	var total int64
+
+	q := r.db.Model(&model.Case{}).Preload("Project")
+	if search != "" {
+		q = q.Where("name LIKE ?", "%"+search+"%")
+	}
+
+	countQ := q.Session(&gorm.Session{})
+	if err := countQ.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * perPage
+	err := q.Order("sort_order asc").Offset(offset).Limit(perPage).Find(&cases).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return cases, total, nil
+}
+
 func (r *CaseRepo) Create(c *model.Case) error {
 	return r.db.Create(c).Error
 }

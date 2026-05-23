@@ -1,27 +1,28 @@
 <template>
-  <div class="cases-page">
+  <div class="projects-page">
     <div class="container">
       <ProjectBreadcrumb />
 
-      <h1 class="page-title">成功案例</h1>
-      <p class="page-subtitle">每一位客户的成功获批，都是我们最大的骄傲</p>
+      <h1 class="page-title">移民项目</h1>
+      <p class="page-subtitle">探索最适合您的投资移民项目</p>
 
-      <div v-if="initialLoading" class="page-skeleton-wrapper"><PageSkeleton variant="cards" :count="6" /></div>
+      <div v-if="initialLoading" class="page-skeleton-wrapper">
+        <PageSkeleton variant="cards" :count="6" />
+      </div>
 
       <div v-else-if="loadError && items.length === 0" class="error-state">{{ loadError }}</div>
 
-      <div v-else class="cases-grid">
-        <CaseCard
-          v-for="item in items"
-          :key="item.id"
-          :slug="item.slug"
-          :name="item.name"
-          :country="item.country"
-          :project="item.project || undefined"
-          :summary="item.summary"
-          :image="item.image"
-          :show-result="true"
-          result-text="成功获批"
+      <div v-else class="projects-grid">
+        <ProjectCard
+          v-for="(project, idx) in items"
+          :key="project.slug"
+          :slug="project.slug"
+          :title="project.title"
+          :description="project.description"
+          :image="project.image"
+          :features="project.features"
+          :link="project.link"
+          :image-variant="idx"
         />
       </div>
 
@@ -29,10 +30,10 @@
         <PageSkeleton variant="cards" :count="3" />
       </div>
 
-      <div v-if="allLoaded && items.length > 0" class="end-of-list">已加载全部案例</div>
+      <div v-if="allLoaded && items.length > 0" class="end-of-list">已加载全部项目</div>
 
       <div v-if="!initialLoading && items.length === 0 && !loadError" class="empty-state">
-        暂无成功案例展示
+        暂无移民项目
       </div>
 
       <div ref="sentinel" class="scroll-sentinel"></div>
@@ -41,61 +42,59 @@
 </template>
 
 <script setup lang="ts">
-useSeo({ title: '成功案例' })
+useSeo({ title: '移民项目', description: '探索最适合您的投资移民项目' })
 
-interface ApiCaseItem {
-  id: number
+interface ApiProject {
   slug: string
   name: string
-  country_from: string
-  photo_url: string
-  content: string
-  project?: { name: string }
+  tagline: string
+  overview_text: string
+  cover_image: string
+  investment_amount: string
+  processing_period: string
+  target_crowd: string
 }
 
-interface CaseItem {
-  id: string
+interface ProjectItem {
   slug: string
-  name: string
-  country: string
-  project: string
-  summary: string
+  title: string
+  description: string
   image: string
-}
-
-function stripHtml(html: string): string {
-  if (!html) return ''
-  return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').slice(0, 80)
+  features: string[]
+  link: string
 }
 
 const PER_PAGE = 12
 const page = ref(1)
-const items = ref<CaseItem[]>([])
+const items = ref<ProjectItem[]>([])
 const totalCount = ref(0)
 const loadingMore = ref(false)
 const loadError = ref<string | null>(null)
 const sentinel = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 
-function mapCase(api: ApiCaseItem): CaseItem {
+function mapProject(api: ApiProject): ProjectItem {
+  const features: string[] = []
+  if (api.investment_amount) features.push(`投资金额：${api.investment_amount}`)
+  if (api.processing_period) features.push(`办理周期：${api.processing_period}`)
+  if (api.target_crowd) features.push(`适合人群：${api.target_crowd}`)
   return {
-    id: String(api.id),
     slug: api.slug,
-    name: api.name,
-    country: api.country_from,
-    project: api.project?.name ?? '',
-    summary: stripHtml(api.content),
-    image: api.photo_url,
+    title: api.name,
+    description: api.tagline || api.overview_text || '',
+    image: api.cover_image || '',
+    features,
+    link: `/projects/${api.slug}`,
   }
 }
 
 const { pending, error: fetchError } = await useFetch(
-  () => `/api/v1/cases?page=1&per_page=${PER_PAGE}`,
+  () => `/api/v1/projects?page=1&per_page=${PER_PAGE}`,
   {
     onResponse({ response }) {
       const body = response._data as any
       if (body?.data) {
-        items.value = (body.data as ApiCaseItem[]).map(mapCase)
+        items.value = (body.data as ApiProject[]).map(mapProject)
         totalCount.value = body.pagination?.total ?? 0
       }
     },
@@ -112,9 +111,9 @@ async function loadMore() {
   loadingMore.value = true
   const nextPage = page.value + 1
   try {
-    const raw = await $fetch(`/api/v1/cases?page=${nextPage}&per_page=${PER_PAGE}`)
+    const raw = await $fetch(`/api/v1/projects?page=${nextPage}&per_page=${PER_PAGE}`)
     const body = raw as any
-    const newItems = (body.data as ApiCaseItem[]).map(mapCase)
+    const newItems = (body.data as ApiProject[]).map(mapProject)
     items.value.push(...newItems)
     totalCount.value = body.pagination?.total ?? totalCount.value
     page.value = nextPage
@@ -126,9 +125,9 @@ async function loadMore() {
 }
 
 onMounted(() => {
-  $fetch(`/api/v1/cases?page=1&per_page=${PER_PAGE}`)
+  $fetch(`/api/v1/projects?page=1&per_page=${PER_PAGE}`)
     .then((v: any) => {
-      items.value = (v.data as ApiCaseItem[]).map(mapCase)
+      items.value = (v.data as ApiProject[]).map(mapProject)
       totalCount.value = v.pagination?.total ?? 0
     })
     .catch(() => {})
@@ -161,11 +160,10 @@ onUnmounted(() => {
   margin-bottom: 40px;
 }
 
-.cases-grid {
+.projects-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 32px;
-  margin-bottom: 0;
+  gap: 24px;
 }
 
 .error-state,
@@ -192,13 +190,13 @@ onUnmounted(() => {
 }
 
 @media (max-width: 1023px) {
-  .cases-grid {
+  .projects-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 767px) {
-  .cases-grid {
+  .projects-grid {
     grid-template-columns: 1fr;
   }
 

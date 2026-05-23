@@ -22,14 +22,15 @@ func (h *Handler) GetCase(c *gin.Context) {
 }
 
 func (h *Handler) ListCases(c *gin.Context) {
-	cases, err := h.svc.Case.List()
+	page, perPage := parsePagination(c)
+	cases, total, err := h.svc.Case.ListPaginated(page, perPage)
 	if err != nil {
 		logging.Logger.Error("failed in ListCases", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.Success(cases))
+	c.JSON(http.StatusOK, dto.SuccessPaginated(cases, page, perPage, total))
 }
 
 func (h *Handler) AdminListCases(c *gin.Context) {

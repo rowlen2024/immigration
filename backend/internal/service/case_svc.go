@@ -56,6 +56,20 @@ func (s *CaseService) List() ([]model.Case, error) {
 	return s.ListAll("")
 }
 
+func (s *CaseService) ListPaginated(page, perPage int) ([]model.Case, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if perPage < 1 {
+		perPage = 10
+	}
+	cases, total, err := s.repo.FindAllPaginated(page, perPage, "")
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to list cases: %w", err)
+	}
+	return cases, total, nil
+}
+
 func (s *CaseService) ListAll(search string) ([]model.Case, error) {
 	cases, err := s.repo.FindAll(search)
 	if err != nil {
@@ -79,22 +93,11 @@ func (s *CaseService) AdminList(page, perPage int, search string) ([]model.Case,
 	if perPage < 1 {
 		perPage = 10
 	}
-
-	cases, err := s.repo.FindAll(search)
+	cases, total, err := s.repo.FindAllPaginated(page, perPage, search)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list cases: %w", err)
 	}
-
-	total := int64(len(cases))
-	start := (page - 1) * perPage
-	if start >= len(cases) {
-		return []model.Case{}, total, nil
-	}
-	end := start + perPage
-	if end > len(cases) {
-		end = len(cases)
-	}
-	return cases[start:end], total, nil
+	return cases, total, nil
 }
 
 func (s *CaseService) Create(c *model.Case) (*model.Case, error) {

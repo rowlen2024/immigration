@@ -82,8 +82,9 @@ img {
 }
 
 .btn-outline:hover {
-  border-color: var(--color-accent-light);
-  background-color: var(--color-accent-soft);
+  border-color: var(--color-accent);
+  background: var(--gradient-gold);
+  color: #fff;
 }
 
 /* ===== Focus ring ===== */
