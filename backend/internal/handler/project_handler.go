@@ -16,6 +16,17 @@ const defaultPage = 1
 const defaultPerPage = 10
 
 func (h *Handler) ListProjects(c *gin.Context) {
+	if c.Query("all") == "true" {
+		projects, err := h.svc.Project.ListAll("", "")
+		if err != nil {
+			logging.Logger.Error("failed in ListProjects", "error", err)
+			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+			return
+		}
+		c.JSON(http.StatusOK, dto.Success(projects))
+		return
+	}
+
 	page, perPage := parsePagination(c)
 
 	projects, total, err := h.svc.Project.List(page, perPage, "", "")

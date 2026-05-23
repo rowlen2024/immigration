@@ -20,6 +20,15 @@ func NewFAQService(repo repository.FAQRepository) *FAQService {
 	return &FAQService{repo: repo}
 }
 
+// ListAll returns all FAQs matching the given filters without pagination.
+func (s *FAQService) ListAll(projectID *uint64, search string) ([]dto.FAQResponse, error) {
+	results, err := s.repo.FindAllList(projectID, search)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list faqs: %w", err)
+	}
+	return toFAQResponses(results), nil
+}
+
 // List returns paginated FAQs, optionally filtered by project or global flag.
 func (s *FAQService) List(projectID *uint64, isGlobal *bool, page, perPage int) ([]dto.FAQResponse, int64, error) {
 	return s.AdminList(projectID, "", page, perPage)

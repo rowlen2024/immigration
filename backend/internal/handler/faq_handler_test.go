@@ -20,6 +20,7 @@ import (
 type handlerMockFAQRepo struct {
 	findByIDFn            func(id uint64) (*model.FAQ, error)
 	findAllFn             func(params repository.FAQQueryParams) ([]repository.FAQWithProject, int64, error)
+	findAllListFn         func(projectID *uint64, search string) ([]repository.FAQWithProject, error)
 	findDistinctProjectsFn func() ([]model.Project, error)
 	createFn              func(faq *model.FAQ) error
 	updateFn              func(faq *model.FAQ) error
@@ -39,6 +40,12 @@ func (m *handlerMockFAQRepo) FindAll(params repository.FAQQueryParams) ([]reposi
 		return m.findAllFn(params)
 	}
 	return nil, 0, nil
+}
+func (m *handlerMockFAQRepo) FindAllList(projectID *uint64, search string) ([]repository.FAQWithProject, error) {
+	if m.findAllListFn != nil {
+		return m.findAllListFn(projectID, search)
+	}
+	return nil, nil
 }
 func (m *handlerMockFAQRepo) FindDistinctProjects() ([]model.Project, error) {
 	if m.findDistinctProjectsFn != nil {
@@ -255,13 +262,16 @@ func TestFAQHandler_CreateFAQ_MissingFields(t *testing.T) {
 	h.CreateFAQ(c)
 
 	// Should get 500 because service validation fails
-	if w.Code != http.StatusInternalServerError {
-		t.Errorf("expected status 500 for missing fields, got %d", w.Code)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400 for missing fields, got %d", w.Code)
 	}
 }
 
 func TestFAQHandler_UpdateFAQ_Success(t *testing.T) {
 	mockRepo := &handlerMockFAQRepo{
+		findByIDFn: func(id uint64) (*model.FAQ, error) {
+			return &model.FAQ{ID: 5, Question: "Old Q", Answer: "Old A"}, nil
+		},
 		updateFn: func(faq *model.FAQ) error {
 			return nil
 		},

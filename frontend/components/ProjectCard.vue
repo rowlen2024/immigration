@@ -1,5 +1,5 @@
 <template>
-  <div class="project-card">
+  <NuxtLink :to="link" class="project-card">
     <div class="card-image" :class="`card-image--${variantIdx}`">
       <div class="card-image-glow"></div>
       <div class="card-image-overlay"></div>
@@ -13,13 +13,13 @@
           {{ feat }}
         </span>
       </div>
-      <NuxtLink :to="link" class="card-link">
+      <span class="card-link">
         了解详情
         <span class="link-arrow" v-html="getIconSvg('chevron-right', 14, 'currentColor')"></span>
-      </NuxtLink>
+      </span>
     </div>
     <div class="card-bottom-line"></div>
-  </div>
+  </NuxtLink>
 </template>
 
 <script setup lang="ts">
@@ -40,6 +40,9 @@ const variantIdx = computed(() => (props.imageVariant ?? 0) % 3)
 
 <style scoped>
 .project-card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
   position: relative;
   background-color: var(--bg-white);
   border-radius: var(--radius-lg);

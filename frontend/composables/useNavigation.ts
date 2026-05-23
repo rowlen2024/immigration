@@ -149,8 +149,12 @@ export const useNavigation = (position: NavPosition = 'header') => {
     return (items && items.length > 0) ? items : fallback
   })
 
-  const getBreadcrumb = (path: string, label?: string): BreadcrumbItem[] => {
-    return buildBreadcrumb(navItems.value, path, label);
+  const getBreadcrumb = (path: string, label?: string, parentCrumb?: BreadcrumbItem): BreadcrumbItem[] => {
+    const result = buildBreadcrumb(navItems.value, path, label);
+    if (parentCrumb && result.length > 0 && !result[0].link) {
+      result[0] = parentCrumb;
+    }
+    return result;
   };
 
   // 客户端强制刷新（绕过 Nuxt payload 缓存）

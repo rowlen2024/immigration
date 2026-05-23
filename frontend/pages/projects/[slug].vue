@@ -182,20 +182,19 @@
 
         <section id="faqs" v-if="faqs.length > 0" class="detail-section">
           <h2 class="detail-section-title">常见问题</h2>
-          <ProjectFAQAccordion :items="paginatedFaqs" />
-          <Pagination
+          <ProjectFaqListSection
+            :items="paginatedFaqs"
             :page="faqPage"
             :per-page="faqPerPage"
             :total="faqs.length"
-            @change="changeFaqPage"
+            @page-change="changeFaqPage"
           />
         </section>
 
-        <section class="detail-cta">
-          <h3>对{{ project.title }}感兴趣？</h3>
-          <p>立即联系我们，专业顾问为您一对一解答</p>
-          <NuxtLink to="/contact" class="btn-primary">免费咨询</NuxtLink>
-        </section>
+        <ConsultCTA
+          :title="`对${project.title}感兴趣？`"
+          description="立即联系我们，专业顾问为您一对一解答"
+        />
       </template>
     </div>
   </div>
@@ -701,45 +700,6 @@ onUnmounted(() => {
   line-height: 1.9;
 }
 
-.detail-cta {
-  text-align: center;
-  padding: 48px 0;
-  background-color: var(--bg-light);
-  border-radius: var(--radius-lg);
-  margin: 40px 0;
-}
-
-.detail-cta h3 {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.detail-cta p {
-  font-size: 15px;
-  color: var(--text-secondary);
-  margin-bottom: 24px;
-}
-
-@media (max-width: 767px) {
-  .detail-cta {
-    padding: 36px 20px;
-    margin: 32px 0;
-    border-radius: var(--radius-md);
-  }
-
-  .detail-cta h3 {
-    font-size: 20px;
-  }
-
-  .detail-cta .btn-primary {
-    width: 100%;
-    padding: 14px 0;
-    font-size: 16px;
-  }
-}
-
 .loading-state,
 .error-state {
   text-align: center;
@@ -975,6 +935,7 @@ onUnmounted(() => {
 /* ══════════════════════════════════════════════
    移动端 — 下拉选择单属性对比
    ══════════════════════════════════════════════ */
+@media (max-width: 767px) {
 .compare-switcher {
   display: flex;
   flex-direction: column;
@@ -1103,7 +1064,7 @@ onUnmounted(() => {
   border-radius: 50%;
   background: var(--accent);
 }
-
+} /* /@media mobile compare-switcher */
 
 @media (max-width: 767px) {
   .detail-hero {

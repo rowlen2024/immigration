@@ -1,7 +1,7 @@
 <template>
   <div class="projects-page">
     <div class="container">
-      <ProjectBreadcrumb />
+      <ProjectBreadcrumb label="项目列表" />
 
       <h1 class="page-title">移民项目</h1>
       <p class="page-subtitle">探索最适合您的投资移民项目</p>

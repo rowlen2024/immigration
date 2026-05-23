@@ -16,6 +16,7 @@ import (
 
 // handlerMockProjectRepo implements repository.ProjectRepository.
 type handlerMockProjectRepo struct {
+	findByID   func(id uint64) (*model.Project, error)
 	findBySlug  func(slug string) (*model.Project, error)
 	findAll     func(page, perPage int, search, status string) ([]model.Project, int64, error)
 	findBySlugs func(slugs []string) ([]model.Project, error)
@@ -28,7 +29,12 @@ type handlerMockProjectRepo struct {
 	deleteNewsByProjectID func(projectID uint64) error
 }
 
-func (m *handlerMockProjectRepo) FindByID(id uint64) (*model.Project, error) { return nil, nil }
+func (m *handlerMockProjectRepo) FindByID(id uint64) (*model.Project, error) {
+	if m.findByID != nil {
+		return m.findByID(id)
+	}
+	return nil, nil
+}
 func (m *handlerMockProjectRepo) FindBySlug(slug string) (*model.Project, error) {
 	if m.findBySlug != nil {
 		return m.findBySlug(slug)
@@ -246,8 +252,8 @@ func TestProjectHandler_CompareProjects_TooMany(t *testing.T) {
 
 	h.CompareProjects(c)
 
-	if w.Code != http.StatusInternalServerError {
-		t.Errorf("expected status 500 for too many slugs, got %d", w.Code)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400 for too many slugs, got %d", w.Code)
 	}
 }
 
@@ -378,8 +384,8 @@ func TestProjectHandler_CreateProject_MissingFields(t *testing.T) {
 
 	h.CreateProject(c)
 
-	if w.Code != http.StatusInternalServerError {
-		t.Errorf("expected status 500 for missing fields, got %d", w.Code)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400 for missing fields, got %d", w.Code)
 	}
 }
 
@@ -400,6 +406,12 @@ func TestProjectHandler_UpdateProject_InvalidID(t *testing.T) {
 
 func TestProjectHandler_UpdateProject_Success(t *testing.T) {
 	mockRepo := &handlerMockProjectRepo{
+		findByID: func(id uint64) (*model.Project, error) {
+			return &model.Project{ID: 5, Name: "Old Name", Slug: "old-slug"}, nil
+		},
+		findBySlug: func(slug string) (*model.Project, error) {
+			return nil, errors.New("not found")
+		},
 		update: func(project *model.Project) error {
 			return nil
 		},

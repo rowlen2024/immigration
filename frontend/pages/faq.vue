@@ -27,31 +27,22 @@
       </div>
 
       <!-- FAQ List -->
-      <div v-if="pending" class="page-skeleton-wrapper">
-        <PageSkeleton variant="list" :count="6" />
-      </div>
-      <div v-else-if="faqError" class="error-state">{{ faqError }}</div>
-      <div v-else class="faq-list">
-        <ProjectFAQAccordion :items="items" />
-      </div>
-
-      <div v-if="!pending && items.length === 0" class="empty-state">
-        暂无该分类的常见问题
-      </div>
-
-      <Pagination
+      <ProjectFaqListSection
+        :items="items"
+        :loading="pending"
+        :error="faqError"
+        empty-text="暂无该分类的常见问题"
         :page="page"
         :per-page="perPage"
         :total="totalItems"
-        @change="changePage"
+        @page-change="changePage"
       />
 
       <!-- CTA -->
-      <section class="faq-cta">
-        <h3>没有找到您的问题？</h3>
-        <p>联系我们的专业顾问，获取一对一解答</p>
-        <NuxtLink to="/contact" class="btn-primary">免费咨询</NuxtLink>
-      </section>
+      <ConsultCTA
+        title="没有找到您的问题？"
+        description="联系我们的专业顾问，获取一对一解答"
+      />
     </div>
   </div>
 </template>
@@ -128,7 +119,8 @@ const changeFilter = (slug: string) => {
 
 const changePage = (p: number) => {
   page.value = p;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({ top: 0, behavior: prefersReduced ? 'instant' : 'smooth' });
 };
 
 // FAQPage structured data
@@ -172,7 +164,7 @@ onMounted(() => {
 
 .page-subtitle {
   font-size: var(--text-base);
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   margin-bottom: 32px;
 }
 
@@ -183,8 +175,10 @@ onMounted(() => {
   flex-wrap: nowrap;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
   scrollbar-width: none;
   padding-bottom: 4px;
+  position: relative;
 }
 
 .faq-filters::-webkit-scrollbar {
@@ -192,7 +186,8 @@ onMounted(() => {
 }
 
 .filter-btn {
-  padding: 8px 22px;
+  padding: 10px 20px;
+  min-height: 44px;
   font-size: 13px;
   font-weight: 500;
   font-family: var(--font-sans);
@@ -202,6 +197,10 @@ onMounted(() => {
   border-radius: var(--radius-full);
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-out);
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
 }
 
 .filter-btn:hover {
@@ -215,47 +214,28 @@ onMounted(() => {
   border-color: var(--color-accent);
 }
 
-.faq-list {
-  margin-bottom: 48px;
-}
-
-.faq-cta {
-  text-align: center;
-  padding: 48px;
-  background-color: var(--bg-light);
-  border-radius: var(--radius-lg);
-  margin-bottom: 48px;
-}
-
-.faq-cta h3 {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.faq-cta p {
-  font-size: 15px;
-  color: var(--text-secondary);
-  margin-bottom: 24px;
-}
-
-.loading-state,
-.error-state,
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--text-light);
-  font-size: 16px;
-}
-
-.error-state {
-  color: #c62828;
-}
+/* styles moved to ProjectFaqListSection / ConsultCTA components */
 
 @media (max-width: 767px) {
   .page-title {
     font-size: 28px;
   }
+
+  .page-subtitle {
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+
+  .faq-filters {
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+
+  .filter-btn {
+    padding: 8px 16px;
+    min-height: 44px;
+    font-size: 12px;
+  }
+
 }
 </style>

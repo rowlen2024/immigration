@@ -14,6 +14,7 @@ type searchMockFAQRepo struct {
 }
 
 func (m *searchMockFAQRepo) FindByID(id uint64) (*model.FAQ, error) { return nil, nil }
+func (m *searchMockFAQRepo) FindAllList(projectID *uint64, search string) ([]repository.FAQWithProject, error) { return nil, nil }
 func (m *searchMockFAQRepo) FindDistinctProjects() ([]model.Project, error) { return nil, nil }
 func (m *searchMockFAQRepo) FindAll(params repository.FAQQueryParams) ([]repository.FAQWithProject, int64, error) {
 	return nil, 0, nil

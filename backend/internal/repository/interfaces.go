@@ -43,6 +43,7 @@ type FAQQueryParams struct {
 type FAQRepository interface {
 	FindByID(id uint64) (*model.FAQ, error)
 	FindAll(params FAQQueryParams) ([]FAQWithProject, int64, error)
+	FindAllList(projectID *uint64, search string) ([]FAQWithProject, error)
 	FindDistinctProjects() ([]model.Project, error)
 	Create(faq *model.FAQ) error
 	Update(faq *model.FAQ) error

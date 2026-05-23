@@ -135,6 +135,16 @@ const toggle = (index: number) => {
   will-change: max-height;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .faq-answer-wrapper {
+    transition: none;
+  }
+
+  .faq-icon {
+    transition: none;
+  }
+}
+
 .faq-answer {
   padding-bottom: 20px;
   font-size: 15px;

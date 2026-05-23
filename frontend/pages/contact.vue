@@ -28,6 +28,7 @@
                 class="form-input"
                 :class="{ 'input-error': errors.name }"
                 placeholder="请输入您的姓名"
+                @blur="validateField('name')"
               />
               <span v-if="errors.name" class="error-text">{{ errors.name }}</span>
             </div>
@@ -43,6 +44,7 @@
                 class="form-input"
                 :class="{ 'input-error': errors.phone }"
                 placeholder="请输入您的手机号码"
+                @blur="validateField('phone')"
               />
               <span v-if="errors.phone" class="error-text">{{ errors.phone }}</span>
             </div>
@@ -58,17 +60,24 @@
                 class="form-input"
                 :class="{ 'input-error': errors.email }"
                 placeholder="请输入您的邮箱地址"
+                @blur="validateField('email')"
               />
               <span v-if="errors.email" class="error-text">{{ errors.email }}</span>
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="project">意向项目</label>
-              <select id="project" v-model="form.project" class="form-input">
-                <option value="">-- 请选择意向项目 --</option>
-                <option v-for="p in projectOptions" :key="p.slug" :value="p.slug">{{ p.name }}</option>
-                <option value="other">其他/尚不确定</option>
-              </select>
+              <label class="form-label">意向项目</label>
+              <div ref="projectSelectRef" class="custom-select" :class="{ open: projectDropdownOpen }">
+                <div class="custom-select-trigger" @click="projectDropdownOpen = !projectDropdownOpen">
+                  <span :class="{ placeholder: !selectedProjectName }">{{ selectedProjectName || '-- 请选择意向项目 --' }}</span>
+                  <svg class="select-arrow" :class="{ rotated: projectDropdownOpen }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div v-show="projectDropdownOpen" class="custom-select-dropdown">
+                  <div class="custom-select-option placeholder-option" @click="selectProject('')">-- 请选择意向项目 --</div>
+                  <div v-for="p in projectOptions" :key="p.slug" class="custom-select-option" :class="{ selected: form.project === p.slug }" @click="selectProject(p.slug)">{{ p.name }}</div>
+                  <div class="custom-select-option" :class="{ selected: form.project === 'other' }" @click="selectProject('other')">其他/尚不确定</div>
+                </div>
+              </div>
             </div>
 
             <div class="form-group">
@@ -83,13 +92,17 @@
               ></textarea>
             </div>
 
-            <div v-if="submitError" class="submit-error">{{ submitError }}</div>
+            <div v-if="submitError" class="submit-error">
+              <span>{{ submitError }}</span>
+              <button type="button" class="retry-btn" @click="handleSubmit">重试</button>
+            </div>
 
             <button
               type="submit"
               class="btn-primary btn-submit"
               :disabled="submitting"
             >
+              <span v-if="submitting" class="spinner"></span>
               {{ submitting ? '提交中...' : '提交咨询' }}
             </button>
           </form>
@@ -166,11 +179,11 @@ interface ProjectOption {
   name: string;
 }
 
-const { data: projectListRaw, refresh: refreshProjects } = await useFetch<{ data?: { items?: ProjectOption[] } }>('/api/v1/projects?per_page=100')
+const { data: projectListRaw } = await useFetch<{ data?: ProjectOption[] }>('/api/v1/projects?all=true')
 
-const projectOptions = computed(() => {
+const projectOptions = computed<ProjectOption[]>(() => {
   const raw = projectListRaw.value as any
-  return raw?.data?.items ?? []
+  return raw?.data ?? []
 })
 
 interface ContactForm {
@@ -193,6 +206,25 @@ const errors = reactive<Record<string, string>>({});
 const submitting = ref(false);
 const submitSuccess = ref(false);
 const submitError = ref<string | null>(null);
+
+// Custom project select
+const projectDropdownOpen = ref(false);
+const projectSelectRef = ref<HTMLElement | null>(null);
+const selectedProjectName = computed(() => {
+  if (!form.project) return '';
+  if (form.project === 'other') return '其他/尚不确定';
+  const found = projectOptions.value.find(item => item.slug === form.project);
+  return found?.name ?? '';
+});
+const selectProject = (slug: string) => {
+  form.project = slug;
+  projectDropdownOpen.value = false;
+};
+const handleClickOutside = (e: MouseEvent) => {
+  if (projectSelectRef.value && !projectSelectRef.value.contains(e.target as Node)) {
+    projectDropdownOpen.value = false;
+  }
+};
 
 const validate = (): boolean => {
   const newErrors: Record<string, string> = {};
@@ -218,6 +250,33 @@ const validate = (): boolean => {
   Object.keys(errors).forEach((key) => delete errors[key]);
   Object.assign(errors, newErrors);
   return Object.keys(newErrors).length === 0;
+};
+
+const validateField = (field: 'name' | 'phone' | 'email') => {
+  const value = form[field].trim();
+  if (field === 'name') {
+    if (!value) {
+      errors.name = '请输入姓名';
+    } else if (value.length < 2) {
+      errors.name = '姓名至少2个字符';
+    } else {
+      delete errors.name;
+    }
+  } else if (field === 'phone') {
+    if (!value) {
+      errors.phone = '请输入电话号码';
+    } else if (!/^1\d{10}$/.test(value)) {
+      errors.phone = '请输入有效的手机号码';
+    } else {
+      delete errors.phone;
+    }
+  } else if (field === 'email') {
+    if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      errors.email = '请输入有效的邮箱地址';
+    } else {
+      delete errors.email;
+    }
+  }
 };
 
 const handleSubmit = async () => {
@@ -258,7 +317,12 @@ const resetForm = () => {
 };
 
 onMounted(() => {
-  $fetch('/api/v1/projects?per_page=100').then(v => { projectListRaw.value = v }).catch(() => {})
+  document.addEventListener('click', handleClickOutside);
+  $fetch('/api/v1/projects?all=true').then(v => { projectListRaw.value = v }).catch(() => {})
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
 })
 </script>
 
@@ -304,13 +368,13 @@ onMounted(() => {
 }
 
 .required {
-  color: #c62828;
+  color: var(--color-danger);
 }
 
 .form-input {
   width: 100%;
   padding: 12px 16px;
-  font-size: 15px;
+  font-size: 16px;
   font-family: var(--font-sans);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -335,20 +399,121 @@ onMounted(() => {
   min-height: 120px;
 }
 
+/* Custom Select */
+.custom-select {
+  position: relative;
+  user-select: none;
+}
+
+.custom-select-trigger {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-family: var(--font-sans);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-white);
+  color: var(--color-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.custom-select.open .custom-select-trigger {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
+}
+
+.custom-select-trigger .placeholder {
+  color: #999;
+}
+
+.select-arrow {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.select-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+.custom-select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  background-color: var(--bg-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+}
+
+.custom-select-option {
+  padding: 10px 16px;
+  font-size: 15px;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.custom-select-option:hover {
+  background-color: var(--color-accent-soft);
+}
+
+.custom-select-option.selected {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.custom-select-option.placeholder-option {
+  color: #999;
+}
+
 .error-text {
   display: block;
   font-size: 13px;
-  color: #c62828;
+  color: var(--color-danger);
   margin-top: 6px;
 }
 
 .submit-error {
-  background-color: #fce8e8;
-  color: #c62828;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background-color: var(--color-danger-soft);
+  color: var(--color-danger);
   padding: 12px 16px;
   border-radius: var(--radius-md);
   font-size: 14px;
   margin-bottom: 16px;
+}
+
+.retry-btn {
+  flex-shrink: 0;
+  padding: 4px 14px;
+  background: none;
+  border: 1.5px solid var(--color-danger);
+  color: var(--color-danger);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.retry-btn:hover {
+  background: var(--color-danger);
+  color: #fff;
 }
 
 .btn-submit {
@@ -360,6 +525,22 @@ onMounted(() => {
 .btn-submit:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Success Message */
@@ -378,8 +559,8 @@ onMounted(() => {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background-color: #e6f4ea;
-  color: #1e7e34;
+  background-color: var(--color-success-soft);
+  color: var(--color-success);
   font-size: 36px;
   margin-bottom: 20px;
 }
@@ -462,14 +643,37 @@ onMounted(() => {
 }
 
 @media (max-width: 1023px) {
+  .page-title {
+    font-size: 32px;
+  }
+
   .contact-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+
+  .contact-qr-img {
+    width: 100px;
   }
 }
 
 @media (max-width: 767px) {
   .page-title {
     font-size: 28px;
+  }
+
+  .page-subtitle {
+    font-size: 15px;
+    margin-bottom: 24px;
+  }
+
+  .contact-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .contact-info {
+    display: none;
   }
 
   .contact-form {
@@ -480,8 +684,18 @@ onMounted(() => {
     min-height: 44px;
   }
 
-  select.form-input {
-    padding: 10px 16px;
+  .success-message {
+    padding: 40px 24px;
+  }
+
+  .success-icon {
+    width: 64px;
+    height: 64px;
+    font-size: 28px;
+  }
+
+  .contact-qr-img {
+    width: 100px;
   }
 }
 </style>

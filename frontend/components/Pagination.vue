@@ -152,6 +152,7 @@ const go = (p: number) => {
 @media (max-width: 767px) {
   .pg-root {
     gap: 2px;
+    justify-content: center;
   }
 
   .pg-label {
@@ -163,8 +164,8 @@ const go = (p: number) => {
   }
 
   .pg-num {
-    min-width: 32px;
-    height: 32px;
+    min-width: 44px;
+    height: 44px;
     font-size: 13px;
   }
 }

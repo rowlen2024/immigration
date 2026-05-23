@@ -330,7 +330,7 @@ const data = await api<ItemType[]>('/admin/resource?all=true')
 | `GET /projects` | ✓ | — | `ListProjects` |
 | `GET /projects/:slug` | ✗ | — | `GetProject` |
 | `GET /projects/compare` | ✗ | — | `CompareProjects` |
-| `GET /faqs` | ✗ (全量) | — | `ListFAQs` |
+| `GET /faqs` | ✓ | — | `ListFAQs` |
 | `GET /faqs/projects` | ✗ (全量) | — | `ListFAQProjects` |
 | `GET /cases` | ✗ (全量) | — | `ListCases` |
 | `GET /cases/:slug` | ✗ | — | `GetCase` |
@@ -340,7 +340,7 @@ const data = await api<ItemType[]>('/admin/resource?all=true')
 | `GET /site-config` | ✗ | — | `GetSiteConfig` (公共) |
 | `GET /navigation` | ✗ (树) | — | `GetNavigation` |
 | `GET /admin/projects` | ✓ | ✓ | `AdminListProjects` |
-| `GET /admin/faqs` | ✓ | ✗ | `AdminListFAQs` |
+| `GET /admin/faqs` | ✓ | ✓ | `AdminListFAQs` |
 | `GET /admin/pages` | ✓ | ✓ | `AdminListPages` |
 | `GET /admin/pages/preview` | ✗ | — | `PreviewPage` |
 | `GET /admin/cases` | ✓ | ✓ | `AdminListCases` |
