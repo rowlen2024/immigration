@@ -15,10 +15,10 @@ immigration/
 │   └── internal/
 │       ├── config/           # 环境变量加载 (.env)
 │       ├── database/         # MySQL 连接 & AutoMigrate
-│       ├── model/            # GORM 模型 (14个)
-│       ├── repository/       # 数据访问层 (interfaces + 实现)
+│       ├── model/            # GORM 模型 (19个)
+│       ├── repository/       # 数据访问层 (interfaces + 13 个实现文件)
 │       ├── service/          # 业务逻辑层 (含 bluemonday 消毒)
-│       ├── handler/          # HTTP handler (路由处理)
+│       ├── handler/          # HTTP handler (16 个 handler 文件)
 │       ├── middleware/        # CORS, JWT Auth, RBAC, RateLimit
 │       ├── router/           # 路由注册 (Gin)
 │       └── dto/              # Request/Response 结构体
@@ -30,7 +30,7 @@ immigration/
 │   ├── composables/          # useApi, useAuth, useSeo, useSiteConfig
 │   ├── layouts/              # default.vue (公众), admin.vue (分组侧边栏)
 │   └── middleware/auth.ts    # 客户端路由鉴权
-├── database/migrations/      # MySQL 迁移 (13组, 000001-000013)
+├── database/migrations/      # MySQL 迁移 (24组, 000001-000024)
 ├── docker-compose.yml        # MySQL 8.0 (端口 3307)
 ├── Makefile                  # 开发命令
 └── .env                      # 环境变量
@@ -53,8 +53,8 @@ immigration/
 
 分层架构：`Handler → Service → Repository → Model (GORM)`
 
-- **Model**: GORM 结构体，对应数据库表。共 14 个模型：`User`, `Project`(+`Requirement`/`CostItem`/`TimelinePhase`/`Milestone`), `FAQ`, `Case`, `Page`, `Lead`, `Media`, `Navigation`, `HomeConfig`, `OperationLog`
-- **Repository**: 接口定义在 `interfaces.go`，实现按模型拆分文件
+- **Model**: GORM 结构体，对应数据库表。共 19 个模型：`User`, `Project`(+`Requirement`/`CostItem`/`TimelinePhase`/`Milestone`/`ProjectAdvantage`), `FAQ`, `Case`, `Page`, `Lead`, `Media`, `Navigation`, `HomeConfig`, `OperationLog`, `Lawyer`, `Testimonial`, `CompareConfig`, `ProjectNews`, `SiteConfig`
+- **Repository**: 接口定义在 `interfaces.go`，实现按模型拆分文件。`project_sub_repo.go` 聚合了 Project 的所有子资源（advantages、news、testimonials、case assignments），`testimonial_repo.go` 处理公众端评价查询
 - **Service**: 业务逻辑，通过 `Service` 结构体聚合
 - **Handler**: 通过 `Handler` 结构体注入 Service，处理 HTTP 请求
 - **DTO**: `request.go` / `response.go` — 统一响应格式 `{code, message, data}`
@@ -80,6 +80,11 @@ immigration/
 | GET | `/search` | 全文搜索 |
 | POST | `/leads` | 提交咨询 (限流 10/min) |
 | POST | `/auth/login` | 登录 (限流 5/min) |
+| GET | `/testimonials` | 客户评价列表 |
+| GET | `/lawyers` | 律师列表 |
+| GET | `/cases/:slug` | 案例详情 |
+| GET | `/faqs/projects` | FAQ 项目列表 |
+| GET | `/site-config` | 站点配置 |
 | POST | `/auth/refresh` | 刷新 token |
 
 ### Admin 路由 (需 Bearer Token)
@@ -94,7 +99,13 @@ immigration/
 
 **关键：路由注册顺序** — `/projects/compare` 必须在 `/projects/:slug` 之前注册，否则 `:slug` 会捕获 "compare"。同理 `/:slug` 类路由应在所有字面量路由之后注册。
 
-**Admin 子资源路由** 统一使用 `/admin/projects/:id/<资源名>` 模式，包含 requirements、cost-items、timeline-phases、advantages、cases、news、compare-config，各有独立的 CRUD 端点。
+**Admin 子资源路由** 统一使用 `/admin/projects/:id/<资源名>` 模式，包含 requirements、cost-items、timeline-phases、advantages、cases、testimonials、news、compare-config，各有独立的 CRUD 端点。
+
+**新增 Admin 资源**:
+- **律师 (Lawyers)**: `GET/POST /admin/lawyers`, `GET/PUT/DELETE /admin/lawyers/:id`
+- **客户评价 (Testimonials)**: `GET /admin/testimonials`（全量查询，通过首页配置管理 featured）
+- **站点配置 (SiteConfig)**: `GET/PUT /admin/site-config`
+- **媒体管理**: `GET /admin/media/unused`（查找未使用媒体）, `POST /admin/media/cleanup`（清理未使用媒体）, `DELETE /admin/media/:id`
 
 ## 前端架构
 
@@ -174,8 +185,8 @@ immigration/
 ## 数据库
 
 - Docker Compose 启动 `mygo-mysql`（端口 3307），MySQL 首次初始化时自动按序执行 `database/migrations/` 下的 SQL 脚本
-- 13 组迁移脚本 (000001–000013)：覆盖 users, projects/requirements/cost_items/timeline_phases/milestones, faqs, cases, pages, leads, media/home_configs, seed_data, navigations
-- 启动时 GORM AutoMigrate 同步所有模型（代码中的 `database.AutoMigrate()` 包含全部 14 个模型，其中 operation_log 仅由 AutoMigrate 创建）
+- 24 组迁移脚本 (000001–000024)：覆盖 users, projects/requirements/cost_items/timeline_phases/milestones, faqs, cases, pages, leads, media/home_configs, seed_data, navigations, lawyers, testimonials, compare_configs, project_advantages, project_news
+- 启动时 GORM AutoMigrate 同步所有模型（代码中的 `database.AutoMigrate()` 包含全部 19 个模型，其中 operation_log 仅由 AutoMigrate 创建）
 
 ## 配置与启动
 
@@ -317,8 +328,12 @@ const data = await api<ItemType[]>('/admin/resource?all=true')
 | 接口 | 分页? | ?all=true? | Handler 方法 |
 |------|-------|-------------|-------------|
 | `GET /projects` | ✓ | — | `ListProjects` |
+| `GET /projects/:slug` | ✗ | — | `GetProject` |
+| `GET /projects/compare` | ✗ | — | `CompareProjects` |
 | `GET /faqs` | ✗ (全量) | — | `ListFAQs` |
+| `GET /faqs/projects` | ✗ (全量) | — | `ListFAQProjects` |
 | `GET /cases` | ✗ (全量) | — | `ListCases` |
+| `GET /cases/:slug` | ✗ | — | `GetCase` |
 | `GET /testimonials` | ✗ (全量) | — | `ListAllTestimonials` |
 | `GET /lawyers` | ✗ (全量) | — | `ListLawyers` |
 | `GET /home-config` | ✗ | — | `GetHomeConfig` (公共) |
@@ -327,12 +342,18 @@ const data = await api<ItemType[]>('/admin/resource?all=true')
 | `GET /admin/projects` | ✓ | ✓ | `AdminListProjects` |
 | `GET /admin/faqs` | ✓ | ✗ | `AdminListFAQs` |
 | `GET /admin/pages` | ✓ | ✓ | `AdminListPages` |
+| `GET /admin/pages/preview` | ✗ | — | `PreviewPage` |
 | `GET /admin/cases` | ✓ | ✓ | `AdminListCases` |
 | `GET /admin/lawyers` | ✓ | ✓ | `AdminListLawyers` |
+| `GET /admin/lawyers/:id` | ✗ | — | `AdminGetLawyer` |
 | `GET /admin/testimonials` | ✗ (全量) | — | `AdminListTestimonials` |
 | `GET /admin/leads` | ✓ | ✗ | `AdminListLeads` |
 | `GET /admin/users` | ✓ | ✗ | `AdminListUsers` |
 | `GET /admin/media` | ✓ | ✗ | `ListMedia` |
+| `POST /admin/media/upload` | ✗ | — | `UploadMedia` |
+| `DELETE /admin/media/:id` | ✗ | — | `DeleteMedia` |
+| `GET /admin/media/unused` | ✗ | — | `FindUnusedMedia` |
+| `POST /admin/media/cleanup` | ✗ | — | `CleanupUnusedMedia` |
 | `GET /admin/navigation` | ✗ (树) | — | `AdminListNavigationTree` |
 | `GET /admin/home-config` | ✗ | — | `GetAdminHomeConfig` |
 | `GET /admin/site-config` | ✗ | — | `GetSiteConfig` |
