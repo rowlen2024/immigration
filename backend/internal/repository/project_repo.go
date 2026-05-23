@@ -102,7 +102,7 @@ func (r *ProjectRepo) FindBySlugs(slugs []string) ([]model.Project, error) {
 // FindBySlugsLight returns projects by slugs without heavy preloads.
 func (r *ProjectRepo) FindBySlugsLight(slugs []string) ([]model.Project, error) {
 	var projects []model.Project
-	err := r.db.Where("slug IN ?", slugs).Find(&projects).Error
+	err := r.db.Where("slug IN ?", slugs).Order("sort_order asc").Find(&projects).Error
 	if err != nil {
 		return nil, err
 	}

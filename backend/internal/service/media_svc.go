@@ -67,11 +67,39 @@ func (s *MediaService) Upload(media *model.Media) (*model.Media, error) {
 	return media, nil
 }
 
-// Delete removes a media entry by ID.
+// Delete removes a media entry by ID, including its physical files and variants.
 func (s *MediaService) Delete(id uint64) error {
 	if id == 0 {
 		return errors.New("media id is required")
 	}
+
+	m, err := s.repo.FindByID(id)
+	if err != nil {
+		return fmt.Errorf("media not found: %w", err)
+	}
+
+	filesToDelete := make(map[string]bool)
+	if m.Filename != "" {
+		filesToDelete[m.Filename] = true
+	}
+	if m.Variants != nil {
+		var v map[string]string
+		if err := json.Unmarshal(m.Variants, &v); err == nil {
+			for _, url := range v {
+				name := filepath.Base(url)
+				if name != "" {
+					filesToDelete[name] = true
+				}
+			}
+		}
+	}
+	for name := range filesToDelete {
+		filePath := filepath.Join("./uploads", name)
+		if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to delete file %s: %w", name, err)
+		}
+	}
+
 	if err := s.repo.Delete(id); err != nil {
 		return fmt.Errorf("failed to delete media: %w", err)
 	}
