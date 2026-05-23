@@ -1,7 +1,0 @@
-{
-  "tool_name": "PowerShell",
-  "tool_input_preview": "{\"command\":\"cd D:\\\\mygo\\\\src\\\\immigration\\\\backend; go test ./... 2>&1\",\"timeout\":120000,\"description\":\"运行后端测试\"}",
-  "error": "Exit code 1\n?   \tmygo-immigration/backend/cmd/server\t[no test files]\n?   \tmygo-immigration/backend/internal/config\t[no test files]\n?   \tmygo-immigration/backend/internal/database\t[no test files]\n?   \tmygo-immigration/backend/internal/dto\t[no test files]\n--- FAIL: TestAuthHandler_Login_Failure_InvalidCredentials (0.00s)\npanic: runtime error: invalid memory address or nil pointer dereference [recovered, repanicked]\n[signal 0xc0000005 code=0x0 addr=0x0 pc=0x7ff77fee8e78]\n\ngoroutine 19 [running]:\nte...",
-  "timestamp": "2026-05-22T10:19:33.930Z",
-  "retry_count": 1
-}
