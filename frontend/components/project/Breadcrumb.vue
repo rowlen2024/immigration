@@ -39,6 +39,7 @@ const crumbs = computed(() => getBreadcrumb(route.path, props.label, parentCrumb
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  row-gap: 4px;
 }
 
 .breadcrumb li {
@@ -65,5 +66,23 @@ const crumbs = computed(() => getBreadcrumb(route.path, props.label, parentCrumb
 
 .breadcrumb span {
   color: var(--text-primary);
+}
+
+@media (max-width: 767px) {
+  .breadcrumb {
+    padding: 12px 0;
+  }
+
+  .breadcrumb li {
+    font-size: 13px;
+  }
+
+  .breadcrumb ol {
+    gap: 4px;
+  }
+
+  .breadcrumb li:not(:last-child)::after {
+    margin-left: 4px;
+  }
 }
 </style>

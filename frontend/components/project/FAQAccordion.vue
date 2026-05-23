@@ -50,8 +50,11 @@ const toggle = (index: number) => {
     // 收起当前
     const wrapper = answerRefs.value[index];
     if (wrapper) {
+      // 先锁定当前高度，再过渡到 0
+      wrapper.style.transition = 'none';
       wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
-      wrapper.offsetHeight;
+      wrapper.offsetHeight; // 强制回流
+      wrapper.style.transition = '';
       wrapper.style.maxHeight = '0px';
     }
     activeIndex.value = null;
@@ -60,8 +63,10 @@ const toggle = (index: number) => {
     if (activeIndex.value !== null) {
       const prev = answerRefs.value[activeIndex.value];
       if (prev) {
+        prev.style.transition = 'none';
         prev.style.maxHeight = prev.scrollHeight + 'px';
         prev.offsetHeight;
+        prev.style.transition = '';
         prev.style.maxHeight = '0px';
       }
     }
@@ -69,6 +74,10 @@ const toggle = (index: number) => {
     activeIndex.value = index;
     const wrapper = answerRefs.value[index];
     if (wrapper) {
+      wrapper.style.transition = 'none';
+      wrapper.style.maxHeight = '0px';
+      wrapper.offsetHeight;
+      wrapper.style.transition = '';
       wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
     }
   }
@@ -123,6 +132,7 @@ const toggle = (index: number) => {
   max-height: 0;
   overflow: hidden;
   transition: max-height 400ms var(--ease-out);
+  will-change: max-height;
 }
 
 .faq-answer {

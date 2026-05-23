@@ -63,6 +63,12 @@ defineProps<{
   border-color: rgba(200, 150, 62, 0.3);
 }
 
+.case-card:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+  border-color: var(--color-border);
+}
+
 /* ── Image area ── */
 
 .case-image {
