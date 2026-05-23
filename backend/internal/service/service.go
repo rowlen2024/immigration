@@ -31,7 +31,7 @@ type Service struct {
 }
 
 func New(repo *repository.Repository, cfg *config.Config) *Service {
-	return &Service{
+	svc := &Service{
 		repo:          repo,
 		Project:       &ProjectService{repo: repo.Project, navRepo: repo.Nav},
 		Auth:          &AuthService{repo: repo.User, cfg: cfg},
@@ -52,6 +52,13 @@ func New(repo *repository.Repository, cfg *config.Config) *Service {
 		Advantage:     &ProjectAdvantageService{repo: repo.ProjectAdvantage},
 		Testimonial:   &TestimonialService{repo: repo.Testimonial},
 	}
+
+	// Wire home_config cleanup into entity services
+	svc.Case.homeConfigSvc = svc.HomeConfig
+	svc.Project.homeConfigSvc = svc.HomeConfig
+	svc.Testimonial.homeConfigSvc = svc.HomeConfig
+
+	return svc
 }
 
 // DashboardStats holds admin dashboard statistics.

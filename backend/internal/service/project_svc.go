@@ -7,14 +7,16 @@ import (
 
 	"mygo-immigration/backend/internal/config"
 	"mygo-immigration/backend/internal/dto"
+	"mygo-immigration/backend/internal/logging"
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
 )
 
 // ProjectService handles business logic for immigration projects.
 type ProjectService struct {
-	repo    repository.ProjectRepository
-	navRepo repository.NavigationRepository
+	repo          repository.ProjectRepository
+	navRepo       repository.NavigationRepository
+	homeConfigSvc *HomeConfigService
 }
 
 // NewProjectService creates a new ProjectService with the given repository.
@@ -52,6 +54,15 @@ func (s *ProjectService) List(page, perPage int, search, status string) ([]model
 // AdminList returns paginated projects (alias for List).
 func (s *ProjectService) AdminList(page, perPage int, search, status string) ([]model.Project, int64, error) {
 	return s.List(page, perPage, search, status)
+}
+
+// ListAll returns all projects without pagination.
+func (s *ProjectService) ListAll(search, status string) ([]model.Project, error) {
+	projects, err := s.repo.FindAllWithoutPagination(search, status)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list all projects: %w", err)
+	}
+	return projects, nil
 }
 
 // Compare returns multiple projects by their slugs for side-by-side comparison.
@@ -297,8 +308,21 @@ func (s *ProjectService) Delete(id uint64) error {
 			return fmt.Errorf("%d 个导航项引用了此项目，请先解除引用", count)
 		}
 	}
+	// Fetch slug before soft-delete for home_config cleanup
+	var slug string
+	if s.homeConfigSvc != nil {
+		if p, err := s.repo.FindByID(id); err == nil {
+			slug = p.Slug
+		}
+	}
 	if err := s.repo.Delete(id); err != nil {
 		return fmt.Errorf("failed to delete project: %w", err)
+	}
+	if s.homeConfigSvc != nil && slug != "" {
+		if err := s.homeConfigSvc.RemoveFeaturedProjectSlug(slug); err != nil {
+			logging.Logger.Warn("home_config: failed to clean up featured project ref after delete",
+				"project_id", id, "slug", slug, "error", err)
+		}
 	}
 	return nil
 }

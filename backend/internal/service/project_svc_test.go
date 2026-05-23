@@ -43,6 +43,10 @@ func (m *mockProjectRepo) FindAll(page, perPage int, search, status string) ([]m
 	return nil, 0, nil
 }
 
+func (m *mockProjectRepo) FindAllWithoutPagination(search, status string) ([]model.Project, error) {
+	return nil, nil
+}
+
 func (m *mockProjectRepo) FindBySlugs(slugs []string) ([]model.Project, error) {
 	if m.findBySlugsFn != nil {
 		return m.findBySlugsFn(slugs)

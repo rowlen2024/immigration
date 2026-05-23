@@ -74,6 +74,15 @@ func (s *PageService) List() ([]model.Page, error) {
 	return pages, nil
 }
 
+// ListAll returns all pages without pagination, optionally filtered.
+func (s *PageService) ListAll(pageType, search, status string) ([]model.Page, error) {
+	pages, err := s.repo.FindAll(pageType, search, status)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list all pages: %w", err)
+	}
+	return pages, nil
+}
+
 // AdminList returns paginated pages, optionally filtered by page_type, search, and status.
 func (s *PageService) AdminList(page, perPage int, pageType, search, status string) ([]model.Page, int64, error) {
 	if page < 1 {

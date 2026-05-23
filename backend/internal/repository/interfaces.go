@@ -19,6 +19,7 @@ type ProjectRepository interface {
 	FindByID(id uint64) (*model.Project, error)
 	FindBySlug(slug string) (*model.Project, error)
 	FindAll(page, perPage int, search, status string) ([]model.Project, int64, error)
+	FindAllWithoutPagination(search, status string) ([]model.Project, error)
 	FindBySlugs(slugs []string) ([]model.Project, error)
 	Create(project *model.Project) error
 	Update(project *model.Project) error

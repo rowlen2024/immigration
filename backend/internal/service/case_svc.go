@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"mygo-immigration/backend/internal/dto"
+	"mygo-immigration/backend/internal/logging"
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
 
@@ -32,7 +33,8 @@ var caseContentSanitizer = func() *bluemonday.Policy {
 }()
 
 type CaseService struct {
-	repo repository.CaseRepository
+	repo          repository.CaseRepository
+	homeConfigSvc *HomeConfigService
 }
 
 func NewCaseService(repo repository.CaseRepository) *CaseService {
@@ -51,7 +53,11 @@ func (s *CaseService) GetBySlug(slug string) (*model.Case, error) {
 }
 
 func (s *CaseService) List() ([]model.Case, error) {
-	cases, err := s.repo.FindAll("")
+	return s.ListAll("")
+}
+
+func (s *CaseService) ListAll(search string) ([]model.Case, error) {
+	cases, err := s.repo.FindAll(search)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list cases: %w", err)
 	}
@@ -70,7 +76,7 @@ func (s *CaseService) AdminList(page, perPage int, search string) ([]model.Case,
 	if page < 1 {
 		page = 1
 	}
-	if perPage < 1 || perPage > 100 {
+	if perPage < 1 {
 		perPage = 10
 	}
 
@@ -138,6 +144,12 @@ func (s *CaseService) Delete(id uint64) error {
 	if err := s.repo.Delete(id); err != nil {
 		return fmt.Errorf("failed to delete case: %w", err)
 	}
+	if s.homeConfigSvc != nil {
+		if err := s.homeConfigSvc.RemoveFeaturedCaseID(id); err != nil {
+			logging.Logger.Warn("home_config: failed to clean up featured case ref after delete",
+				"case_id", id, "error", err)
+		}
+	}
 	return nil
 }
 
@@ -147,6 +159,12 @@ func (s *CaseService) HardDelete(id uint64) error {
 	}
 	if err := s.repo.HardDelete(id); err != nil {
 		return fmt.Errorf("failed to hard delete case: %w", err)
+	}
+	if s.homeConfigSvc != nil {
+		if err := s.homeConfigSvc.RemoveFeaturedCaseID(id); err != nil {
+			logging.Logger.Warn("home_config: failed to clean up featured case ref after hard delete",
+				"case_id", id, "error", err)
+		}
 	}
 	return nil
 }

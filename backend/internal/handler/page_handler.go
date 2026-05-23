@@ -60,7 +60,7 @@ func (h *Handler) AdminListPages(c *gin.Context) {
 	status := c.Query("status")
 
 	if c.Query("all") == "true" {
-		pages, _, err := h.svc.Page.AdminList(1, 1000, pageType, search, status)
+		pages, err := h.svc.Page.ListAll(pageType, search, status)
 		if err != nil {
 			logging.Logger.Error("failed in AdminListPages", "error", err)
 			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))

@@ -73,7 +73,7 @@ func (h *Handler) AdminListProjects(c *gin.Context) {
 	status := c.Query("status")
 
 	if c.Query("all") == "true" {
-		projects, _, err := h.svc.Project.AdminList(1, 1000, search, status)
+		projects, err := h.svc.Project.ListAll(search, status)
 		if err != nil {
 			logging.Logger.Error("failed in AdminListProjects", "error", err)
 			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))

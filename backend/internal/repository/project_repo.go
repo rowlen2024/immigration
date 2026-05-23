@@ -67,6 +67,20 @@ func (r *ProjectRepo) FindAll(page, perPage int, search, status string) ([]model
 	return projects, total, nil
 }
 
+// FindAllWithoutPagination returns all projects matching filters, no pagination.
+func (r *ProjectRepo) FindAllWithoutPagination(search, status string) ([]model.Project, error) {
+	var projects []model.Project
+	q := r.db.Model(&model.Project{})
+	if search != "" {
+		q = q.Where("name LIKE ?", "%"+search+"%")
+	}
+	if status != "" {
+		q = q.Where("status = ?", status)
+	}
+	err := q.Order("sort_order asc").Find(&projects).Error
+	return projects, err
+}
+
 func (r *ProjectRepo) FindBySlugs(slugs []string) ([]model.Project, error) {
 	var projects []model.Project
 	err := r.db.

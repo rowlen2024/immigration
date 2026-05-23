@@ -30,7 +30,7 @@ func (s *FAQService) AdminList(projectID *uint64, search string, page, perPage i
 	if page < 1 {
 		page = 1
 	}
-	if perPage < 1 || perPage > 100 {
+	if perPage < 1 {
 		perPage = 10
 	}
 

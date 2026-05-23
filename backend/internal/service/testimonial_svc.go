@@ -6,12 +6,14 @@ import (
 	"strings"
 
 	"mygo-immigration/backend/internal/dto"
+	"mygo-immigration/backend/internal/logging"
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
 )
 
 type TestimonialService struct {
-	repo repository.TestimonialRepository
+	repo          repository.TestimonialRepository
+	homeConfigSvc *HomeConfigService
 }
 
 func (s *TestimonialService) ListByProject(projectID uint64) ([]model.Testimonial, error) {
@@ -84,6 +86,12 @@ func (s *TestimonialService) HardDelete(id uint64) error {
 	}
 	if err := s.repo.HardDelete(id); err != nil {
 		return fmt.Errorf("failed to delete testimonial: %w", err)
+	}
+	if s.homeConfigSvc != nil {
+		if err := s.homeConfigSvc.RemoveFeaturedTestimonialID(id); err != nil {
+			logging.Logger.Warn("home_config: failed to clean up featured testimonial ref after delete",
+				"testimonial_id", id, "error", err)
+		}
 	}
 	return nil
 }

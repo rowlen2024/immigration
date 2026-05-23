@@ -374,10 +374,16 @@ interface ProjectShowcase {
   featured_slugs: string[];
 }
 
+interface FeaturedCaseData {
+  id: number;
+  name: string;
+}
+
 interface CaseShowcase {
   section_title: string;
   section_subtitle: string;
   featured_case_ids: number[];
+  featured_cases?: FeaturedCaseData[];
 }
 
 interface ProjectOption {
@@ -411,10 +417,16 @@ interface CaseOption {
   name: string;
 }
 
+interface FeaturedTestimonialData {
+  id: number;
+  nickname: string;
+}
+
 interface TestimonialShowcase {
   section_title: string;
   section_subtitle: string;
   featured_testimonial_ids: number[];
+  featured_testimonials?: FeaturedTestimonialData[];
 }
 
 interface TestimonialOption {
@@ -592,6 +604,8 @@ const availableCases = computed(() => {
 });
 
 function getCaseTitle(id: number): string {
+  const featured = caseShowcase.value.featured_cases?.find((c) => c.id === id);
+  if (featured?.name) return featured.name;
   return allCases.value.find((c) => c.id === id)?.name || String(id);
 }
 
@@ -636,6 +650,8 @@ const availableTestimonials = computed(() => {
 });
 
 function getTestimonialTitle(id: number): string {
+  const featured = testimonialShowcase.value.featured_testimonials?.find((t) => t.id === id);
+  if (featured?.nickname) return featured.nickname;
   return allTestimonials.value.find((t) => t.id === id)?.nickname || String(id);
 }
 

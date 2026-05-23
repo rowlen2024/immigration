@@ -36,7 +36,7 @@ func (h *Handler) AdminListCases(c *gin.Context) {
 	search := c.Query("search")
 
 	if c.Query("all") == "true" {
-		cases, _, err := h.svc.Case.AdminList(1, 1000, search)
+		cases, err := h.svc.Case.ListAll(search)
 		if err != nil {
 			logging.Logger.Error("failed in AdminListCases", "error", err)
 			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
