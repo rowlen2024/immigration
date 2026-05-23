@@ -2,7 +2,7 @@
   <div class="homepage">
     <!-- Hero Carousel Section -->
     <section class="hero-section">
-      <div class="hero-carousel">
+      <div class="hero-carousel" @touchstart="onHeroTouchStart" @touchend="onHeroTouchEnd">
         <div
           v-for="(slide, index) in heroSlides"
           :key="index"
@@ -234,6 +234,22 @@ import { getIconByName, getIconSvg } from '~/composables/lucideIcons'
 // Hero carousel
 const currentSlide = ref(0);
 let autoTimer: ReturnType<typeof setInterval> | null = null;
+let heroTouchStartX = 0;
+
+const onHeroTouchStart = (e: TouchEvent) => {
+  heroTouchStartX = e.touches[0].clientX;
+};
+
+const onHeroTouchEnd = (e: TouchEvent) => {
+  const diff = heroTouchStartX - e.changedTouches[0].clientX;
+  if (Math.abs(diff) > 50) {
+    if (diff > 0) {
+      nextSlide();
+    } else {
+      prevSlide();
+    }
+  }
+};
 
 interface HeroSlide {
   title: string;
@@ -935,18 +951,30 @@ onUnmounted(() => {
 
 @media (max-width: 767px) {
   .trust-bar {
-    flex-direction: column;
-    gap: 20px;
-    padding: 28px 20px;
+    flex-direction: row;
+    gap: 8px;
+    padding: 20px 12px;
+    flex-wrap: wrap;
+    justify-content: space-around;
   }
 
-  .trust-bar-divider {
-    width: 60px;
-    height: 1px;
+  .trust-bar-item {
+    flex: 0 0 auto;
+    min-width: 0;
   }
 
   .trust-bar-number {
-    font-size: 30px;
+    font-size: 28px;
+  }
+
+  .trust-bar-label {
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+
+  .trust-bar-divider {
+    width: 1px;
+    height: 36px;
   }
 }
 
@@ -1001,6 +1029,16 @@ onUnmounted(() => {
   cursor: pointer;
   padding: 0;
   transition: all 0.25s ease-out;
+  position: relative;
+}
+
+.carousel-dot::after {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: -10px;
+  right: -10px;
+  bottom: -20px;
 }
 
 .carousel-dot.active {
@@ -1043,6 +1081,10 @@ onUnmounted(() => {
   .btn-hero-secondary {
     width: 100%;
     justify-content: center;
+  }
+
+  .carousel-arrow {
+    display: none;
   }
 
   .carousel-dot {
@@ -1397,12 +1439,43 @@ onUnmounted(() => {
     height: 400px;
   }
 
+  .hero-content {
+    justify-content: flex-start;
+    padding-top: 48px;
+  }
+
   .hero-title {
     font-size: 32px;
   }
 
   .hero-subtitle {
     font-size: 16px;
+  }
+
+  .hero-badge {
+    margin-bottom: 14px;
+  }
+
+  .hero-badge span {
+    font-size: 11px;
+    padding: 4px 10px;
+    letter-spacing: 1px;
+  }
+
+  .hero-glow--gold {
+    animation: blobPulse 12s ease-in-out infinite;
+  }
+
+  .hero-glow--blue {
+    animation: blobPulse 14s ease-in-out infinite 2s;
+  }
+
+  .hero-glow--amber {
+    animation: blobPulse 10s ease-in-out infinite 4s;
+  }
+
+  .hero-glow--deep-blue {
+    animation: blobPulse 16s ease-in-out infinite 1s;
   }
 
   .project-cards,

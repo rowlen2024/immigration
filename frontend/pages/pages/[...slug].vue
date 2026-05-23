@@ -161,9 +161,17 @@ onMounted(() => {
 }
 
 .page-content :deep(table) {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   width: 100%;
   border-collapse: collapse;
   margin: 20px 0;
+}
+
+.page-content :deep(pre) {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .page-content :deep(th),

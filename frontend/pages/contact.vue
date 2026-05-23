@@ -475,5 +475,13 @@ onMounted(() => {
   .contact-form {
     padding: 24px;
   }
+
+  .form-input {
+    min-height: 44px;
+  }
+
+  select.form-input {
+    padding: 10px 16px;
+  }
 }
 </style>

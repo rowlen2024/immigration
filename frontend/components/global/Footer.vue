@@ -46,9 +46,14 @@
         </div>
       </div>
 
-      <div v-for="col in footerNav" :key="col.id" class="footer-column">
-        <h3 class="footer-heading">{{ col.label }}</h3>
-        <ul class="footer-links">
+      <div v-for="col in footerNav" :key="col.id" class="footer-column" :class="{ 'footer-col-open': footerExpanded.has(col.id) }">
+        <h3 class="footer-heading" @click="toggleFooterCol(col.id)">
+          {{ col.label }}
+          <span class="footer-heading-chevron">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </h3>
+        <ul class="footer-links" :class="{ 'footer-links-open': footerExpanded.has(col.id) }">
           <li v-for="child in col.children" :key="child.id">
             <NuxtLink :to="child.link" class="footer-link">{{ child.label }}</NuxtLink>
           </li>
@@ -80,6 +85,18 @@ const footerGridStyle = computed(() => {
   const count = footerNav.value.length || 2;
   return { '--footer-cols': `2fr ${Array(count).fill('1fr').join(' ')}` };
 });
+
+const footerExpanded = ref<Set<number>>(new Set());
+
+const toggleFooterCol = (id: number) => {
+  const next = new Set(footerExpanded.value);
+  if (next.has(id)) {
+    next.delete(id);
+  } else {
+    next.add(id);
+  }
+  footerExpanded.value = next;
+};
 
 const hasQRCodes = computed(() => {
   const c = siteConfig.value;
@@ -268,20 +285,119 @@ onMounted(() => {
 
 @media (max-width: 1023px) {
   .footer-container {
-    grid-template-columns: 1fr 1fr !important;
+    grid-template-columns: 1fr 1fr;
   }
 }
 
 @media (max-width: 767px) {
   .footer-container {
-    grid-template-columns: 1fr !important;
-    gap: 32px;
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .footer-brand {
+    padding-right: 0;
+    padding-bottom: 24px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid rgba(200, 150, 62, 0.12);
+  }
+
+  .footer-brand-contact {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+  }
+
+  .brand-contact-item {
+    font-size: 12px;
+  }
+
+  .footer-qr-row {
+    justify-content: center;
+    gap: 24px;
   }
 
   .footer-bottom .footer-container {
     flex-direction: column;
     gap: 8px;
     text-align: center;
+  }
+
+  /* Nav columns: full-width accordion rows */
+  .footer-column:not(.footer-brand) {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .footer-column:not(.footer-brand):last-child {
+    border-bottom: none;
+  }
+
+  .footer-heading {
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    margin-bottom: 0;
+    padding: 14px 0;
+    user-select: none;
+    color: rgba(255, 255, 255, 0.7);
+    transition: color 0.2s ease;
+  }
+
+  .footer-col-open .footer-heading {
+    color: var(--accent);
+  }
+
+  .footer-heading-chevron {
+    display: inline-flex;
+    align-items: center;
+    color: rgba(200, 150, 62, 0.5);
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+  }
+
+  .footer-col-open .footer-heading-chevron {
+    transform: rotate(180deg);
+    color: var(--accent);
+  }
+
+  /* Links: hidden by default, 2-column grid when open */
+  .footer-links {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 16px;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    padding-bottom: 0;
+    transition: max-height 0.35s ease, opacity 0.25s ease, padding 0.3s ease;
+  }
+
+  .footer-links-open {
+    max-height: 400px;
+    opacity: 1;
+    padding-bottom: 14px;
+  }
+
+  .footer-link {
+    font-size: 13px;
+    padding: 6px 0;
+    color: rgba(255, 255, 255, 0.45);
+  }
+}
+
+@media (min-width: 768px) {
+  .footer-heading-chevron {
+    display: none;
+  }
+
+  .footer-links {
+    max-height: none;
+    opacity: 1;
+    overflow: visible;
+    padding-bottom: 0;
   }
 }
 </style>

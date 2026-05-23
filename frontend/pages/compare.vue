@@ -337,8 +337,20 @@ onMounted(() => {
   }
 
   .selector-vs {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     text-align: center;
     padding-bottom: 0;
+    font-size: 18px;
+  }
+
+  .selector-vs::before,
+  .selector-vs::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
   }
 
   .page-title {

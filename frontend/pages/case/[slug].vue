@@ -169,11 +169,17 @@ onMounted(() => {
 }
 
 @media (max-width: 767px) {
+  .case-detail-page {
+    padding: 40px 0;
+  }
+
   .case-title {
     font-size: 28px;
   }
 
   .case-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 16px;
     padding: 16px;
   }

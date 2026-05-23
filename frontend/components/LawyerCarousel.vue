@@ -1,6 +1,6 @@
 <template>
   <div v-if="lawyers.length > 0" class="lawyer-carousel">
-    <div class="carousel-viewport" ref="viewportRef">
+    <div class="carousel-viewport" ref="viewportRef" @touchstart="onTouchStart" @touchend="onTouchEnd">
       <div
         class="carousel-track"
         :style="{ transform: `translateX(${offset}px)`, gap: `${gap}px` }"
@@ -57,6 +57,22 @@ const viewportRef = ref<HTMLElement | null>(null);
 const currentPage = ref(0);
 const viewportWidth = ref(0);
 let autoTimer: ReturnType<typeof setInterval> | null = null;
+let touchStartX = 0;
+
+function onTouchStart(e: TouchEvent) {
+  touchStartX = e.touches[0].clientX;
+}
+
+function onTouchEnd(e: TouchEvent) {
+  const diff = touchStartX - e.changedTouches[0].clientX;
+  if (Math.abs(diff) > 50) {
+    if (diff > 0) {
+      goToPage(currentPage.value + 1);
+    } else {
+      goToPage(currentPage.value - 1);
+    }
+  }
+}
 
 const cardsPerView = computed(() => {
   if (viewportWidth.value < 640) return 1;
@@ -313,7 +329,17 @@ defineExpose({ goToPage });
   background: #d9d9d9;
   cursor: pointer;
   padding: 0;
+  position: relative;
   transition: all var(--duration-normal) var(--ease-out);
+}
+
+.carousel-dot::after {
+  content: '';
+  position: absolute;
+  top: -17px;
+  left: -17px;
+  right: -17px;
+  bottom: -17px;
 }
 
 .carousel-dot:hover {
@@ -323,6 +349,11 @@ defineExpose({ goToPage });
 .carousel-dot.active {
   background: var(--color-accent);
   width: 24px;
+}
+
+.carousel-dot.active::after {
+  left: -7px;
+  right: -7px;
 }
 
 @media (max-width: 767px) {

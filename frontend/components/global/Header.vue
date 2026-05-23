@@ -12,7 +12,13 @@
         </template>
       </NuxtLink>
 
-      <nav class="header-nav" :class="{ 'nav-open': mobileMenuOpen }">
+      <nav
+        class="header-nav"
+        :class="{ 'nav-open': mobileMenuOpen }"
+        @touchstart="onNavTouchStart"
+        @touchend="onNavTouchEnd"
+        @click.self="mobileMenuOpen = false"
+      >
         <ul class="nav-list">
           <li
             v-for="(item, index) in navItems"
@@ -27,13 +33,13 @@
           >
             <span v-if="index > 0" class="nav-separator" aria-hidden="true">·</span>
 
-            <NuxtLink v-if="item.link" :to="item.link" class="nav-link">
+            <NuxtLink v-if="item.link" :to="item.link" class="nav-link" @click="onNavLinkClick(item, $event)">
               {{ item.label }}
               <span v-if="item.children?.length" class="dropdown-arrow">
                 <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
               </span>
             </NuxtLink>
-            <span v-else class="nav-link">
+            <span v-else class="nav-link" @click="onNavLinkClick(item, $event)">
               {{ item.label }}
               <span v-if="item.children?.length" class="dropdown-arrow">
                 <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
@@ -96,10 +102,11 @@
             </div>
 
             <!-- Mobile: expanded children -->
-            <ul
-              v-if="item.children?.length && mobileExpanded.has(item.id)"
-              class="mobile-submenu"
-            >
+            <Transition name="mobile-sub">
+              <ul
+                v-if="item.children?.length && mobileExpanded.has(item.id)"
+                class="mobile-submenu"
+              >
               <li
                 v-for="child in item.children"
                 :key="child.id"
@@ -129,10 +136,11 @@
                   </button>
                 </div>
 
-                <ul
-                  v-if="child.children?.length && mobileExpanded.has(child.id)"
-                  class="mobile-submenu l3"
-                >
+                <Transition name="mobile-sub">
+                  <ul
+                    v-if="child.children?.length && mobileExpanded.has(child.id)"
+                    class="mobile-submenu l3"
+                  >
                   <li v-for="sub in child.children" :key="sub.id" class="mobile-subitem l3">
                     <NuxtLink
                       v-if="sub.link"
@@ -145,29 +153,34 @@
                     <span v-else class="mobile-subitem-label l3">{{ sub.label }}</span>
                   </li>
                 </ul>
+                </Transition>
               </li>
             </ul>
+            </Transition>
           </li>
         </ul>
       </nav>
 
-      <a :href="`tel:${siteConfig?.contact_phone || '400-963-6933'}`" class="header-cta">
-        <svg class="header-cta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-        </svg>
-        全国咨询热线：{{ siteConfig?.contact_phone || '400-963-6933' }}
-      </a>
+      <div class="header-actions">
+        <a :href="`tel:${siteConfig?.contact_phone || '400-963-6933'}`" class="header-cta">
+          <svg class="header-cta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+          全国咨询热线：{{ siteConfig?.contact_phone || '400-963-6933' }}
+        </a>
 
-      <button
-        class="hamburger"
-        :class="{ active: mobileMenuOpen }"
-        @click="mobileMenuOpen = !mobileMenuOpen"
-        aria-label="Toggle navigation menu"
-      >
-        <span class="hamburger-bar"></span>
-        <span class="hamburger-bar"></span>
-        <span class="hamburger-bar"></span>
-      </button>
+        <button
+          type="button"
+          class="hamburger"
+          :class="{ active: mobileMenuOpen }"
+          @click.stop="toggleMobileMenu"
+          aria-label="Toggle navigation menu"
+        >
+          <span class="hamburger-bar"></span>
+          <span class="hamburger-bar"></span>
+          <span class="hamburger-bar"></span>
+        </button>
+      </div>
     </div>
   </header>
 </template>
@@ -183,6 +196,7 @@ const mobileExpanded = ref<Set<number>>(new Set());
 const isScrolled = ref(false);
 
 let megaCloseTimer: ReturnType<typeof setTimeout> | null = null;
+let navTouchStartX = 0;
 
 onMounted(() => {
   refreshNavigation()
@@ -246,6 +260,27 @@ const toggleMobileExpand = (id: number) => {
   mobileExpanded.value = next;
 };
 
+const toggleMobileMenu = () => {
+  mobileMenuOpen.value = !mobileMenuOpen.value;
+};
+
+const onNavLinkClick = (item: NavItem, event: MouseEvent) => {
+  if (!mobileMenuOpen.value || !item.children?.length) return;
+  event.preventDefault();
+  toggleMobileExpand(item.id);
+};
+
+const onNavTouchStart = (e: TouchEvent) => {
+  navTouchStartX = e.touches[0].clientX;
+};
+
+const onNavTouchEnd = (e: TouchEvent) => {
+  const diff = e.changedTouches[0].clientX - navTouchStartX;
+  if (diff > 60) {
+    mobileMenuOpen.value = false;
+  }
+};
+
 watch(mobileMenuOpen, (val) => {
   if (import.meta.client) {
     document.body.style.overflow = val ? 'hidden' : '';
@@ -253,6 +288,10 @@ watch(mobileMenuOpen, (val) => {
   if (!val) {
     mobileExpanded.value = new Set();
   }
+});
+
+watch(() => route.path, () => {
+  mobileMenuOpen.value = false;
 });
 </script>
 
@@ -599,6 +638,15 @@ a.nav-link {
   background: linear-gradient(90deg, transparent, rgba(200, 150, 62, 0.15), transparent);
 }
 
+/* ==================== Header Actions (CTA + Hamburger) ==================== */
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
 /* ==================== CTA Button ==================== */
 
 .header-cta {
@@ -718,17 +766,21 @@ a.nav-link {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(180deg, #0A1425, #0F1E3D, #15294D);
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    background: rgba(10, 20, 37, 0.92);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
     padding-top: 80px;
     transform: translateX(100%);
-    transition: transform 0.3s ease;
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 100;
     overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .header-nav.nav-open {
@@ -763,15 +815,20 @@ a.nav-link {
 
   .nav-item.has-children {
     display: flex;
+    cursor: pointer;
   }
 
   .nav-link {
     font-size: 17px;
     font-weight: 500;
-    padding: 14px 0;
-    justify-content: center;
+    padding: 14px 20px 14px 44px;
+    justify-content: flex-start;
     width: 100%;
     border-radius: 0;
+  }
+
+  .nav-link .dropdown-arrow {
+    display: none;
   }
 
   .nav-item.is-active .nav-link {
@@ -791,7 +848,7 @@ a.nav-link {
     align-items: center;
     justify-content: center;
     position: absolute;
-    right: 0;
+    left: 0;
     top: 14px;
     width: 44px;
     height: 44px;
@@ -799,9 +856,33 @@ a.nav-link {
 
   .mobile-submenu {
     width: 100%;
-    padding: 0 0 8px;
+    padding: 4px 0 8px;
     background: rgba(255, 255, 255, 0.03);
     border-radius: 0 0 8px 8px;
+    border-left: 1px solid rgba(200, 150, 62, 0.15);
+    margin-left: 12px;
+    overflow: hidden;
+  }
+
+  /* Transition: mobile submenu expand/collapse */
+  .mobile-sub-enter-active,
+  .mobile-sub-leave-active {
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, padding 0.3s ease;
+    overflow: hidden;
+  }
+
+  .mobile-sub-enter-from,
+  .mobile-sub-leave-to {
+    max-height: 0 !important;
+    opacity: 0;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  .mobile-sub-enter-to,
+  .mobile-sub-leave-from {
+    max-height: 800px;
+    opacity: 1;
   }
 
   .mobile-subitem {
@@ -817,10 +898,10 @@ a.nav-link {
 
   .mobile-subitem-label {
     display: block;
-    padding: 10px 40px;
-    color: rgba(255, 255, 255, 0.65);
+    padding: 10px 16px 10px 36px;
+    color: rgba(255, 255, 255, 0.7);
     font-size: 15px;
-    text-align: center;
+    text-align: left;
     width: 100%;
     transition: color 0.15s ease;
   }
@@ -831,15 +912,18 @@ a.nav-link {
 
   .mobile-expand-toggle.sub {
     position: absolute;
-    right: 8px;
+    left: 4px;
     top: 6px;
     width: 32px;
     height: 32px;
   }
 
   .mobile-submenu.l3 {
-    padding: 0 0 6px 24px;
-    background: rgba(255, 255, 255, 0.02);
+    padding: 0 0 6px 20px;
+    margin-left: 0;
+    background: rgba(255, 255, 255, 0.015);
+    border-left: 1px solid rgba(200, 150, 62, 0.08);
+    width: 100%;
   }
 
   .mobile-subitem.l3 {
@@ -848,24 +932,38 @@ a.nav-link {
 
   .mobile-subitem-label.l3 {
     font-size: 14px;
-    padding: 8px 48px;
+    padding: 8px 16px 8px 44px;
     color: rgba(255, 255, 255, 0.5);
-    text-align: center;
+    text-align: left;
   }
 
   .mobile-subitem-label.l3.is-link:active {
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.75);
   }
 
   .header-cta {
-    font-size: 11px;
-    padding: 7px 14px;
-    gap: 5px;
+    font-size: 0;
+    padding: 6px;
+    gap: 0;
+    border-radius: 6px;
+    width: 34px;
+    height: 34px;
+    justify-content: center;
+    margin-left: 6px;
+    background: transparent;
+    box-shadow: none;
+    color: var(--bg-white);
+  }
+
+  .header-cta:hover {
+    transform: none;
+    box-shadow: none;
+    color: var(--accent-light);
   }
 
   .header-cta-icon {
-    width: 12px;
-    height: 12px;
+    width: 20px;
+    height: 20px;
   }
 }
 </style>

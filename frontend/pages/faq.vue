@@ -180,7 +180,15 @@ onMounted(() => {
   display: flex;
   gap: 12px;
   margin-bottom: 40px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+
+.faq-filters::-webkit-scrollbar {
+  display: none;
 }
 
 .filter-btn {
