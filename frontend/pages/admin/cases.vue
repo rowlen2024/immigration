@@ -81,7 +81,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="封面图片">
-          <ImageInput v-model="form.photo_url" placeholder="图片 URL 或上传" size-hint="推荐 800×450px (16:9 横向)" />
+          <ImageInput v-model="form.photo_url" placeholder="图片 URL 或上传" size-hint="推荐 800×450px (16:9 横向)" context="case" />
         </el-form-item>
         <el-form-item label="投资金额" prop="investment_amount">
           <el-input v-model="form.investment_amount" placeholder="如：80万美元" />

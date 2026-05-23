@@ -97,7 +97,7 @@
             <el-input v-model="advantageSection.section_subtitle" placeholder="专业服务，值得信赖" />
           </el-form-item>
           <el-form-item label="区域图片">
-            <ImageInput v-model="advantageSection.image" placeholder="图片地址（选填）" size-hint="推荐 1920×480px (约4:1 横向)" />
+            <ImageInput v-model="advantageSection.image" placeholder="图片地址（选填）" size-hint="推荐 1920×480px (约4:1 横向)" context="general" />
           </el-form-item>
         </el-form>
         <div v-if="advantageItems.length === 0" class="admin-empty-hint">暂无优势项，点击"新增优势项"添加。</div>
@@ -269,7 +269,7 @@
     >
       <el-form label-position="top">
         <el-form-item label="背景图" required>
-          <ImageInput v-model="slideForm.image" placeholder="图片地址" size-hint="推荐 1920×800px (约2.4:1 横向)" />
+          <ImageInput v-model="slideForm.image" placeholder="图片地址" size-hint="推荐 1920×800px (约2.4:1 横向)" context="homepage-slide" />
         </el-form-item>
         <el-form-item label="标题">
           <el-input v-model="slideForm.title" placeholder="主标题(可选)" />

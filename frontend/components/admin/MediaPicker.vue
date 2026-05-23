@@ -87,6 +87,7 @@ interface MediaItem {
 
 const props = defineProps<{
   modelValue: boolean;
+  context?: string;
 }>();
 
 const emit = defineEmits<{
@@ -102,7 +103,10 @@ const total = ref(0);
 const searchText = ref('');
 const selectedId = ref<number | null>(null);
 
-const uploadUrl = '/api/v1/admin/media/upload';
+const uploadUrl = computed(() => {
+  const ctx = props.context || 'general';
+  return `/api/v1/admin/media/upload?context=${ctx}`;
+});
 
 const uploadHeaders = computed(() => {
   const token = import.meta.client ? localStorage.getItem('token') : null;

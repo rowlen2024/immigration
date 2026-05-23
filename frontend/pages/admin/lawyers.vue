@@ -76,7 +76,7 @@
     >
       <el-form label-position="top">
         <el-form-item label="照片">
-          <ImageInput v-model="form.photo_url" placeholder="照片地址" size-hint="推荐 600×800px (3:4 竖版)" preview-ratio="3 / 4" />
+          <ImageInput v-model="form.photo_url" placeholder="照片地址" size-hint="推荐 600×800px (3:4 竖版)" preview-ratio="3 / 4" context="lawyer" />
         </el-form-item>
         <el-form-item label="姓名" required>
           <el-input v-model="form.name" placeholder="律师姓名" />

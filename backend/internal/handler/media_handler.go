@@ -13,6 +13,7 @@ import (
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/logging"
 	"mygo-immigration/backend/internal/model"
+	"mygo-immigration/backend/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/datatypes"
@@ -65,9 +66,20 @@ func (h *Handler) UploadMedia(c *gin.Context) {
 		savePath = newPath
 	}
 
-	// Generate JPEG variants (thumb, sm, md, lg)
+	// Generate JPEG variants according to upload context
 	baseName := safeName[:len(safeName)-len(filepath.Ext(safeName))]
-	variants, err := h.svc.Media.GenerateVariants(savePath, baseName)
+	ctx := c.Query("context")
+	if ctx == "" {
+		ctx = c.PostForm("context")
+	}
+	if ctx != "" && !service.IsValidContext(ctx) {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid context: "+ctx))
+		return
+	}
+	if ctx == "" {
+		ctx = "general"
+	}
+	variants, err := service.GenerateVariantsForContext(savePath, baseName, ctx)
 	if err != nil {
 		logging.Logger.Warn("generateVariants failed", "error", err)
 		variants = nil

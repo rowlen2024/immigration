@@ -34,6 +34,7 @@ const props = defineProps<{
   placeholder?: string;
   sizeHint?: string;
   previewRatio?: string;
+  context?: string;
 }>();
 
 const emit = defineEmits<{
@@ -46,7 +47,10 @@ const previewError = ref(false);
 
 const previewSrc = computed(() => getVariantUrl(urlValue.value, 'sm'))
 
-const uploadUrl = '/api/v1/admin/media/upload';
+const uploadUrl = computed(() => {
+  const ctx = props.context || 'general';
+  return `/api/v1/admin/media/upload?context=${ctx}`;
+});
 
 const uploadHeaders = computed(() => {
   const token = import.meta.client ? localStorage.getItem('token') : null;

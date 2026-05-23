@@ -51,6 +51,7 @@
                 :placeholder="field.placeholder"
                 :size-hint="field.sizeHint"
                 :preview-ratio="field.previewRatio"
+                :context="field.context"
               />
 
               <el-input v-else v-model="form[field.key]" :placeholder="field.placeholder" />
@@ -189,6 +190,9 @@ interface FieldDef {
   textarea?: boolean;
   rows?: number;
   image?: boolean;
+  sizeHint?: string;
+  previewRatio?: string;
+  context?: string;
   tip: string;
 }
 
@@ -203,8 +207,8 @@ const groups: GroupDef[] = [
     key: 'basic', label: '基础信息',
     fields: [
       { key: 'site_name', label: '网站名称', placeholder: '北极星移民', tip: tips.site_name },
-      { key: 'site_logo', label: '网站 Logo', image: true, placeholder: '/images/logo.png', sizeHint: '推荐 SVG 或 200×60px PNG（透明背景）', previewRatio: '16 / 5', tip: tips.site_logo },
-      { key: 'site_favicon', label: 'Favicon', image: true, placeholder: '/favicon.ico', sizeHint: '推荐 32×32px PNG 或 ICO', previewRatio: '1 / 1', tip: tips.site_favicon },
+      { key: 'site_logo', label: '网站 Logo', image: true, placeholder: '/images/logo.png', sizeHint: '推荐 SVG 或 200×60px PNG（透明背景）', previewRatio: '16 / 5', context: 'general', tip: tips.site_logo },
+      { key: 'site_favicon', label: 'Favicon', image: true, placeholder: '/favicon.ico', sizeHint: '推荐 32×32px PNG 或 ICO', previewRatio: '1 / 1', context: 'favicon', tip: tips.site_favicon },
     ],
   },
   {
@@ -213,7 +217,7 @@ const groups: GroupDef[] = [
       { key: 'seo_title', label: '标题模板', tip: tips.seo_title },
       { key: 'seo_description', label: 'Meta 描述', tip: tips.seo_description },
       { key: 'seo_keywords', label: '关键词', tip: tips.seo_keywords },
-      { key: 'og_image', label: 'OG 分享图', image: true, sizeHint: '推荐 1200×630px (1.91:1)', previewRatio: '1.91 / 1', tip: tips.og_image },
+      { key: 'og_image', label: 'OG 分享图', image: true, sizeHint: '推荐 1200×630px (1.91:1)', previewRatio: '1.91 / 1', context: 'og-image', tip: tips.og_image },
       { key: 'canonical_base', label: '首选域名', placeholder: 'https://www.example.com', tip: tips.canonical_base },
     ],
   },
@@ -222,7 +226,7 @@ const groups: GroupDef[] = [
     fields: [
       { key: 'organization_name', label: '机构名称', tip: tips.organization_name },
       { key: 'organization_description', label: '机构描述', tip: tips.organization_description },
-      { key: 'organization_logo', label: '机构 Logo', image: true, sizeHint: '推荐 SVG 或 200×60px PNG（透明背景）', previewRatio: '16 / 5', tip: tips.organization_logo },
+      { key: 'organization_logo', label: '机构 Logo', image: true, sizeHint: '推荐 SVG 或 200×60px PNG（透明背景）', previewRatio: '16 / 5', context: 'general', tip: tips.organization_logo },
       { key: 'organization_url', label: '官网 URL', placeholder: 'https://www.example.com', tip: tips.organization_url },
       { key: 'same_as', label: '社交媒体链接', tip: tips.same_as },
     ],
@@ -234,9 +238,9 @@ const groups: GroupDef[] = [
       { key: 'contact_phone_2', label: '联系电话', placeholder: '400-xxx-xxxx', tip: tips.contact_phone_2 },
       { key: 'contact_email', label: '客服邮箱', placeholder: 'info@example.com', tip: tips.contact_email },
       { key: 'contact_address', label: '公司地址', tip: tips.contact_address },
-      { key: 'contact_wechat', label: '微信', image: true, sizeHint: '推荐 500×500px (1:1 正方形)', previewRatio: '1 / 1', tip: tips.contact_wechat },
-      { key: 'contact_wechat_mp', label: '微信公众号', image: true, sizeHint: '推荐 500×500px (1:1 正方形)', previewRatio: '1 / 1', tip: tips.contact_wechat_mp },
-      { key: 'contact_wechat_video', label: '企业视频号', image: true, sizeHint: '推荐 500×500px (1:1 正方形)', previewRatio: '1 / 1', tip: tips.contact_wechat_video },
+      { key: 'contact_wechat', label: '微信', image: true, sizeHint: '推荐 500×500px (1:1 正方形)', previewRatio: '1 / 1', context: 'qr-code', tip: tips.contact_wechat },
+      { key: 'contact_wechat_mp', label: '微信公众号', image: true, sizeHint: '推荐 500×500px (1:1 正方形)', previewRatio: '1 / 1', context: 'qr-code', tip: tips.contact_wechat_mp },
+      { key: 'contact_wechat_video', label: '企业视频号', image: true, sizeHint: '推荐 500×500px (1:1 正方形)', previewRatio: '1 / 1', context: 'qr-code', tip: tips.contact_wechat_video },
     ],
   },
   {
