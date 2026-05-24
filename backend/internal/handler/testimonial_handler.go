@@ -115,7 +115,7 @@ func (h *Handler) DeleteProjectTestimonial(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid testimonial id"))
 		return
 	}
-	if err := h.svc.Testimonial.HardDelete(tid); err != nil {
+	if err := h.svc.Testimonial.Delete(tid); err != nil {
 		logging.Logger.Warn("business error in DeleteProjectTestimonial", "error", err)
 		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return

@@ -10,6 +10,7 @@ import (
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/service"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -109,7 +110,7 @@ func TestProjectHandler_ListProjects(t *testing.T) {
 		},
 	}
 
-	projectSvc := service.NewProjectService(mockRepo)
+	projectSvc := service.NewProjectService(mockRepo, nil)
 	h := &Handler{svc: &service.Service{Project: projectSvc}}
 
 	w := httptest.NewRecorder()
@@ -138,7 +139,7 @@ func TestProjectHandler_GetProject_Success(t *testing.T) {
 		},
 	}
 
-	projectSvc := service.NewProjectService(mockRepo)
+	projectSvc := service.NewProjectService(mockRepo, nil)
 	h := &Handler{svc: &service.Service{Project: projectSvc}}
 
 	w := httptest.NewRecorder()
@@ -165,7 +166,7 @@ func TestProjectHandler_GetProject_NotFound(t *testing.T) {
 		},
 	}
 
-	projectSvc := service.NewProjectService(mockRepo)
+	projectSvc := service.NewProjectService(mockRepo, nil)
 	h := &Handler{svc: &service.Service{Project: projectSvc}}
 
 	w := httptest.NewRecorder()
@@ -205,7 +206,7 @@ func TestProjectHandler_CompareProjects_Success(t *testing.T) {
 		},
 	}
 
-	projectSvc := service.NewProjectService(mockRepo)
+	projectSvc := service.NewProjectService(mockRepo, nil)
 	h := &Handler{svc: &service.Service{Project: projectSvc}}
 
 	w := httptest.NewRecorder()
@@ -243,7 +244,7 @@ func TestProjectHandler_CompareProjects_NoSlugs(t *testing.T) {
 
 func TestProjectHandler_CompareProjects_TooMany(t *testing.T) {
 	mockRepo := &handlerMockProjectRepo{}
-	projectSvc := service.NewProjectService(mockRepo)
+	projectSvc := service.NewProjectService(mockRepo, nil)
 	h := &Handler{svc: &service.Service{Project: projectSvc}}
 
 	w := httptest.NewRecorder()
@@ -267,7 +268,7 @@ func TestProjectHandler_CompareProjects_ThreeWay(t *testing.T) {
 			}, nil
 		},
 	}
-	projectSvc := service.NewProjectService(mockRepo)
+	projectSvc := service.NewProjectService(mockRepo, nil)
 	h := &Handler{svc: &service.Service{Project: projectSvc}}
 
 	w := httptest.NewRecorder()
@@ -307,7 +308,7 @@ func TestProjectHandler_AdminListProjects_Success(t *testing.T) {
 		},
 	}
 
-	projectSvc := service.NewProjectService(mockRepo)
+	projectSvc := service.NewProjectService(mockRepo, nil)
 	h := &Handler{svc: &service.Service{Project: projectSvc}}
 
 	w := httptest.NewRecorder()
@@ -337,7 +338,7 @@ func TestProjectHandler_CreateProject_Success(t *testing.T) {
 		},
 	}
 
-	projectSvc := service.NewProjectService(mockRepo)
+	projectSvc := service.NewProjectService(mockRepo, nil)
 	h := &Handler{svc: &service.Service{Project: projectSvc}}
 
 	w := httptest.NewRecorder()
@@ -371,7 +372,7 @@ func TestProjectHandler_CreateProject_InvalidJSON(t *testing.T) {
 
 func TestProjectHandler_CreateProject_MissingFields(t *testing.T) {
 	mockRepo := &handlerMockProjectRepo{}
-	projectSvc := service.NewProjectService(mockRepo)
+	projectSvc := service.NewProjectService(mockRepo, nil)
 	h := &Handler{svc: &service.Service{Project: projectSvc}}
 
 	w := httptest.NewRecorder()
@@ -417,7 +418,7 @@ func TestProjectHandler_UpdateProject_Success(t *testing.T) {
 		},
 	}
 
-	projectSvc := service.NewProjectService(mockRepo)
+	projectSvc := service.NewProjectService(mockRepo, nil)
 	h := &Handler{svc: &service.Service{Project: projectSvc}}
 
 	w := httptest.NewRecorder()
@@ -457,7 +458,7 @@ func TestProjectHandler_DeleteProject_Success(t *testing.T) {
 		},
 	}
 
-	projectSvc := service.NewProjectService(mockRepo)
+	projectSvc := service.NewProjectService(mockRepo, nil)
 	h := &Handler{svc: &service.Service{Project: projectSvc}}
 
 	w := httptest.NewRecorder()
@@ -479,7 +480,7 @@ func TestProjectHandler_ListProjects_ServiceError(t *testing.T) {
 		},
 	}
 
-	projectSvc := service.NewProjectService(mockRepo)
+	projectSvc := service.NewProjectService(mockRepo, nil)
 	h := &Handler{svc: &service.Service{Project: projectSvc}}
 
 	w := httptest.NewRecorder()
@@ -492,3 +493,8 @@ func TestProjectHandler_ListProjects_ServiceError(t *testing.T) {
 		t.Errorf("expected status 500, got %d, body: %s", w.Code, w.Body.String())
 	}
 }
+
+func (m *handlerMockProjectRepo) FindBySlugsLight(slugs []string) ([]model.Project, error) { return nil, nil }
+func (m *handlerMockProjectRepo) FindAllCoverImages() ([]string, error) { return nil, nil }
+func (m *handlerMockProjectRepo) Count() (int64, error) { return 0, nil }
+func (m *handlerMockProjectRepo) CountByRange(start, end time.Time) (int64, error) { return 0, nil }

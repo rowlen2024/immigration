@@ -66,5 +66,5 @@ func (r *UserRepo) PatchUpdate(id uint64, updates map[string]interface{}) error 
 }
 
 func (r *UserRepo) Delete(id uint64) error {
-	return r.db.Delete(&model.User{}, id).Error
+	return r.db.Unscoped().Delete(&model.User{}, id).Error
 }

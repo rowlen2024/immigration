@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"mygo-immigration/backend/internal/model"
+	"time"
 	"mygo-immigration/backend/internal/repository"
 )
 
@@ -203,3 +204,9 @@ func TestSearch_KeywordForwardedCorrectly(t *testing.T) {
 		t.Errorf("Page repo received '%s', expected 'immigration'", pageKeyword)
 	}
 }
+
+func (m *searchMockPageRepo) FindAllPaginated(page, perPage int, pageType, search, status string) ([]model.Page, int64, error) { return nil, 0, nil }
+func (m *searchMockPageRepo) FindAllCoverImages() ([]string, error) { return nil, nil }
+func (m *searchMockPageRepo) FindAllContents() ([]string, error) { return nil, nil }
+func (m *searchMockPageRepo) Count() (int64, error) { return 0, nil }
+func (m *searchMockPageRepo) CountByRange(start, end time.Time) (int64, error) { return 0, nil }

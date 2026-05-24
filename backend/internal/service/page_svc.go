@@ -7,8 +7,6 @@ import (
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
-
-	"github.com/microcosm-cc/bluemonday"
 )
 
 // PageService handles business logic for content pages.
@@ -17,29 +15,10 @@ type PageService struct {
 	navRepo repository.NavigationRepository
 }
 
-// NewPageService creates a new PageService with the given repository.
-func NewPageService(repo repository.PageRepository) *PageService {
-	return &PageService{repo: repo}
+// NewPageService creates a new PageService with the given dependencies.
+func NewPageService(repo repository.PageRepository, navRepo repository.NavigationRepository) *PageService {
+	return &PageService{repo: repo, navRepo: navRepo}
 }
-
-var sanitizer = func() *bluemonday.Policy {
-	p := bluemonday.NewPolicy()
-	p.AllowElements("h1", "h2", "h3", "h4", "h5", "h6", "p", "br", "hr",
-		"ul", "ol", "li", "blockquote", "pre", "code", "strong", "em", "u", "s",
-		"a", "img", "table", "thead", "tbody", "tr", "th", "td",
-		"div", "span", "iframe", "video", "source")
-	p.AllowAttrs("src", "alt", "title", "width", "height").OnElements("img")
-	p.AllowAttrs("href", "title", "target", "rel").OnElements("a")
-	p.AllowAttrs("src", "frameborder", "allowfullscreen").OnElements("iframe")
-	p.AllowAttrs("src", "controls", "width", "height").OnElements("video", "source")
-	p.AllowAttrs("style", "class").OnElements("span", "div", "td", "th")
-	p.AllowAttrs("class").OnElements("table", "thead", "tbody", "tr", "img", "a")
-	p.AllowStyles("color", "background-color", "text-align").OnElements("span", "td", "th")
-	p.AllowURLSchemes("http", "https", "mailto")
-	p.AllowRelativeURLs(true)
-	p.RequireNoFollowOnLinks(true)
-	return p
-}()
 
 // GetBySlug returns a published page by its slug.
 func (s *PageService) GetBySlug(slug string) (*model.Page, error) {
@@ -92,21 +71,11 @@ func (s *PageService) AdminList(page, perPage int, pageType, search, status stri
 		perPage = 10
 	}
 
-	pages, err := s.repo.FindAll(pageType, search, status)
+	pages, total, err := s.repo.FindAllPaginated(page, perPage, pageType, search, status)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list pages: %w", err)
 	}
-
-	total := int64(len(pages))
-	start := (page - 1) * perPage
-	if start >= len(pages) {
-		return []model.Page{}, total, nil
-	}
-	end := start + perPage
-	if end > len(pages) {
-		end = len(pages)
-	}
-	return pages[start:end], total, nil
+	return pages, total, nil
 }
 
 // Search returns pages matching a search query.
@@ -134,7 +103,7 @@ func (s *PageService) Create(page *model.Page) (*model.Page, error) {
 		return nil, errors.New("page slug is required")
 	}
 	page.ID = 0
-	page.Content = sanitizer.Sanitize(page.Content)
+	page.Content = HTMLSanitizer.Sanitize(page.Content)
 	if err := s.repo.Create(page); err != nil {
 		return nil, fmt.Errorf("failed to create page: %w", err)
 	}
@@ -176,7 +145,7 @@ func (s *PageService) Update(id uint64, req dto.UpdatePageRequest) (*model.Page,
 	}
 	existing.ProjectID = req.ProjectID
 	existing.Title = req.Title
-	existing.Content = sanitizer.Sanitize(req.Content)
+	existing.Content = HTMLSanitizer.Sanitize(req.Content)
 	existing.CoverImage = req.CoverImage
 	existing.MetaTitle = req.MetaTitle
 	existing.MetaDescription = req.MetaDescription

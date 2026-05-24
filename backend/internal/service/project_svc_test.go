@@ -6,6 +6,7 @@ import (
 
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
+	"time"
 )
 
 // mockProjectRepo implements repository.ProjectRepository for testing.
@@ -117,7 +118,7 @@ func TestProject_List(t *testing.T) {
 		},
 	}
 
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	projects, total, err := svc.List(1, 10, "", "")
 	if err != nil {
@@ -144,7 +145,7 @@ func TestProject_List_DefaultPagination(t *testing.T) {
 		},
 	}
 
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 	_, _, err := svc.List(0, 0, "", "")
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
@@ -162,7 +163,7 @@ func TestProject_GetBySlug_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	project, err := svc.GetBySlug("test-project")
 	if err != nil {
@@ -180,7 +181,7 @@ func TestProject_GetBySlug_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	_, err := svc.GetBySlug("nonexistent")
 	if err == nil {
@@ -190,7 +191,7 @@ func TestProject_GetBySlug_NotFound(t *testing.T) {
 
 func TestProject_GetBySlug_EmptySlug(t *testing.T) {
 	repo := &mockProjectRepo{}
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	_, err := svc.GetBySlug("")
 	if err == nil {
@@ -210,7 +211,7 @@ func TestProject_Compare_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	projects, err := svc.Compare([]string{"a", "b"})
 	if err != nil {
@@ -223,7 +224,7 @@ func TestProject_Compare_Success(t *testing.T) {
 
 func TestProject_Compare_EmptySlugs(t *testing.T) {
 	repo := &mockProjectRepo{}
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	_, err := svc.Compare([]string{})
 	if err == nil {
@@ -233,7 +234,7 @@ func TestProject_Compare_EmptySlugs(t *testing.T) {
 
 func TestProject_Compare_TooManySlugs(t *testing.T) {
 	repo := &mockProjectRepo{}
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	_, err := svc.Compare([]string{"a", "b", "c", "d", "e", "f"})
 	if err == nil {
@@ -251,7 +252,7 @@ func TestProject_Create_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	project, err := svc.Create(&model.Project{Name: "New Project", Slug: "new-project"})
 	if err != nil {
@@ -267,7 +268,7 @@ func TestProject_Create_Success(t *testing.T) {
 
 func TestProject_Create_NilProject(t *testing.T) {
 	repo := &mockProjectRepo{}
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	_, err := svc.Create(nil)
 	if err == nil {
@@ -277,7 +278,7 @@ func TestProject_Create_NilProject(t *testing.T) {
 
 func TestProject_Create_MissingName(t *testing.T) {
 	repo := &mockProjectRepo{}
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	_, err := svc.Create(&model.Project{Slug: "some-slug"})
 	if err == nil {
@@ -287,7 +288,7 @@ func TestProject_Create_MissingName(t *testing.T) {
 
 func TestProject_Create_MissingSlug(t *testing.T) {
 	repo := &mockProjectRepo{}
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	_, err := svc.Create(&model.Project{Name: "Some Name"})
 	if err == nil {
@@ -302,7 +303,7 @@ func TestProject_Create_RepoError(t *testing.T) {
 		},
 	}
 
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	_, err := svc.Create(&model.Project{Name: "Test", Slug: "test"})
 	if err == nil {
@@ -322,7 +323,7 @@ func TestProject_Update_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	project, err := svc.Update(5, dto.UpdateProjectRequest{Name: "Updated Name", Slug: "updated-slug"})
 	if err != nil {
@@ -341,7 +342,7 @@ func TestProject_Update_Success(t *testing.T) {
 
 func TestProject_Update_NilProject(t *testing.T) {
 	repo := &mockProjectRepo{}
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	_, err := svc.Update(1, dto.UpdateProjectRequest{})
 	if err == nil {
@@ -351,7 +352,7 @@ func TestProject_Update_NilProject(t *testing.T) {
 
 func TestProject_Update_ZeroID(t *testing.T) {
 	repo := &mockProjectRepo{}
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	_, err := svc.Update(0, dto.UpdateProjectRequest{Name: "Test", Slug: "test"})
 	if err == nil {
@@ -366,7 +367,7 @@ func TestProject_Update_RepoError(t *testing.T) {
 		},
 	}
 
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	_, err := svc.Update(1, dto.UpdateProjectRequest{Name: "Test", Slug: "test"})
 	if err == nil {
@@ -385,7 +386,7 @@ func TestProject_Delete_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	err := svc.Delete(10)
 	if err != nil {
@@ -401,7 +402,7 @@ func TestProject_Delete_Success(t *testing.T) {
 
 func TestProject_Delete_ZeroID(t *testing.T) {
 	repo := &mockProjectRepo{}
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	err := svc.Delete(0)
 	if err == nil {
@@ -416,7 +417,7 @@ func TestProject_Delete_RepoError(t *testing.T) {
 		},
 	}
 
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	err := svc.Delete(1)
 	if err == nil {
@@ -436,7 +437,7 @@ func TestProject_AdminList_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	projects, total, err := svc.AdminList(1, 10, "", "")
 	if err != nil {
@@ -463,7 +464,7 @@ func TestProject_AdminList_DefaultPagination(t *testing.T) {
 		},
 	}
 
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 	_, _, err := svc.AdminList(0, 0, "", "")
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
@@ -477,7 +478,7 @@ func TestProject_List_RepoError(t *testing.T) {
 		},
 	}
 
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	_, _, err := svc.List(1, 10, "", "")
 	if err == nil {
@@ -492,7 +493,7 @@ func TestProject_GetBySlug_RepoError(t *testing.T) {
 		},
 	}
 
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	_, err := svc.GetBySlug("valid-slug")
 	if err == nil {
@@ -507,10 +508,15 @@ func TestProject_Compare_RepoError(t *testing.T) {
 		},
 	}
 
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, nil)
 
 	_, err := svc.Compare([]string{"a", "b"})
 	if err == nil {
 		t.Fatal("expected error from repo")
 	}
 }
+
+func (m *mockProjectRepo) FindBySlugsLight(slugs []string) ([]model.Project, error) { return nil, nil }
+func (m *mockProjectRepo) FindAllCoverImages() ([]string, error) { return nil, nil }
+func (m *mockProjectRepo) Count() (int64, error) { return 0, nil }
+func (m *mockProjectRepo) CountByRange(start, end time.Time) (int64, error) { return 0, nil }

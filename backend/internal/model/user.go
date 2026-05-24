@@ -1,6 +1,18 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+)
+
+// JWTClaims is shared between middleware (parsing) and service (generating) JWT tokens.
+type JWTClaims struct {
+	UserID   uint64 `json:"user_id"`
+	Username string `json:"username"`
+	Role     string `json:"role"`
+	jwt.RegisteredClaims
+}
 
 type User struct {
 	ID           uint64     `gorm:"primaryKey;autoIncrement" json:"id"`

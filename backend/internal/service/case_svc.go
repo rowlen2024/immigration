@@ -10,35 +10,15 @@ import (
 	"mygo-immigration/backend/internal/repository"
 
 	"github.com/google/uuid"
-	"github.com/microcosm-cc/bluemonday"
 )
-
-var caseContentSanitizer = func() *bluemonday.Policy {
-	p := bluemonday.NewPolicy()
-	p.AllowElements("h1", "h2", "h3", "h4", "h5", "h6", "p", "br", "hr",
-		"ul", "ol", "li", "blockquote", "pre", "code", "strong", "em", "u", "s",
-		"a", "img", "table", "thead", "tbody", "tr", "th", "td",
-		"div", "span", "iframe", "video", "source")
-	p.AllowAttrs("src", "alt", "title", "width", "height").OnElements("img")
-	p.AllowAttrs("href", "title", "target", "rel").OnElements("a")
-	p.AllowAttrs("src", "frameborder", "allowfullscreen").OnElements("iframe")
-	p.AllowAttrs("src", "controls", "width", "height").OnElements("video", "source")
-	p.AllowAttrs("style", "class").OnElements("span", "div", "td", "th")
-	p.AllowAttrs("class").OnElements("table", "thead", "tbody", "tr", "img", "a")
-	p.AllowStyles("color", "background-color", "text-align").OnElements("span", "td", "th")
-	p.AllowURLSchemes("http", "https", "mailto")
-	p.AllowRelativeURLs(true)
-	p.RequireNoFollowOnLinks(true)
-	return p
-}()
 
 type CaseService struct {
 	repo          repository.CaseRepository
 	homeConfigSvc *HomeConfigService
 }
 
-func NewCaseService(repo repository.CaseRepository) *CaseService {
-	return &CaseService{repo: repo}
+func NewCaseService(repo repository.CaseRepository, homeConfigSvc *HomeConfigService) *CaseService {
+	return &CaseService{repo: repo, homeConfigSvc: homeConfigSvc}
 }
 
 func (s *CaseService) GetBySlug(slug string) (*model.Case, error) {
@@ -110,7 +90,7 @@ func (s *CaseService) Create(c *model.Case) (*model.Case, error) {
 	if c.Slug == "" {
 		c.Slug = uuid.New().String()
 	}
-	c.Content = caseContentSanitizer.Sanitize(c.Content)
+	c.Content = HTMLSanitizer.Sanitize(c.Content)
 	if err := s.repo.Create(c); err != nil {
 		return nil, fmt.Errorf("failed to create case: %w", err)
 	}
@@ -131,7 +111,7 @@ func (s *CaseService) Update(id uint64, req dto.UpdateCaseRequest) (*model.Case,
 	existing.InvestmentAmount = req.InvestmentAmount
 	existing.InvestmentValue = req.InvestmentValue
 	existing.ProcessingPeriod = req.ProcessingPeriod
-	existing.Content = caseContentSanitizer.Sanitize(req.Content)
+	existing.Content = HTMLSanitizer.Sanitize(req.Content)
 	existing.PhotoURL = req.PhotoURL
 	existing.SortOrder = req.SortOrder
 	if err := s.repo.Update(existing); err != nil {
@@ -156,18 +136,3 @@ func (s *CaseService) Delete(id uint64) error {
 	return nil
 }
 
-func (s *CaseService) HardDelete(id uint64) error {
-	if id == 0 {
-		return errors.New("case id is required")
-	}
-	if err := s.repo.HardDelete(id); err != nil {
-		return fmt.Errorf("failed to hard delete case: %w", err)
-	}
-	if s.homeConfigSvc != nil {
-		if err := s.homeConfigSvc.RemoveFeaturedCaseID(id); err != nil {
-			logging.Logger.Warn("home_config: failed to clean up featured case ref after hard delete",
-				"case_id", id, "error", err)
-		}
-	}
-	return nil
-}

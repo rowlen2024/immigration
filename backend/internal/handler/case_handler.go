@@ -191,7 +191,7 @@ func (h *Handler) DeleteProjectCase(c *gin.Context) {
 		return
 	}
 
-	if err := h.svc.Case.HardDelete(caseID); err != nil {
+	if err := h.svc.Case.Delete(caseID); err != nil {
 		logging.Logger.Warn("business error in DeleteProjectCase", "error", err)
 		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return

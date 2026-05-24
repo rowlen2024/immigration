@@ -3,13 +3,12 @@ package service
 import (
 	"errors"
 	"fmt"
-	"strings"
-
 	"mygo-immigration/backend/internal/config"
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/logging"
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
+	"strings"
 )
 
 // ProjectService handles business logic for immigration projects.
@@ -28,9 +27,9 @@ type ProjectService struct {
 	faqRepo           repository.FAQRepository
 }
 
-// NewProjectService creates a new ProjectService with the given repository.
-func NewProjectService(repo repository.ProjectRepository) *ProjectService {
-	return &ProjectService{repo: repo}
+// NewProjectService creates a new ProjectService with the given dependencies.
+func NewProjectService(repo repository.ProjectRepository, navRepo repository.NavigationRepository) *ProjectService {
+	return &ProjectService{repo: repo, navRepo: navRepo}
 }
 
 // GetBySlug returns a project by its slug with all relations preloaded.
@@ -89,25 +88,6 @@ func (s *ProjectService) Compare(slugs []string) ([]model.Project, error) {
 	return projects, nil
 }
 
-// CompareRow represents a single comparison row.
-type CompareRow struct {
-	Label  string     `json:"label"`
-	Values []string   `json:"values"`
-	Items  [][]string `json:"items,omitempty"`
-}
-
-// CompareResult holds the full comparison output.
-type CompareResult struct {
-	Projects []CompareProject `json:"projects"`
-	Rows     []CompareRow     `json:"rows"`
-}
-
-// CompareProject holds minimal project info for the comparison header.
-type CompareProject struct {
-	Title string `json:"title"`
-	Slug  string `json:"slug"`
-}
-
 // fieldBuilder maps a compare field key to its label and value extraction function.
 type fieldBuilder struct {
 	Label   string
@@ -132,7 +112,7 @@ var compareFieldBuilders = map[string]fieldBuilder{
 // CompareRows returns formatted comparison rows for N projects.
 // If fields is empty, all default fields from config.CompareFields are returned.
 // Otherwise, only the requested field keys are included (unknown keys are skipped).
-func (s *ProjectService) CompareRows(slugs []string, fields []string) (*CompareResult, error) {
+func (s *ProjectService) CompareRows(slugs []string, fields []string) (*dto.CompareResult, error) {
 	projects, err := s.Compare(slugs)
 	if err != nil {
 		return nil, err
@@ -141,9 +121,9 @@ func (s *ProjectService) CompareRows(slugs []string, fields []string) (*CompareR
 		return nil, errors.New("需要至少两个项目进行对比")
 	}
 
-	projInfo := make([]CompareProject, len(projects))
+	projInfo := make([]dto.CompareProject, len(projects))
 	for i, p := range projects {
-		projInfo[i] = CompareProject{Title: p.Name, Slug: p.Slug}
+		projInfo[i] = dto.CompareProject{Title: p.Name, Slug: p.Slug}
 	}
 
 	// Determine which field keys to use
@@ -156,13 +136,13 @@ func (s *ProjectService) CompareRows(slugs []string, fields []string) (*CompareR
 	}
 
 	// Build rows for selected keys, skipping unknown keys
-	rows := make([]CompareRow, 0, len(selectedKeys))
+	rows := make([]dto.CompareRow, 0, len(selectedKeys))
 	for _, key := range selectedKeys {
 		builder, ok := compareFieldBuilders[key]
 		if !ok {
 			continue
 		}
-		row := CompareRow{
+		row := dto.CompareRow{
 			Label:  builder.Label,
 			Values: pluck(projects, builder.Extract),
 		}
@@ -172,7 +152,7 @@ func (s *ProjectService) CompareRows(slugs []string, fields []string) (*CompareR
 		rows = append(rows, row)
 	}
 
-	return &CompareResult{Projects: projInfo, Rows: rows}, nil
+	return &dto.CompareResult{Projects: projInfo, Rows: rows}, nil
 }
 
 func pluck(projects []model.Project, fn func(model.Project) string) []string {
@@ -317,17 +297,70 @@ func (s *ProjectService) Delete(id uint64) error {
 			return fmt.Errorf("%d 个导航项引用了此项目，请先解除引用", count)
 		}
 	}
-	// Fetch slug before soft-delete for home_config cleanup
-	var slug string
+
+	slug, caseIDs, testimonialIDs := s.preDeleteCleanup(id)
+
+	err := repository.Tx(func(txRepo *repository.Repository) error {
+		if err := cascadeDeleteResources(txRepo, id); err != nil {
+			return err
+		}
+		return txRepo.Project.Delete(id)
+	})
+	if errors.Is(err, repository.ErrTxNotReady) {
+		s.cascadeDeleteProjectResources(id)
+		if err := s.repo.Delete(id); err != nil {
+			return fmt.Errorf("failed to delete project: %w", err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("failed to delete project: %w", err)
+	}
+
+	s.postDeleteHomeConfigCleanup(id, slug, caseIDs, testimonialIDs)
+	return nil
+}
+
+// cascadeDeleteResources deletes all child resources of a project using the
+// given Repository. Any error triggers a rollback in the calling transaction.
+func cascadeDeleteResources(repo *repository.Repository, id uint64) error {
+	if err := repo.Requirement.DeleteByProjectID(id); err != nil {
+		return err
+	}
+	if err := repo.CostItem.DeleteByProjectID(id); err != nil {
+		return err
+	}
+	if err := repo.TimelinePhase.DeleteByProjectID(id); err != nil {
+		return err
+	}
+	if err := repo.Milestone.DeleteByProjectID(id); err != nil {
+		return err
+	}
+	if err := repo.ProjectAdvantage.DeleteByProjectID(id); err != nil {
+		return err
+	}
+	if err := repo.CompareConfig.DeleteByProjectID(id); err != nil {
+		return err
+	}
+	if err := repo.Project.DeleteNewsByProjectID(id); err != nil {
+		return err
+	}
+	if err := repo.Case.DeleteByProjectID(id); err != nil {
+		return err
+	}
+	if err := repo.Testimonial.DeleteByProjectID(id); err != nil {
+		return err
+	}
+	if err := repo.FAQ.DeleteByProjectID(id); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ProjectService) preDeleteCleanup(id uint64) (slug string, caseIDs, testimonialIDs []uint64) {
 	if s.homeConfigSvc != nil {
 		if p, err := s.repo.FindByID(id); err == nil {
 			slug = p.Slug
 		}
 	}
-
-	// Pre-fetch case and testimonial IDs for home_config cleanup
-	var caseIDs []uint64
-	var testimonialIDs []uint64
 	if s.caseRepo != nil {
 		if cases, err := s.caseRepo.FindByProjectID(id); err == nil {
 			for _, c := range cases {
@@ -342,8 +375,10 @@ func (s *ProjectService) Delete(id uint64) error {
 			}
 		}
 	}
+	return
+}
 
-	// Cascade soft-delete NOT NULL sub-resources
+func (s *ProjectService) cascadeDeleteProjectResources(id uint64) {
 	if s.requirementRepo != nil {
 		if err := s.requirementRepo.DeleteByProjectID(id); err != nil {
 			logging.Logger.Warn("cascade delete requirements failed", "project_id", id, "error", err)
@@ -369,7 +404,6 @@ func (s *ProjectService) Delete(id uint64) error {
 			logging.Logger.Warn("cascade delete project_advantages failed", "project_id", id, "error", err)
 		}
 	}
-	// Hard-delete tables without deleted_at column
 	if s.compareConfigRepo != nil {
 		if err := s.compareConfigRepo.DeleteByProjectID(id); err != nil {
 			logging.Logger.Warn("cascade delete compare_config failed", "project_id", id, "error", err)
@@ -378,8 +412,6 @@ func (s *ProjectService) Delete(id uint64) error {
 	if err := s.repo.DeleteNewsByProjectID(id); err != nil {
 		logging.Logger.Warn("cascade delete project_news failed", "project_id", id, "error", err)
 	}
-
-	// Cascade soft-delete nullable sub-resources
 	if s.caseRepo != nil {
 		if err := s.caseRepo.DeleteByProjectID(id); err != nil {
 			logging.Logger.Warn("cascade delete cases failed", "project_id", id, "error", err)
@@ -395,23 +427,22 @@ func (s *ProjectService) Delete(id uint64) error {
 			logging.Logger.Warn("cascade delete faqs failed", "project_id", id, "error", err)
 		}
 	}
+}
 
-	// Clean up home_config featured refs before project is gone
-	if s.homeConfigSvc != nil && (len(caseIDs) > 0 || len(testimonialIDs) > 0) {
+func (s *ProjectService) postDeleteHomeConfigCleanup(id uint64, slug string, caseIDs, testimonialIDs []uint64) {
+	if s.homeConfigSvc == nil {
+		return
+	}
+	if len(caseIDs) > 0 || len(testimonialIDs) > 0 {
 		if err := s.homeConfigSvc.CleanupFeaturedRefs(caseIDs, testimonialIDs); err != nil {
 			logging.Logger.Warn("home_config: failed to clean up featured refs after cascade delete",
 				"project_id", id, "case_ids", caseIDs, "testimonial_ids", testimonialIDs, "error", err)
 		}
 	}
-
-	if err := s.repo.Delete(id); err != nil {
-		return fmt.Errorf("failed to delete project: %w", err)
-	}
-	if s.homeConfigSvc != nil && slug != "" {
+	if slug != "" {
 		if err := s.homeConfigSvc.RemoveFeaturedProjectSlug(slug); err != nil {
 			logging.Logger.Warn("home_config: failed to clean up featured project ref after delete",
 				"project_id", id, "slug", slug, "error", err)
 		}
 	}
-	return nil
 }

@@ -24,7 +24,7 @@ func (r *NavRepo) FindAllActive() ([]model.Navigation, error) {
 
 func (r *NavRepo) FindAllActiveByPosition(position string) ([]model.Navigation, error) {
 	var items []model.Navigation
-	err := r.db.Where("status = 1 AND deleted_at IS NULL AND display_position IN ?", []string{position, "both"}).
+	err := r.db.Unscoped().Where("status = 1 AND deleted_at IS NULL AND display_position IN ?", []string{position, "both"}).
 		Order("sort_order asc, id asc").
 		Find(&items).Error
 	return items, err
@@ -48,7 +48,7 @@ func (r *NavRepo) Update(nav *model.Navigation) error {
 }
 
 func (r *NavRepo) Delete(id uint64) error {
-	return r.db.Delete(&model.Navigation{}, id).Error
+	return r.db.Unscoped().Delete(&model.Navigation{}, id).Error
 }
 
 func (r *NavRepo) HasChildren(parentID uint64) (bool, error) {
@@ -61,7 +61,7 @@ func (r *NavRepo) HasChildren(parentID uint64) (bool, error) {
 
 func (r *NavRepo) FindByParentID(parentID uint64) ([]model.Navigation, error) {
 	var items []model.Navigation
-	err := r.db.Where("parent_id = ? AND deleted_at IS NULL", parentID).
+	err := r.db.Unscoped().Where("parent_id = ? AND deleted_at IS NULL", parentID).
 		Order("sort_order asc, id asc").
 		Find(&items).Error
 	return items, err

@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"mygo-immigration/backend/internal/dto"
-	"mygo-immigration/backend/internal/logging"
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
 )
@@ -30,6 +29,21 @@ func (s *TestimonialService) ListAll() ([]model.Testimonial, error) {
 		return nil, fmt.Errorf("failed to list testimonials: %w", err)
 	}
 	return items, nil
+}
+
+func (s *TestimonialService) Delete(id uint64) error {
+	if id == 0 {
+		return errors.New("testimonial id is required")
+	}
+	if s.homeConfigSvc != nil {
+		if err := s.homeConfigSvc.RemoveFeaturedTestimonialID(id); err != nil {
+			return fmt.Errorf("failed to clean up featured testimonial ref: %w", err)
+		}
+	}
+	if err := s.repo.Delete(id); err != nil {
+		return fmt.Errorf("failed to delete testimonial: %w", err)
+	}
+	return nil
 }
 
 func (s *TestimonialService) Create(projectID uint64, t *model.Testimonial) (*model.Testimonial, error) {
@@ -80,18 +94,3 @@ func (s *TestimonialService) Update(id uint64, req dto.UpdateTestimonialRequest)
 	return existing, nil
 }
 
-func (s *TestimonialService) HardDelete(id uint64) error {
-	if id == 0 {
-		return errors.New("testimonial id is required")
-	}
-	if err := s.repo.HardDelete(id); err != nil {
-		return fmt.Errorf("failed to delete testimonial: %w", err)
-	}
-	if s.homeConfigSvc != nil {
-		if err := s.homeConfigSvc.RemoveFeaturedTestimonialID(id); err != nil {
-			logging.Logger.Warn("home_config: failed to clean up featured testimonial ref after delete",
-				"testimonial_id", id, "error", err)
-		}
-	}
-	return nil
-}

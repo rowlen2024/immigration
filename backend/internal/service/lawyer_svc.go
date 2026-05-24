@@ -10,7 +10,7 @@ import (
 )
 
 type LawyerService struct {
-	repo *repository.LawyerRepo
+	repo repository.LawyerRepository
 }
 
 // LawyerResponse is the API-facing representation with tags as array.

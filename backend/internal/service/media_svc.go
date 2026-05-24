@@ -15,13 +15,13 @@ import (
 
 // MediaService handles business logic for media file metadata.
 type MediaService struct {
-	repo             *repository.MediaRepo
-	projectRepo      *repository.ProjectRepo
-	caseRepo         *repository.CaseRepo
-	pageRepo         *repository.PageRepo
-	lawyerRepo       *repository.LawyerRepo
-	testimonialRepo  *repository.TestimonialRepo
-	homeConfigRepo   *repository.HomeConfigRepo
+	repo             repository.MediaRepository
+	projectRepo      repository.ProjectRepository
+	caseRepo         repository.CaseRepository
+	pageRepo         repository.PageRepository
+	lawyerRepo       repository.LawyerRepository
+	testimonialRepo  repository.TestimonialRepository
+	homeConfigRepo   repository.HomeConfigRepository
 }
 
 // List returns paginated media entries.

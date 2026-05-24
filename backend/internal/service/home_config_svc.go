@@ -11,10 +11,10 @@ import (
 
 // HomeConfigService handles business logic for the homepage configuration.
 type HomeConfigService struct {
-	repo          *repository.HomeConfigRepo
-	projectRepo   *repository.ProjectRepo
-	caseRepo      *repository.CaseRepo
-	testimonialRepo *repository.TestimonialRepo
+	repo            repository.HomeConfigRepository
+	projectRepo     repository.ProjectRepository
+	caseRepo        repository.CaseRepository
+	testimonialRepo repository.TestimonialRepository
 }
 
 // HeroSlide represents a slide in the hero section of the homepage.

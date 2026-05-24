@@ -6,6 +6,7 @@ import (
 
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
+	"time"
 )
 
 // mockCaseRepo implements repository.CaseRepository for testing.
@@ -105,7 +106,7 @@ func TestCase_List(t *testing.T) {
 		},
 	}
 
-	svc := NewCaseService(repo)
+	svc := NewCaseService(repo, nil)
 
 	cases, err := svc.List()
 	if err != nil {
@@ -123,7 +124,7 @@ func TestCase_List_Error(t *testing.T) {
 		},
 	}
 
-	svc := NewCaseService(repo)
+	svc := NewCaseService(repo, nil)
 
 	_, err := svc.List()
 	if err == nil {
@@ -141,7 +142,7 @@ func TestCase_Create_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewCaseService(repo)
+	svc := NewCaseService(repo, nil)
 
 	c, err := svc.Create(&model.Case{Name: "Test Case"})
 	if err != nil {
@@ -157,7 +158,7 @@ func TestCase_Create_Success(t *testing.T) {
 
 func TestCase_Create_NilCase(t *testing.T) {
 	repo := &mockCaseRepo{}
-	svc := NewCaseService(repo)
+	svc := NewCaseService(repo, nil)
 
 	_, err := svc.Create(nil)
 	if err == nil {
@@ -167,7 +168,7 @@ func TestCase_Create_NilCase(t *testing.T) {
 
 func TestCase_Create_MissingName(t *testing.T) {
 	repo := &mockCaseRepo{}
-	svc := NewCaseService(repo)
+	svc := NewCaseService(repo, nil)
 
 	_, err := svc.Create(&model.Case{})
 	if err == nil {
@@ -187,7 +188,7 @@ func TestCase_Update_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewCaseService(repo)
+	svc := NewCaseService(repo, nil)
 
 	c, err := svc.Update(1, dto.UpdateCaseRequest{Name: "Updated Case"})
 	if err != nil {
@@ -207,7 +208,7 @@ func TestCase_Update_NotFound(t *testing.T) {
 			return nil, errors.New("not found")
 		},
 	}
-	svc := NewCaseService(repo)
+	svc := NewCaseService(repo, nil)
 
 	_, err := svc.Update(1, dto.UpdateCaseRequest{Name: "Test"})
 	if err == nil {
@@ -217,7 +218,7 @@ func TestCase_Update_NotFound(t *testing.T) {
 
 func TestCase_Update_ZeroID(t *testing.T) {
 	repo := &mockCaseRepo{}
-	svc := NewCaseService(repo)
+	svc := NewCaseService(repo, nil)
 
 	_, err := svc.Update(0, dto.UpdateCaseRequest{Name: "Test"})
 	if err == nil {
@@ -235,7 +236,7 @@ func TestCase_Update_RepoError(t *testing.T) {
 		},
 	}
 
-	svc := NewCaseService(repo)
+	svc := NewCaseService(repo, nil)
 
 	_, err := svc.Update(1, dto.UpdateCaseRequest{Name: "Test"})
 	if err == nil {
@@ -254,7 +255,7 @@ func TestCase_Delete_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewCaseService(repo)
+	svc := NewCaseService(repo, nil)
 
 	err := svc.Delete(5)
 	if err != nil {
@@ -270,7 +271,7 @@ func TestCase_Delete_Success(t *testing.T) {
 
 func TestCase_Delete_ZeroID(t *testing.T) {
 	repo := &mockCaseRepo{}
-	svc := NewCaseService(repo)
+	svc := NewCaseService(repo, nil)
 
 	err := svc.Delete(0)
 	if err == nil {
@@ -285,7 +286,7 @@ func TestCase_Delete_RepoError(t *testing.T) {
 		},
 	}
 
-	svc := NewCaseService(repo)
+	svc := NewCaseService(repo, nil)
 
 	err := svc.Delete(1)
 	if err == nil {
@@ -300,7 +301,7 @@ func TestCase_Create_RepoError(t *testing.T) {
 		},
 	}
 
-	svc := NewCaseService(repo)
+	svc := NewCaseService(repo, nil)
 
 	_, err := svc.Create(&model.Case{Name: "Test"})
 	if err == nil {
@@ -318,7 +319,7 @@ func TestCase_AdminList_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewCaseService(repo)
+	svc := NewCaseService(repo, nil)
 
 	cases, total, err := svc.AdminList(1, 2, "")
 	if err != nil {
@@ -341,7 +342,7 @@ func TestCase_AdminList_Page2(t *testing.T) {
 		},
 	}
 
-	svc := NewCaseService(repo)
+	svc := NewCaseService(repo, nil)
 
 	cases, total, err := svc.AdminList(2, 2, "")
 	if err != nil {
@@ -362,7 +363,7 @@ func TestCase_AdminList_BeyondRange(t *testing.T) {
 		},
 	}
 
-	svc := NewCaseService(repo)
+	svc := NewCaseService(repo, nil)
 
 	cases, total, err := svc.AdminList(5, 10, "")
 	if err != nil {
@@ -383,7 +384,7 @@ func TestCase_AdminList_DefaultPagination(t *testing.T) {
 		},
 	}
 
-	svc := NewCaseService(repo)
+	svc := NewCaseService(repo, nil)
 	_, _, err := svc.AdminList(0, 0, "")
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
@@ -397,7 +398,7 @@ func TestCase_AdminList_RepoError(t *testing.T) {
 		},
 	}
 
-	svc := NewCaseService(repo)
+	svc := NewCaseService(repo, nil)
 
 	_, _, err := svc.AdminList(1, 10, "")
 	if err == nil {
@@ -415,7 +416,7 @@ func TestCase_ListPaginated_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewCaseService(repo)
+	svc := NewCaseService(repo, nil)
 
 	cases, total, err := svc.ListPaginated(1, 10)
 	if err != nil {
@@ -428,3 +429,9 @@ func TestCase_ListPaginated_Success(t *testing.T) {
 		t.Errorf("expected 2 cases, got %d", len(cases))
 	}
 }
+
+func (m *mockCaseRepo) FindByIDs(ids []uint64) ([]model.Case, error) { return nil, nil }
+func (m *mockCaseRepo) FindAllPhotoURLs() ([]string, error) { return nil, nil }
+func (m *mockCaseRepo) FindAllContents() ([]string, error) { return nil, nil }
+func (m *mockCaseRepo) Count() (int64, error) { return 0, nil }
+func (m *mockCaseRepo) CountByRange(start, end time.Time) (int64, error) { return 0, nil }

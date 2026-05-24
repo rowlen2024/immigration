@@ -5,17 +5,11 @@ import (
 	"strings"
 
 	"mygo-immigration/backend/internal/config"
+	"mygo-immigration/backend/internal/model"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
-
-type Claims struct {
-	UserID   uint64 `json:"user_id"`
-	Username string `json:"username"`
-	Role     string `json:"role"`
-	jwt.RegisteredClaims
-}
 
 func Auth(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -27,7 +21,7 @@ func Auth(cfg *config.Config) gin.HandlerFunc {
 		}
 
 		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-		claims := &Claims{}
+		claims := &model.JWTClaims{}
 
 		token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
 			return []byte(cfg.JWTSecret), nil
