@@ -2,14 +2,20 @@
   <div class="homepage">
     <!-- Hero Carousel Section -->
     <section class="hero-section">
-      <div class="hero-carousel">
+      <div class="hero-carousel" @touchstart="onHeroTouchStart" @touchend="onHeroTouchEnd">
         <div
           v-for="(slide, index) in heroSlides"
           :key="index"
           class="hero-slide"
           :class="{ active: currentSlide === index }"
-          :style="{ backgroundImage: slide.image ? `url(${slide.image})` : undefined }"
         >
+          <ResponsiveImage
+            v-if="slide.image"
+            :src="slide.image"
+            alt=""
+            variant="lg"
+            class="hero-slide-bg"
+          />
           <div class="hero-slide-gradient"></div>
           <div class="hero-glow hero-glow--gold"></div>
           <div class="hero-glow hero-glow--blue"></div>
@@ -83,27 +89,24 @@
           </div>
         </div>
         <div v-else class="project-cards">
-          <div v-for="(project, idx) in projectCards" :key="project.slug" class="project-card reveal">
-            <div class="card-image" :class="`card-image--${idx % 3}`">
-              <div class="card-image-glow"></div>
-              <div class="card-image-overlay"></div>
-              <img v-if="project.image" :src="project.image" :alt="project.title" loading="lazy" />
-            </div>
-            <div class="card-body">
-              <h3 class="card-title">{{ project.title }}</h3>
-              <p class="card-desc">{{ project.description }}</p>
-              <div class="card-stats">
-                <span class="card-stat" v-for="(feat, fi) in project.features" :key="fi">
-                  {{ feat }}
-                </span>
-              </div>
-              <NuxtLink :to="project.link" class="card-link">
-                了解详情
-                <span class="link-arrow" v-html="getIconSvg('chevron-right', 14, 'currentColor')"></span>
-              </NuxtLink>
-            </div>
-            <div class="card-bottom-line"></div>
-          </div>
+          <ProjectCard
+            v-for="(project, idx) in projectCards"
+            :key="project.slug"
+            class="reveal"
+            :slug="project.slug"
+            :title="project.title"
+            :description="project.description"
+            :image="project.image"
+            :features="project.features"
+            :link="project.link"
+            :image-variant="idx"
+          />
+        </div>
+        <div v-if="!pending.projects && projectCards.length > 0" class="section-more">
+          <NuxtLink to="/projects" class="btn-outline">
+            查看更多项目
+            <span v-html="getIconSvg('chevron-right', 14, 'currentColor')"></span>
+          </NuxtLink>
         </div>
       </div>
     </section>
@@ -136,6 +139,13 @@
             :summary="stripHtml(item.content)"
             :image="item.photo_url"
           />
+        </div>
+
+        <div v-if="!pending.cases && featuredCases.length > 0" class="section-more">
+          <NuxtLink to="/cases" class="btn-outline">
+            查看更多案例
+            <span v-html="getIconSvg('chevron-right', 14, 'currentColor')"></span>
+          </NuxtLink>
         </div>
 
         <div v-if="!pending.cases && featuredCases.length === 0" class="empty-state">
@@ -190,7 +200,7 @@
         </div>
 
         <div v-if="advantageSection?.image" class="advantage-banner">
-          <img :src="advantageSection.image" alt="优势区域图" loading="lazy" />
+          <ResponsiveImage :src="advantageSection.image" alt="优势区域图" variant="lg" loading="lazy" />
         </div>
       </div>
     </section>
@@ -224,6 +234,22 @@ import { getIconByName, getIconSvg } from '~/composables/lucideIcons'
 // Hero carousel
 const currentSlide = ref(0);
 let autoTimer: ReturnType<typeof setInterval> | null = null;
+let heroTouchStartX = 0;
+
+const onHeroTouchStart = (e: TouchEvent) => {
+  heroTouchStartX = e.touches[0].clientX;
+};
+
+const onHeroTouchEnd = (e: TouchEvent) => {
+  const diff = heroTouchStartX - e.changedTouches[0].clientX;
+  if (Math.abs(diff) > 50) {
+    if (diff > 0) {
+      nextSlide();
+    } else {
+      prevSlide();
+    }
+  }
+};
 
 interface HeroSlide {
   title: string;
@@ -642,10 +668,17 @@ onUnmounted(() => {
 .hero-slide {
   position: absolute;
   inset: 0;
-  background-size: cover;
-  background-position: center;
   opacity: 0;
   transition: opacity 0.6s ease-in-out;
+}
+
+.hero-slide-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .hero-slide.active {
@@ -918,18 +951,30 @@ onUnmounted(() => {
 
 @media (max-width: 767px) {
   .trust-bar {
-    flex-direction: column;
-    gap: 20px;
-    padding: 28px 20px;
+    flex-direction: row;
+    gap: 8px;
+    padding: 20px 12px;
+    flex-wrap: wrap;
+    justify-content: space-around;
   }
 
-  .trust-bar-divider {
-    width: 60px;
-    height: 1px;
+  .trust-bar-item {
+    flex: 0 0 auto;
+    min-width: 0;
   }
 
   .trust-bar-number {
-    font-size: 30px;
+    font-size: 28px;
+  }
+
+  .trust-bar-label {
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+
+  .trust-bar-divider {
+    width: 1px;
+    height: 36px;
   }
 }
 
@@ -984,6 +1029,16 @@ onUnmounted(() => {
   cursor: pointer;
   padding: 0;
   transition: all 0.25s ease-out;
+  position: relative;
+}
+
+.carousel-dot::after {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: -10px;
+  right: -10px;
+  bottom: -20px;
 }
 
 .carousel-dot.active {
@@ -1028,6 +1083,10 @@ onUnmounted(() => {
     justify-content: center;
   }
 
+  .carousel-arrow {
+    display: none;
+  }
+
   .carousel-dot {
     width: 16px;
   }
@@ -1070,206 +1129,16 @@ onUnmounted(() => {
   background: linear-gradient(90deg, transparent, var(--accent), transparent);
 }
 
+.section-more {
+  text-align: center;
+  margin-top: 32px;
+}
+
 /* Project Cards */
 .project-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
-}
-
-.project-card {
-  position: relative;
-  background-color: var(--bg-white);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow var(--duration-slow) var(--ease-out),
-              transform 0.35s var(--ease-spring),
-              border-color var(--duration-normal) var(--ease-out);
-}
-
-.project-card:hover {
-  box-shadow: var(--shadow-xl), 0 0 0 1px rgba(200, 150, 62, 0.25);
-  transform: translateY(-6px);
-  border-color: rgba(200, 150, 62, 0.4);
-}
-
-.card-image {
-  height: 200px;
-  overflow: hidden;
-  position: relative;
-}
-
-.card-image-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background: linear-gradient(180deg, transparent 50%, rgba(200, 150, 62, 0.25) 100%);
-  opacity: 0;
-  transition: opacity var(--duration-slow) var(--ease-out);
-}
-
-.card-image::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: linear-gradient(to top, rgba(200, 150, 62, 0.3), transparent);
-  z-index: 2;
-  transition: height var(--duration-slow) var(--ease-out),
-              opacity var(--duration-slow) var(--ease-out);
-}
-
-.project-card:hover .card-image-overlay {
-  opacity: 1;
-}
-
-.project-card:hover .card-image::after {
-  height: 100px;
-  background: linear-gradient(to top, rgba(200, 150, 62, 0.4), transparent 80%);
-}
-
-.card-image--0 {
-  background: linear-gradient(135deg, #0F1E3D, #15294D);
-}
-
-.card-image--1 {
-  background: linear-gradient(135deg, #15294D, #1A3A5C);
-}
-
-.card-image--2 {
-  background: linear-gradient(135deg, #1A3A5C, #1E3A6E);
-}
-
-.card-image-glow {
-  position: absolute;
-  top: -30px;
-  right: -20px;
-  width: 140px;
-  height: 140px;
-  background: radial-gradient(circle, rgba(200, 150, 62, 0.12), transparent 70%);
-  border-radius: 50%;
-  z-index: 1;
-  transition: all var(--duration-slow) var(--ease-out);
-}
-
-.project-card:hover .card-image-glow {
-  width: 220px;
-  height: 220px;
-  top: -60px;
-  right: -60px;
-  background: radial-gradient(circle, rgba(200, 150, 62, 0.22), transparent 65%);
-}
-
-.card-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.45s var(--ease-out);
-}
-
-.project-card:hover .card-image img {
-  transform: scale(1.08);
-}
-
-.card-body {
-  padding: 22px 24px;
-  position: relative;
-  z-index: 2;
-}
-
-.card-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-text);
-  margin-bottom: 8px;
-  transition: color var(--duration-normal) var(--ease-out);
-}
-
-.project-card:hover .card-title {
-  color: var(--color-accent-dark);
-}
-
-.card-desc {
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  line-height: 1.7;
-  margin-bottom: 16px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.card-stats {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 18px;
-}
-
-.card-stat {
-  background: var(--color-accent-soft);
-  color: var(--color-accent-dark);
-  font-size: 12px;
-  font-weight: 500;
-  padding: 4px 12px;
-  border-radius: var(--radius-full);
-  transition: background var(--duration-normal) var(--ease-out),
-              color var(--duration-normal) var(--ease-out);
-}
-
-.project-card:hover .card-stat {
-  background: rgba(200, 150, 62, 0.18);
-  color: var(--color-accent-dark);
-}
-
-.card-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--primary);
-  transition: gap var(--duration-normal) var(--ease-out),
-              color var(--duration-normal) var(--ease-out);
-}
-
-.card-link:hover {
-  gap: 8px;
-  color: var(--accent-dark);
-}
-
-.link-arrow {
-  display: inline-flex;
-  align-items: center;
-  transition: transform var(--duration-normal) var(--ease-out);
-}
-
-.card-link:hover .link-arrow {
-  transform: translateX(2px);
-}
-
-/* ── Bottom golden line ── */
-
-.card-bottom-line {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--gradient-gold);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.45s var(--ease-spring);
-  z-index: 3;
-}
-
-.project-card:hover .card-bottom-line {
-  transform: scaleX(1);
 }
 
 @media (max-width: 1023px) {
@@ -1366,6 +1235,8 @@ onUnmounted(() => {
 
 .advantage-banner img {
   width: 100%;
+  max-height: 500px;
+  object-fit: cover;
   display: block;
   border-radius: var(--radius-lg);
 }
@@ -1568,12 +1439,43 @@ onUnmounted(() => {
     height: 400px;
   }
 
+  .hero-content {
+    justify-content: flex-start;
+    padding-top: 48px;
+  }
+
   .hero-title {
     font-size: 32px;
   }
 
   .hero-subtitle {
     font-size: 16px;
+  }
+
+  .hero-badge {
+    margin-bottom: 14px;
+  }
+
+  .hero-badge span {
+    font-size: 11px;
+    padding: 4px 10px;
+    letter-spacing: 1px;
+  }
+
+  .hero-glow--gold {
+    animation: blobPulse 12s ease-in-out infinite;
+  }
+
+  .hero-glow--blue {
+    animation: blobPulse 14s ease-in-out infinite 2s;
+  }
+
+  .hero-glow--amber {
+    animation: blobPulse 10s ease-in-out infinite 4s;
+  }
+
+  .hero-glow--deep-blue {
+    animation: blobPulse 16s ease-in-out infinite 1s;
   }
 
   .project-cards,

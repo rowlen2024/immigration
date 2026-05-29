@@ -28,5 +28,5 @@ func (r *CompareConfigRepo) Upsert(cfg *model.CompareConfig) error {
 }
 
 func (r *CompareConfigRepo) DeleteByProjectID(projectID uint64) error {
-	return r.db.Where("project_id = ?", projectID).Delete(&model.CompareConfig{}).Error
+	return r.db.Unscoped().Where("project_id = ?", projectID).Delete(&model.CompareConfig{}).Error
 }

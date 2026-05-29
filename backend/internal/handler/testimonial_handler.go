@@ -72,8 +72,8 @@ func (h *Handler) CreateProjectTestimonial(c *gin.Context) {
 	item.ID = 0 // ensure DB auto-increment
 	created, err := h.svc.Testimonial.Create(projectID, &item)
 	if err != nil {
-		logging.Logger.Error("failed in CreateProjectTestimonial", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in CreateProjectTestimonial", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusCreated, dto.Success(created))
@@ -97,8 +97,8 @@ func (h *Handler) UpdateProjectTestimonial(c *gin.Context) {
 	}
 	updated, err := h.svc.Testimonial.Update(tid, req)
 	if err != nil {
-		logging.Logger.Error("failed in UpdateProjectTestimonial", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in UpdateProjectTestimonial", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, dto.Success(updated))
@@ -115,9 +115,9 @@ func (h *Handler) DeleteProjectTestimonial(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid testimonial id"))
 		return
 	}
-	if err := h.svc.Testimonial.HardDelete(tid); err != nil {
-		logging.Logger.Error("failed in DeleteProjectTestimonial", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+	if err := h.svc.Testimonial.Delete(tid); err != nil {
+		logging.Logger.Warn("business error in DeleteProjectTestimonial", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, dto.Success(nil))

@@ -13,9 +13,10 @@
       </el-upload>
       <el-button @click="pickerVisible = true">浏览</el-button>
     </div>
-    <div v-if="urlValue" class="preview">
-      <img :src="urlValue" alt="预览" @error="previewError = true" v-show="!previewError" />
+    <div v-if="urlValue" class="preview" :style="{ aspectRatio: previewRatio }">
+      <img :src="previewSrc" alt="预览" @error="previewError = true" v-show="!previewError" />
     </div>
+    <p v-if="sizeHint" class="size-hint">{{ sizeHint }}</p>
 
     <MediaPicker
       v-model="pickerVisible"
@@ -25,11 +26,15 @@
 </template>
 
 <script setup lang="ts">
+import { getVariantUrl } from '~/utils/image'
 import MediaPicker from './MediaPicker.vue';
 
 const props = defineProps<{
   modelValue: string;
   placeholder?: string;
+  sizeHint?: string;
+  previewRatio?: string;
+  context?: string;
 }>();
 
 const emit = defineEmits<{
@@ -40,7 +45,12 @@ const urlValue = ref(props.modelValue);
 const pickerVisible = ref(false);
 const previewError = ref(false);
 
-const uploadUrl = '/api/v1/admin/media/upload';
+const previewSrc = computed(() => getVariantUrl(urlValue.value, 'sm'))
+
+const uploadUrl = computed(() => {
+  const ctx = props.context || 'general';
+  return `/api/v1/admin/media/upload?context=${ctx}`;
+});
 
 const uploadHeaders = computed(() => {
   const token = import.meta.client ? localStorage.getItem('token') : null;
@@ -98,7 +108,7 @@ watch(
 .preview {
   margin-top: 8px;
   width: 120px;
-  height: 68px;
+  aspect-ratio: 16 / 9;
   border-radius: 4px;
   overflow: hidden;
   background: #f5f7fa;
@@ -109,5 +119,12 @@ watch(
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.size-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.4;
 }
 </style>

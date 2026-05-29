@@ -1,6 +1,6 @@
 <template>
   <div v-if="testimonials.length > 0" class="testimonial-carousel">
-    <div class="carousel-viewport" ref="viewportRef">
+    <div class="carousel-viewport" ref="viewportRef" @touchstart="onTouchStart" @touchend="onTouchEnd">
       <div
         class="carousel-track"
         :style="{ transform: `translateX(${offset}px)`, gap: `${gap}px` }"
@@ -25,7 +25,7 @@
           <!-- 用户信息 -->
           <div class="tm-footer">
             <div class="tm-avatar">
-              <img v-if="item.avatar_url" :src="item.avatar_url" :alt="item.nickname" />
+              <ResponsiveImage v-if="item.avatar_url" :src="item.avatar_url" :alt="item.nickname" variant="thumb" />
               <svg v-else width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 22c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
             </div>
             <div class="tm-meta">
@@ -71,6 +71,24 @@ const viewportRef = ref<HTMLElement | null>(null);
 const currentPage = ref(0);
 const viewportWidth = ref(0);
 let autoTimer: ReturnType<typeof setInterval> | null = null;
+let touchStartX = 0;
+
+// ---- Touch swipe ----
+
+function onTouchStart(e: TouchEvent) {
+  touchStartX = e.touches[0].clientX;
+}
+
+function onTouchEnd(e: TouchEvent) {
+  const diff = touchStartX - e.changedTouches[0].clientX;
+  if (Math.abs(diff) > 50) {
+    if (diff > 0) {
+      goToPage(currentPage.value + 1);
+    } else {
+      goToPage(currentPage.value - 1);
+    }
+  }
+}
 
 // ---- 响应式计算 ----
 
@@ -301,7 +319,17 @@ defineExpose({ goToPage });
   background: #d9d9d9;
   cursor: pointer;
   padding: 0;
+  position: relative;
   transition: all var(--duration-normal) var(--ease-out);
+}
+
+.carousel-dot::after {
+  content: '';
+  position: absolute;
+  top: -17px;
+  left: -17px;
+  right: -17px;
+  bottom: -17px;
 }
 
 .carousel-dot:hover {
@@ -311,6 +339,11 @@ defineExpose({ goToPage });
 .carousel-dot.active {
   background: var(--color-accent);
   width: 24px;
+}
+
+.carousel-dot.active::after {
+  left: -7px;
+  right: -7px;
 }
 
 @media (max-width: 767px) {

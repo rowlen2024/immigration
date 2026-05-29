@@ -31,8 +31,8 @@ func (h *Handler) AdminCreateUser(c *gin.Context) {
 
 	user, err := h.svc.User.Create(req.Username, req.Password, req.DisplayName, req.Role)
 	if err != nil {
-		logging.Logger.Error("failed in AdminCreateUser", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in AdminCreateUser", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -54,8 +54,8 @@ func (h *Handler) AdminUpdateUser(c *gin.Context) {
 
 	user, err := h.svc.User.Update(id, req)
 	if err != nil {
-		logging.Logger.Error("failed in AdminUpdateUser", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in AdminUpdateUser", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 

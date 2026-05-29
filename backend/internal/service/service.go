@@ -1,11 +1,13 @@
 package service
 
 import (
-	"mygo-immigration/backend/internal/logging"
-	"mygo-immigration/backend/internal/config"
-	"mygo-immigration/backend/internal/repository"
 	"strconv"
 	"time"
+
+	"mygo-immigration/backend/internal/config"
+	"mygo-immigration/backend/internal/dto"
+	"mygo-immigration/backend/internal/logging"
+	"mygo-immigration/backend/internal/repository"
 )
 
 type Service struct {
@@ -31,18 +33,26 @@ type Service struct {
 }
 
 func New(repo *repository.Repository, cfg *config.Config) *Service {
-	return &Service{
+	svc := &Service{
 		repo:          repo,
-		Project:       &ProjectService{repo: repo.Project, navRepo: repo.Nav},
-		Auth:          &AuthService{repo: repo.User, cfg: cfg},
+		Project: NewProjectService(repo.Project, repo.Nav),
+		Auth:    NewAuthService(repo.User, cfg),
 		User:          &UserService{repo: repo.User},
-		FAQ:           &FAQService{repo: repo.FAQ},
-		Page:          &PageService{repo: repo.Page, navRepo: repo.Nav},
-		Case:          &CaseService{repo: repo.Case},
-		Lead:          &LeadService{repo: repo.Lead},
+		FAQ:     NewFAQService(repo.FAQ),
+		Page:    NewPageService(repo.Page, repo.Nav),
+		Case:    NewCaseService(repo.Case, nil),
+		Lead:    NewLeadService(repo.Lead),
 		Lawyer:        &LawyerService{repo: repo.Lawyer},
 		HomeConfig:    &HomeConfigService{repo: repo.HomeConfig, projectRepo: repo.Project, caseRepo: repo.Case, testimonialRepo: repo.Testimonial},
-		Media:         &MediaService{repo: repo.Media},
+		Media: &MediaService{
+			repo:             repo.Media,
+			projectRepo:      repo.Project,
+			caseRepo:         repo.Case,
+			pageRepo:         repo.Page,
+			lawyerRepo:       repo.Lawyer,
+			testimonialRepo:  repo.Testimonial,
+			homeConfigRepo:   repo.HomeConfig,
+		},
 		Nav:           &NavService{repo: repo.Nav, projectRepo: repo.Project, pageRepo: repo.Page},
 		Search:        &SearchService{faqRepo: repo.FAQ, pageRepo: repo.Page},
 		Requirement:   &RequirementService{repo: repo.Requirement},
@@ -52,28 +62,28 @@ func New(repo *repository.Repository, cfg *config.Config) *Service {
 		Advantage:     &ProjectAdvantageService{repo: repo.ProjectAdvantage},
 		Testimonial:   &TestimonialService{repo: repo.Testimonial},
 	}
-}
 
-// DashboardStats holds admin dashboard statistics.
-type DashboardStats struct {
-	TotalProjects int64   `json:"totalProjects"`
-	TotalPages    int64   `json:"totalPages"`
-	TotalLeads    int64   `json:"totalLeads"`
-	TotalCases    int64   `json:"totalCases"`
-	UnreadLeads   int64   `json:"unreadLeads"`
-	Trends        []Trend `json:"trends"`
-}
+	// Wire home_config cleanup into entity services
+	svc.Case.homeConfigSvc = svc.HomeConfig
+	svc.Project.homeConfigSvc = svc.HomeConfig
+	svc.Testimonial.homeConfigSvc = svc.HomeConfig
 
-// Trend represents a single metric's month-over-month trend.
-type Trend struct {
-	Key       string `json:"key"`
-	Direction string `json:"direction"`
-	Percent   int    `json:"percent"`
-	Label     string `json:"label"`
+	// Post-wire cascade delete dependencies into ProjectService
+	svc.Project.requirementRepo = repo.Requirement
+	svc.Project.costItemRepo = repo.CostItem
+	svc.Project.timelinePhaseRepo = repo.TimelinePhase
+	svc.Project.milestoneRepo = repo.Milestone
+	svc.Project.advantageRepo = repo.ProjectAdvantage
+	svc.Project.compareConfigRepo = repo.CompareConfig
+	svc.Project.caseRepo = repo.Case
+	svc.Project.testimonialRepo = repo.Testimonial
+	svc.Project.faqRepo = repo.FAQ
+
+	return svc
 }
 
 // Stats returns dashboard statistics with month-over-month trends.
-func (s *Service) Stats() (*DashboardStats, error) {
+func (s *Service) Stats() (*dto.DashboardStats, error) {
 	now := time.Now()
 	thisMonthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
 	lastMonthStart := thisMonthStart.AddDate(0, -1, 0)
@@ -87,7 +97,7 @@ func (s *Service) Stats() (*DashboardStats, error) {
 	if err != nil {
 		logging.Logger.Warn("stats: failed to count pages", "error", err)
 	}
-	leads, err := s.repo.Lead.CountAll()
+	leads, err := s.repo.Lead.Count()
 	if err != nil {
 		logging.Logger.Warn("stats: failed to count leads", "error", err)
 	}
@@ -133,23 +143,23 @@ func (s *Service) Stats() (*DashboardStats, error) {
 		logging.Logger.Warn("stats: failed to count cases last month", "error", err)
 	}
 
-	calc := func(this, last int64) Trend {
+	calc := func(this, last int64) dto.Trend {
 		if last == 0 {
 			if this == 0 {
-				return Trend{Direction: "neutral", Percent: 0, Label: "持平"}
+				return dto.Trend{Direction: "neutral", Percent: 0, Label: "持平"}
 			}
-			return Trend{Direction: "up", Percent: 100, Label: "本月新增"}
+			return dto.Trend{Direction: "up", Percent: 100, Label: "本月新增"}
 		}
 		diff := float64(this-last) / float64(last) * 100
 		if diff >= 0 {
 			pct := int(diff + 0.5)
 			if pct == 0 {
-				return Trend{Direction: "neutral", Percent: 0, Label: "持平"}
+				return dto.Trend{Direction: "neutral", Percent: 0, Label: "持平"}
 			}
-			return Trend{Direction: "up", Percent: pct, Label: fmtLabel("up", pct)}
+			return dto.Trend{Direction: "up", Percent: pct, Label: fmtLabel("up", pct)}
 		}
 		pct := int(-diff + 0.5)
-		return Trend{Direction: "down", Percent: pct, Label: fmtLabel("down", pct)}
+		return dto.Trend{Direction: "down", Percent: pct, Label: fmtLabel("down", pct)}
 	}
 
 	pT := calc(projectsThis, projectsLast)
@@ -157,13 +167,13 @@ func (s *Service) Stats() (*DashboardStats, error) {
 	lT := calc(leadsThis, leadsLast)
 	cT := calc(casesThis, casesLast)
 
-	return &DashboardStats{
+	return &dto.DashboardStats{
 		TotalProjects: projects,
 		TotalPages:    pages,
 		TotalLeads:    leads,
 		TotalCases:    cases,
 		UnreadLeads:   unread,
-		Trends: []Trend{
+		Trends: []dto.Trend{
 			{Key: "projects", Direction: pT.Direction, Percent: pT.Percent, Label: pT.Label},
 			{Key: "pages", Direction: pgT.Direction, Percent: pgT.Percent, Label: pgT.Label},
 			{Key: "leads", Direction: lT.Direction, Percent: lT.Percent, Label: lT.Label},

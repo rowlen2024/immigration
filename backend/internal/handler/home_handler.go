@@ -64,8 +64,8 @@ func (h *Handler) UpdateSiteConfig(c *gin.Context) {
 	}
 
 	if err := h.svc.HomeConfig.UpdateSiteConfig(&cfg); err != nil {
-		logging.Logger.Error("failed in UpdateSiteConfig", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in UpdateSiteConfig", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -80,8 +80,8 @@ func (h *Handler) UpdateHomeConfig(c *gin.Context) {
 	}
 
 	if err := h.svc.HomeConfig.Update(configs); err != nil {
-		logging.Logger.Error("failed in UpdateHomeConfig", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in UpdateHomeConfig", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 

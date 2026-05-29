@@ -3,9 +3,10 @@
     <div class="case-image">
       <div class="case-image-overlay"></div>
       <div class="case-image-goldline"></div>
-      <img
-        :src="image || ''"
+      <ResponsiveImage
+        :src="image"
         :alt="name"
+        variant="sm"
         loading="lazy"
       />
     </div>
@@ -60,6 +61,12 @@ defineProps<{
   box-shadow: var(--shadow-lg), 0 0 0 1px rgba(200, 150, 62, 0.15);
   transform: translateY(-4px);
   border-color: rgba(200, 150, 62, 0.3);
+}
+
+.case-card:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+  border-color: var(--color-border);
 }
 
 /* ── Image area ── */

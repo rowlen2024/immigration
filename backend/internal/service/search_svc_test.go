@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"mygo-immigration/backend/internal/model"
+	"time"
 	"mygo-immigration/backend/internal/repository"
 )
 
@@ -14,6 +15,7 @@ type searchMockFAQRepo struct {
 }
 
 func (m *searchMockFAQRepo) FindByID(id uint64) (*model.FAQ, error) { return nil, nil }
+func (m *searchMockFAQRepo) FindAllList(projectID *uint64, search string) ([]repository.FAQWithProject, error) { return nil, nil }
 func (m *searchMockFAQRepo) FindDistinctProjects() ([]model.Project, error) { return nil, nil }
 func (m *searchMockFAQRepo) FindAll(params repository.FAQQueryParams) ([]repository.FAQWithProject, int64, error) {
 	return nil, 0, nil
@@ -21,6 +23,7 @@ func (m *searchMockFAQRepo) FindAll(params repository.FAQQueryParams) ([]reposit
 func (m *searchMockFAQRepo) Create(faq *model.FAQ) error                           { return nil }
 func (m *searchMockFAQRepo) Update(faq *model.FAQ) error                           { return nil }
 func (m *searchMockFAQRepo) Delete(id uint64) error                                { return nil }
+func (m *searchMockFAQRepo) DeleteByProjectID(projectID uint64) error               { return nil }
 func (m *searchMockFAQRepo) Search(keyword string) ([]model.FAQ, error) {
 	if m.searchFn != nil {
 		return m.searchFn(keyword)
@@ -201,3 +204,9 @@ func TestSearch_KeywordForwardedCorrectly(t *testing.T) {
 		t.Errorf("Page repo received '%s', expected 'immigration'", pageKeyword)
 	}
 }
+
+func (m *searchMockPageRepo) FindAllPaginated(page, perPage int, pageType, search, status string) ([]model.Page, int64, error) { return nil, 0, nil }
+func (m *searchMockPageRepo) FindAllCoverImages() ([]string, error) { return nil, nil }
+func (m *searchMockPageRepo) FindAllContents() ([]string, error) { return nil, nil }
+func (m *searchMockPageRepo) Count() (int64, error) { return 0, nil }
+func (m *searchMockPageRepo) CountByRange(start, end time.Time) (int64, error) { return 0, nil }

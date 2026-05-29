@@ -41,8 +41,8 @@ func (h *Handler) CreateRequirement(c *gin.Context) {
 	item.ID = 0 // ensure DB auto-increment
 	created, err := h.svc.Requirement.Create(projectID, &item)
 	if err != nil {
-		logging.Logger.Error("failed in CreateRequirement", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in CreateRequirement", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusCreated, dto.Success(created))
@@ -66,8 +66,8 @@ func (h *Handler) UpdateRequirement(c *gin.Context) {
 	}
 	updated, err := h.svc.Requirement.Update(projectID, rid, &item)
 	if err != nil {
-		logging.Logger.Error("failed in UpdateRequirement", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in UpdateRequirement", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, dto.Success(updated))
@@ -85,8 +85,8 @@ func (h *Handler) DeleteRequirement(c *gin.Context) {
 		return
 	}
 	if err := h.svc.Requirement.Delete(projectID, rid); err != nil {
-		logging.Logger.Error("failed in DeleteRequirement", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in DeleteRequirement", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, dto.Success(nil))
@@ -123,8 +123,8 @@ func (h *Handler) CreateCostItem(c *gin.Context) {
 	item.ID = 0 // ensure DB auto-increment
 	created, err := h.svc.CostItem.Create(projectID, &item)
 	if err != nil {
-		logging.Logger.Error("failed in CreateCostItem", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in CreateCostItem", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusCreated, dto.Success(created))
@@ -148,8 +148,8 @@ func (h *Handler) UpdateCostItem(c *gin.Context) {
 	}
 	updated, err := h.svc.CostItem.Update(projectID, cid, &item)
 	if err != nil {
-		logging.Logger.Error("failed in UpdateCostItem", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in UpdateCostItem", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, dto.Success(updated))
@@ -167,8 +167,8 @@ func (h *Handler) DeleteCostItem(c *gin.Context) {
 		return
 	}
 	if err := h.svc.CostItem.Delete(projectID, cid); err != nil {
-		logging.Logger.Error("failed in DeleteCostItem", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in DeleteCostItem", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, dto.Success(nil))
@@ -205,8 +205,8 @@ func (h *Handler) CreateTimelinePhase(c *gin.Context) {
 	item.ID = 0 // ensure DB auto-increment
 	created, err := h.svc.TimelinePhase.Create(projectID, &item)
 	if err != nil {
-		logging.Logger.Error("failed in CreateTimelinePhase", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in CreateTimelinePhase", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusCreated, dto.Success(created))
@@ -230,8 +230,8 @@ func (h *Handler) UpdateTimelinePhase(c *gin.Context) {
 	}
 	updated, err := h.svc.TimelinePhase.Update(projectID, tid, &item)
 	if err != nil {
-		logging.Logger.Error("failed in UpdateTimelinePhase", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in UpdateTimelinePhase", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, dto.Success(updated))
@@ -249,8 +249,8 @@ func (h *Handler) DeleteTimelinePhase(c *gin.Context) {
 		return
 	}
 	if err := h.svc.TimelinePhase.Delete(projectID, tid); err != nil {
-		logging.Logger.Error("failed in DeleteTimelinePhase", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in DeleteTimelinePhase", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, dto.Success(nil))
@@ -265,7 +265,7 @@ func (h *Handler) DeleteTimelinePhase(c *gin.Context) {
 		}
 		items, err := h.svc.Advantage.List(projectID)
 		if err != nil {
-			logging.Logger.Error("failed in DeleteTimelinePhase", "error", err)
+			logging.Logger.Error("failed in ListProjectAdvantages", "error", err)
 			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 			return
 		}
@@ -286,8 +286,8 @@ func (h *Handler) DeleteTimelinePhase(c *gin.Context) {
 		item.ID = 0 // ensure DB auto-increment
 		created, err := h.svc.Advantage.Create(projectID, &item)
 		if err != nil {
-			logging.Logger.Error("failed in DeleteTimelinePhase", "error", err)
-			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+			logging.Logger.Warn("business error in CreateProjectAdvantage", "error", err)
+			c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 			return
 		}
 		c.JSON(http.StatusCreated, dto.Success(created))
@@ -311,8 +311,8 @@ func (h *Handler) DeleteTimelinePhase(c *gin.Context) {
 		}
 		updated, err := h.svc.Advantage.Update(projectID, aid, &item)
 		if err != nil {
-			logging.Logger.Error("failed in DeleteTimelinePhase", "error", err)
-			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+			logging.Logger.Warn("business error in UpdateProjectAdvantage", "error", err)
+			c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 			return
 		}
 		c.JSON(http.StatusOK, dto.Success(updated))
@@ -330,8 +330,8 @@ func (h *Handler) DeleteTimelinePhase(c *gin.Context) {
 			return
 		}
 		if err := h.svc.Advantage.Delete(projectID, aid); err != nil {
-			logging.Logger.Error("failed in DeleteTimelinePhase", "error", err)
-			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+			logging.Logger.Warn("business error in DeleteProjectAdvantage", "error", err)
+			c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 			return
 		}
 		c.JSON(http.StatusOK, dto.Success(nil))

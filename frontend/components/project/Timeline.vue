@@ -114,4 +114,27 @@ defineProps<{
   color: var(--text-light);
   font-style: italic;
 }
+
+@media (max-width: 767px) {
+  .timeline {
+    padding-left: 32px;
+  }
+
+  .timeline-marker {
+    left: -32px;
+  }
+
+  .timeline-dot {
+    width: 14px;
+    height: 14px;
+  }
+
+  .timeline-title {
+    font-size: 16px;
+  }
+
+  .timeline-desc {
+    font-size: 13px;
+  }
+}
 </style>

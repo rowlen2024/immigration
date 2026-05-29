@@ -34,7 +34,7 @@
           :class="{ selected: selectedId === item.id }"
           @click="selectedId = item.id"
         >
-          <img :src="item.url" :alt="item.original_name" />
+          <ResponsiveImage :src="item.url" :alt="item.original_name" variant="sm" />
         </div>
         <div v-if="!loading && list.length === 0" class="empty-hint">
           暂无图片
@@ -43,7 +43,7 @@
 
       <div class="picker-detail" v-if="selectedItem">
         <div class="detail-preview">
-          <img :src="selectedItem.url" :alt="selectedItem.original_name" />
+          <ResponsiveImage :src="selectedItem.url" :alt="selectedItem.original_name" variant="md" />
         </div>
         <div class="detail-info">
           <p class="detail-name">{{ selectedItem.original_name || selectedItem.filename }}</p>
@@ -87,6 +87,7 @@ interface MediaItem {
 
 const props = defineProps<{
   modelValue: boolean;
+  context?: string;
 }>();
 
 const emit = defineEmits<{
@@ -102,7 +103,10 @@ const total = ref(0);
 const searchText = ref('');
 const selectedId = ref<number | null>(null);
 
-const uploadUrl = '/api/v1/admin/media/upload';
+const uploadUrl = computed(() => {
+  const ctx = props.context || 'general';
+  return `/api/v1/admin/media/upload?context=${ctx}`;
+});
 
 const uploadHeaders = computed(() => {
   const token = import.meta.client ? localStorage.getItem('token') : null;

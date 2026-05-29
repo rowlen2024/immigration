@@ -22,6 +22,10 @@ docker-logs:
 migrate:
 	cd backend && go run ./cmd/migrate
 
+# Generate image variants for all existing media
+generate-variants:
+	cd backend && go run ./cmd/server generate-variants
+
 # Run backend dev server
 dev-backend:
 	cd backend && go run ./cmd/server

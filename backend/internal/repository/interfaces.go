@@ -1,6 +1,11 @@
 package repository
 
-import "mygo-immigration/backend/internal/model"
+import (
+	"encoding/json"
+	"time"
+
+	"mygo-immigration/backend/internal/model"
+)
 
 // UserRepository defines the interface for user data access.
 type UserRepository interface {
@@ -19,13 +24,19 @@ type ProjectRepository interface {
 	FindByID(id uint64) (*model.Project, error)
 	FindBySlug(slug string) (*model.Project, error)
 	FindAll(page, perPage int, search, status string) ([]model.Project, int64, error)
+	FindAllWithoutPagination(search, status string) ([]model.Project, error)
 	FindBySlugs(slugs []string) ([]model.Project, error)
+	FindBySlugsLight(slugs []string) ([]model.Project, error)
 	Create(project *model.Project) error
 	Update(project *model.Project) error
 	Delete(id uint64) error
 	FindNews(projectID uint64) ([]model.Page, error)
 	AddNews(projectID uint64, pageIDs []uint64) error
 	RemoveNews(projectID, pageID uint64) error
+	DeleteNewsByProjectID(projectID uint64) error
+	FindAllCoverImages() ([]string, error)
+	Count() (int64, error)
+	CountByRange(start, end time.Time) (int64, error)
 }
 
 // FAQQueryParams holds optional filters for FAQ queries.
@@ -41,10 +52,12 @@ type FAQQueryParams struct {
 type FAQRepository interface {
 	FindByID(id uint64) (*model.FAQ, error)
 	FindAll(params FAQQueryParams) ([]FAQWithProject, int64, error)
+	FindAllList(projectID *uint64, search string) ([]FAQWithProject, error)
 	FindDistinctProjects() ([]model.Project, error)
 	Create(faq *model.FAQ) error
 	Update(faq *model.FAQ) error
 	Delete(id uint64) error
+	DeleteByProjectID(projectID uint64) error
 	Search(keyword string) ([]model.FAQ, error)
 }
 
@@ -53,6 +66,7 @@ type PageRepository interface {
 	FindByID(id uint64) (*model.Page, error)
 	FindBySlug(slug string) (*model.Page, error)
 	FindAll(pageType, search, status string) ([]model.Page, error)
+	FindAllPaginated(page, perPage int, pageType, search, status string) ([]model.Page, int64, error)
 	FindAllPublished() ([]model.Page, error)
 	FindBySlugPublished(slug string) (*model.Page, error)
 	FindByProjectID(projectID uint64) ([]model.Page, error)
@@ -60,6 +74,10 @@ type PageRepository interface {
 	Update(page *model.Page) error
 	Delete(id uint64) error
 	Search(keyword string) ([]model.Page, error)
+	FindAllCoverImages() ([]string, error)
+	FindAllContents() ([]string, error)
+	Count() (int64, error)
+	CountByRange(start, end time.Time) (int64, error)
 }
 
 // LeadRepository defines the interface for lead data access.
@@ -88,13 +106,19 @@ type NavigationRepository interface {
 // CaseRepository defines the interface for case data access.
 type CaseRepository interface {
 	FindByID(id uint64) (*model.Case, error)
+	FindByIDs(ids []uint64) ([]model.Case, error)
 	FindByProjectID(projectID uint64) ([]model.Case, error)
 	FindAll(search string) ([]model.Case, error)
+	FindAllPaginated(page, perPage int, search string) ([]model.Case, int64, error)
 	FindBySlug(slug string) (*model.Case, error)
 	Create(c *model.Case) error
 	Update(c *model.Case) error
 	Delete(id uint64) error
-	HardDelete(id uint64) error
+	DeleteByProjectID(projectID uint64) error
+	FindAllPhotoURLs() ([]string, error)
+	FindAllContents() ([]string, error)
+	Count() (int64, error)
+	CountByRange(start, end time.Time) (int64, error)
 }
 
 // CompareConfigRepository defines the interface for compare config data access.
@@ -110,6 +134,7 @@ type RequirementRepository interface {
 	Create(requirement *model.Requirement) error
 	Update(requirement *model.Requirement) error
 	Delete(id uint64) error
+	DeleteByProjectID(projectID uint64) error
 }
 
 // CostItemRepository defines the interface for cost item data access.
@@ -118,6 +143,7 @@ type CostItemRepository interface {
 	Create(costItem *model.CostItem) error
 	Update(costItem *model.CostItem) error
 	Delete(id uint64) error
+	DeleteByProjectID(projectID uint64) error
 }
 
 // TimelinePhaseRepository defines the interface for timeline phase data access.
@@ -126,6 +152,7 @@ type TimelinePhaseRepository interface {
 	Create(phase *model.TimelinePhase) error
 	Update(phase *model.TimelinePhase) error
 	Delete(id uint64) error
+	DeleteByProjectID(projectID uint64) error
 }
 
 // ProjectAdvantageRepository defines the interface for project advantage data access.
@@ -134,14 +161,52 @@ type ProjectAdvantageRepository interface {
 	Create(adv *model.ProjectAdvantage) error
 	Update(adv *model.ProjectAdvantage) error
 	Delete(id uint64) error
+	DeleteByProjectID(projectID uint64) error
+}
+
+// MilestoneRepository defines the interface for milestone data access.
+type MilestoneRepository interface {
+	DeleteByProjectID(projectID uint64) error
 }
 
 // TestimonialRepository defines the interface for testimonial data access.
 type TestimonialRepository interface {
 	FindByID(id uint64) (*model.Testimonial, error)
+	FindByIDs(ids []uint64) ([]model.Testimonial, error)
 	FindByProjectID(projectID uint64) ([]model.Testimonial, error)
 	FindAll() ([]model.Testimonial, error)
 	Create(t *model.Testimonial) error
 	Update(t *model.Testimonial) error
-	HardDelete(id uint64) error
+	Delete(id uint64) error
+	DeleteByProjectID(projectID uint64) error
+	FindAllAvatarURLs() ([]string, error)
+}
+
+// HomeConfigRepository defines the interface for home config data access.
+type HomeConfigRepository interface {
+	FindByKey(key string) (*model.HomeConfig, error)
+	FindAll() ([]model.HomeConfig, error)
+	Create(cfg *model.HomeConfig) error
+	Update(cfg *model.HomeConfig) error
+	FindAllConfigValues() ([]json.RawMessage, error)
+}
+
+// MediaRepository defines the interface for media data access.
+type MediaRepository interface {
+	FindAll(search string) ([]model.Media, error)
+	FindByID(id uint64) (*model.Media, error)
+	Create(media *model.Media) error
+	Delete(id uint64) error
+	DeleteByIDPermanently(id uint64) error
+}
+
+// LawyerRepository defines the interface for lawyer data access.
+type LawyerRepository interface {
+	FindAll() ([]model.Lawyer, error)
+	FindPaginated(page, perPage int, search string) ([]model.Lawyer, int64, error)
+	FindByID(id uint64) (*model.Lawyer, error)
+	Create(item *model.Lawyer) error
+	Update(item *model.Lawyer) error
+	Delete(id uint64) error
+	FindAllPhotoURLs() ([]string, error)
 }

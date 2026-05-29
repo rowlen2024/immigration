@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"mygo-immigration/backend/internal/config"
+	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -28,13 +29,6 @@ type TokenPair struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	ExpiresIn    int64  `json:"expires_in"`
-}
-
-type jwtClaims struct {
-	UserID   uint64 `json:"user_id"`
-	Username string `json:"username"`
-	Role     string `json:"role"`
-	jwt.RegisteredClaims
 }
 
 // Login verifies the username and password, then returns JWT access and refresh tokens.
@@ -79,7 +73,7 @@ func (s *AuthService) RefreshToken(refreshToken string) (*TokenPair, error) {
 		return nil, errors.New("refresh token is required")
 	}
 
-	claims := &jwtClaims{}
+	claims := &model.JWTClaims{}
 	token, err := jwt.ParseWithClaims(refreshToken, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -103,7 +97,7 @@ func (s *AuthService) RefreshToken(refreshToken string) (*TokenPair, error) {
 
 func (s *AuthService) generateToken(userID uint64, username, role string, expiry time.Duration) (string, error) {
 	now := time.Now()
-	claims := &jwtClaims{
+	claims := &model.JWTClaims{
 		UserID:   userID,
 		Username: username,
 		Role:     role,

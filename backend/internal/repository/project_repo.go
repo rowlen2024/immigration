@@ -11,6 +11,37 @@ type ProjectRepo struct {
 	db *gorm.DB
 }
 
+// preloadScope defines which associations to preload in a Project query.
+type preloadScope int
+
+const (
+	preloadCompare preloadScope = iota + 1 // compare page: 7 common associations
+	preloadDetail                         // detail page: all 10 associations
+)
+
+// withAssociations applies ordered, sorted Preloads appropriate to the scope.
+// Centralizing Preloads here ensures new associations are added once, not per query method.
+func (r *ProjectRepo) withAssociations(db *gorm.DB, scope preloadScope) *gorm.DB {
+	sorted := func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }
+
+	db = db.
+		Preload("Requirements", sorted).
+		Preload("CostItems", sorted).
+		Preload("TimelinePhases", sorted).
+		Preload("Milestones", sorted).
+		Preload("FAQs", sorted).
+		Preload("Cases", sorted).
+		Preload("Advantages", sorted)
+
+	if scope == preloadDetail {
+		db = db.
+			Preload("News").
+			Preload("CompareConfig").
+			Preload("Testimonials", sorted)
+	}
+	return db
+}
+
 func (r *ProjectRepo) FindByID(id uint64) (*model.Project, error) {
 	var project model.Project
 	err := r.db.First(&project, id).Error
@@ -22,17 +53,7 @@ func (r *ProjectRepo) FindByID(id uint64) (*model.Project, error) {
 
 func (r *ProjectRepo) FindBySlug(slug string) (*model.Project, error) {
 	var project model.Project
-	err := r.db.
-		Preload("Requirements", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
-		Preload("CostItems", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
-		Preload("TimelinePhases", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
-		Preload("Milestones", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
-		Preload("FAQs", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
-		Preload("Cases", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
-		Preload("News").
-		Preload("CompareConfig").
-		Preload("Advantages", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
-		Preload("Testimonials", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
+	err := r.withAssociations(r.db, preloadDetail).
 		Where("slug = ?", slug).
 		First(&project).Error
 	if err != nil {
@@ -67,17 +88,23 @@ func (r *ProjectRepo) FindAll(page, perPage int, search, status string) ([]model
 	return projects, total, nil
 }
 
+// FindAllWithoutPagination returns all projects matching filters, no pagination.
+func (r *ProjectRepo) FindAllWithoutPagination(search, status string) ([]model.Project, error) {
+	var projects []model.Project
+	q := r.db.Model(&model.Project{})
+	if search != "" {
+		q = q.Where("name LIKE ?", "%"+search+"%")
+	}
+	if status != "" {
+		q = q.Where("status = ?", status)
+	}
+	err := q.Order("sort_order asc").Find(&projects).Error
+	return projects, err
+}
+
 func (r *ProjectRepo) FindBySlugs(slugs []string) ([]model.Project, error) {
 	var projects []model.Project
-	err := r.db.
-		Where("slug IN ?", slugs).
-		Preload("Requirements", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
-		Preload("CostItems", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
-		Preload("TimelinePhases", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
-		Preload("Milestones", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
-		Preload("FAQs", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
-		Preload("Cases", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
-		Preload("Advantages", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }).
+	err := r.withAssociations(r.db.Where("slug IN ?", slugs), preloadCompare).
 		Find(&projects).Error
 	if err != nil {
 		return nil, err
@@ -88,7 +115,7 @@ func (r *ProjectRepo) FindBySlugs(slugs []string) ([]model.Project, error) {
 // FindBySlugsLight returns projects by slugs without heavy preloads.
 func (r *ProjectRepo) FindBySlugsLight(slugs []string) ([]model.Project, error) {
 	var projects []model.Project
-	err := r.db.Where("slug IN ?", slugs).Find(&projects).Error
+	err := r.db.Where("slug IN ?", slugs).Order("sort_order asc").Find(&projects).Error
 	if err != nil {
 		return nil, err
 	}
@@ -104,19 +131,15 @@ func (r *ProjectRepo) Update(project *model.Project) error {
 }
 
 func (r *ProjectRepo) Delete(id uint64) error {
-	return r.db.Delete(&model.Project{}, id).Error
+	return r.db.Unscoped().Delete(&model.Project{}, id).Error
 }
 
 func (r *ProjectRepo) Count() (int64, error) {
-	var c int64
-	err := r.db.Model(&model.Project{}).Count(&c).Error
-	return c, err
+	return CountByModel[model.Project](r.db)
 }
 
 func (r *ProjectRepo) CountByRange(start, end time.Time) (int64, error) {
-	var c int64
-	err := r.db.Model(&model.Project{}).Where("created_at >= ? AND created_at < ?", start, end).Count(&c).Error
-	return c, err
+	return CountByModelRange[model.Project](r.db, start, end)
 }
 
 // FindNews returns news pages linked to a project via project_news.
@@ -143,6 +166,16 @@ func (r *ProjectRepo) AddNews(projectID uint64, pageIDs []uint64) error {
 		}
 	}
 	return nil
+}
+
+// DeleteNewsByProjectID hard-deletes all project_news rows for a project.
+func (r *ProjectRepo) DeleteNewsByProjectID(projectID uint64) error {
+	return r.db.Unscoped().Where("project_id = ?", projectID).Delete(&model.ProjectNews{}).Error
+}
+
+// FindAllCoverImages returns non-empty cover_image values referencing /uploads/ (unscoped).
+func (r *ProjectRepo) FindAllCoverImages() ([]string, error) {
+	return PluckUploadsByColumn[model.Project](r.db, "cover_image")
 }
 
 // RemoveNews unlinks a news page from a project.

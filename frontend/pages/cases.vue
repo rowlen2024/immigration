@@ -6,11 +6,13 @@
       <h1 class="page-title">成功案例</h1>
       <p class="page-subtitle">每一位客户的成功获批，都是我们最大的骄傲</p>
 
-      <div v-if="pending" class="page-skeleton-wrapper"><PageSkeleton variant="cards" :count="6" /></div>
-      <div v-else-if="error" class="error-state">{{ error }}</div>
+      <div v-if="initialLoading" class="page-skeleton-wrapper"><PageSkeleton variant="cards" :count="6" /></div>
+
+      <div v-else-if="loadError && items.length === 0" class="error-state">{{ loadError }}</div>
+
       <div v-else class="cases-grid">
         <CaseCard
-          v-for="item in cases"
+          v-for="item in items"
           :key="item.id"
           :slug="item.slug"
           :name="item.name"
@@ -23,49 +25,125 @@
         />
       </div>
 
-      <div v-if="!pending && cases.length === 0" class="empty-state">
+      <div v-if="loadingMore" class="page-skeleton-wrapper" style="margin-top: 32px;">
+        <PageSkeleton variant="cards" :count="3" />
+      </div>
+
+      <div v-if="allLoaded && items.length > 0" class="end-of-list">已加载全部案例</div>
+
+      <div v-if="!initialLoading && items.length === 0 && !loadError" class="empty-state">
         暂无成功案例展示
       </div>
+
+      <div ref="sentinel" class="scroll-sentinel"></div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-useSeo({ title: '成功案例' });
+useSeo({ title: '成功案例' })
 
 interface ApiCaseItem {
-  id: number;
-  slug: string;
-  name: string;
-  country_from: string;
-  photo_url: string;
-  content: string;
-  project?: { name: string };
+  id: number
+  slug: string
+  name: string
+  country_from: string
+  photo_url: string
+  content: string
+  project?: { name: string }
+}
+
+interface CaseItem {
+  id: string
+  slug: string
+  name: string
+  country: string
+  project: string
+  summary: string
+  image: string
 }
 
 function stripHtml(html: string): string {
-  if (!html) return '';
-  return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').slice(0, 80);
+  if (!html) return ''
+  return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').slice(0, 80)
 }
 
-const { data, pending, error, refresh } = await useFetch<{ data: ApiCaseItem[] }>('/api/v1/cases');
+const PER_PAGE = 12
+const page = ref(1)
+const items = ref<CaseItem[]>([])
+const totalCount = ref(0)
+const loadingMore = ref(false)
+const loadError = ref<string | null>(null)
+const sentinel = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
 
-const cases = computed(() => {
-  const apiData = data.value as { data?: ApiCaseItem[] } | null;
-  const items = apiData?.data ?? [];
-  return items.map((c) => ({
-    id: String(c.id),
-    slug: c.slug,
-    name: c.name,
-    country: c.country_from,
-    project: c.project?.name ?? '',
-    summary: stripHtml(c.content),
-    image: c.photo_url,
-  }));
-});
+function mapCase(api: ApiCaseItem): CaseItem {
+  return {
+    id: String(api.id),
+    slug: api.slug,
+    name: api.name,
+    country: api.country_from,
+    project: api.project?.name ?? '',
+    summary: stripHtml(api.content),
+    image: api.photo_url,
+  }
+}
+
+const { pending, error: fetchError } = await useFetch(
+  () => `/api/v1/cases?page=1&per_page=${PER_PAGE}`,
+  {
+    onResponse({ response }) {
+      const body = response._data as any
+      if (body?.data) {
+        items.value = (body.data as ApiCaseItem[]).map(mapCase)
+        totalCount.value = body.pagination?.total ?? 0
+      }
+    },
+  },
+)
+
+const initialLoading = computed(() => pending.value && items.value.length === 0)
+const allLoaded = computed(() => items.value.length >= totalCount.value && totalCount.value > 0)
+const computedError = computed(() => (fetchError.value ? '加载失败，请刷新重试' : null))
+watchEffect(() => { loadError.value = computedError.value })
+
+async function loadMore() {
+  if (loadingMore.value || allLoaded.value) return
+  loadingMore.value = true
+  const nextPage = page.value + 1
+  try {
+    const raw = await $fetch(`/api/v1/cases?page=${nextPage}&per_page=${PER_PAGE}`)
+    const body = raw as any
+    const newItems = (body.data as ApiCaseItem[]).map(mapCase)
+    items.value.push(...newItems)
+    totalCount.value = body.pagination?.total ?? totalCount.value
+    page.value = nextPage
+  } catch {
+    // silent retry on next scroll
+  } finally {
+    loadingMore.value = false
+  }
+}
 
 onMounted(() => {
-  $fetch('/api/v1/cases').then(v => { data.value = v }).catch(() => {})
+  $fetch(`/api/v1/cases?page=1&per_page=${PER_PAGE}`)
+    .then((v: any) => {
+      items.value = (v.data as ApiCaseItem[]).map(mapCase)
+      totalCount.value = v.pagination?.total ?? 0
+    })
+    .catch(() => {})
+
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting) loadMore()
+    },
+    { rootMargin: '200px' },
+  )
+  if (sentinel.value) observer.observe(sentinel.value)
+})
+
+onUnmounted(() => {
+  observer?.disconnect()
 })
 </script>
 
@@ -87,10 +165,9 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 32px;
-  margin-bottom: 48px;
+  margin-bottom: 0;
 }
 
-.loading-state,
 .error-state,
 .empty-state {
   text-align: center;
@@ -101,6 +178,17 @@ onMounted(() => {
 
 .error-state {
   color: var(--color-danger);
+}
+
+.end-of-list {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-light);
+  font-size: 14px;
+}
+
+.scroll-sentinel {
+  height: 1px;
 }
 
 @media (max-width: 1023px) {

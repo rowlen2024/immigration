@@ -27,15 +27,19 @@
         @input="onSearch"
       />
       <el-button :icon="Refresh" circle @click="searchQuery='';loadList()" :loading="loading" />
+      <el-button type="warning" @click="handleCleanupUnused" :loading="cleanupLoading">
+        清理未使用
+      </el-button>
     </div>
 
     <div class="admin-table-wrap">
       <el-table :data="list" v-loading="loading">
         <el-table-column label="缩略图" width="80">
           <template #default="{ row }">
-            <img
+            <ResponsiveImage
               :src="row.url"
               :alt="row.filename"
+              variant="thumb"
               class="media-thumb"
               @click="openPreview(row.url)"
             />
@@ -85,10 +89,39 @@
 
     <div v-if="previewImage" class="preview-overlay" @click.self="closePreview">
       <div class="preview-container">
-        <img :src="previewImage" alt="预览" />
+        <ResponsiveImage :src="previewImage" alt="预览" variant="md" />
         <button class="preview-close" @click="closePreview" v-html="getIconSvg('x', 24)"></button>
       </div>
     </div>
+
+    <el-dialog
+      v-model="showCleanupDialog"
+      title="确认清理未使用媒体"
+      width="600px"
+      :close-on-click-modal="false"
+    >
+      <p>发现 {{ unusedMediaList.length }} 个未被引用的媒体文件，以下文件将被永久删除：</p>
+      <div class="cleanup-file-list">
+        <div
+          v-for="item in unusedMediaList"
+          :key="item.id"
+          class="cleanup-file-item"
+        >
+          <ResponsiveImage :src="item.url" :alt="item.filename" variant="thumb" class="cleanup-file-thumb" />
+          <div class="cleanup-file-info">
+            <div class="cleanup-file-name">{{ item.original_name || item.filename }}</div>
+            <div class="cleanup-file-url">{{ item.url }}</div>
+          </div>
+          <span class="cleanup-file-size">{{ formatSize(item.size_bytes) }}</span>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="showCleanupDialog = false">取消</el-button>
+        <el-button type="danger" @click="confirmCleanup" :loading="cleanupDeleting">
+          确认删除 {{ unusedMediaList.length }} 个文件
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -191,6 +224,50 @@ const handleDelete = async (id: string) => {
   }
 };
 
+const cleanupLoading = ref(false);
+const unusedMediaList = ref<MediaItem[]>([]);
+const showCleanupDialog = ref(false);
+const cleanupDeleting = ref(false);
+
+const handleCleanupUnused = async () => {
+  cleanupLoading.value = true;
+  try {
+    const api = useApi();
+    unusedMediaList.value = await api<MediaItem[]>('/admin/media/unused');
+    if (unusedMediaList.value.length === 0) {
+      ElMessage.success('没有未使用的媒体文件');
+      return;
+    }
+    showCleanupDialog.value = true;
+  } catch (e) {
+    notify.error(e, '获取未使用媒体列表失败');
+  } finally {
+    cleanupLoading.value = false;
+  }
+};
+
+const confirmCleanup = async () => {
+  cleanupDeleting.value = true;
+  try {
+    const api = useApi();
+    const ids = unusedMediaList.value.map((m) => Number(m.id));
+    const result = await api<{ deleted: number; failed: string[] }>('/admin/media/cleanup', {
+      method: 'POST',
+      body: { ids },
+    });
+    notify.success(`已清理 ${result.deleted} 个文件`);
+    if (result.failed && result.failed.length > 0) {
+      ElMessage.warning(`部分文件清理失败: ${result.failed.join(', ')}`);
+    }
+    showCleanupDialog.value = false;
+    loadList();
+  } catch (e) {
+    notify.error(e, '清理失败');
+  } finally {
+    cleanupDeleting.value = false;
+  }
+};
+
 onMounted(() => {
   loadList();
 });
@@ -257,5 +334,54 @@ onMounted(() => {
 
 .preview-close:hover {
   background: rgba(255, 255, 255, 0.15);
+}
+
+.cleanup-file-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 16px 0;
+}
+
+.cleanup-file-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--el-border-color-light);
+}
+
+.cleanup-file-thumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.cleanup-file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cleanup-file-name {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cleanup-file-url {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cleanup-file-size {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 </style>

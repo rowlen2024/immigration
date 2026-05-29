@@ -10,6 +10,7 @@ html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  touch-action: manipulation;
 }
 
 body {
@@ -82,8 +83,9 @@ img {
 }
 
 .btn-outline:hover {
-  border-color: var(--color-accent-light);
-  background-color: var(--color-accent-soft);
+  border-color: var(--color-accent);
+  background: var(--gradient-gold);
+  color: #fff;
 }
 
 /* ===== Focus ring ===== */

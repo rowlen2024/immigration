@@ -4,7 +4,15 @@
       <ProjectBreadcrumb :label="project.title" />
     </div>
 
-    <section class="detail-hero" :style="heroStyle">
+    <section class="detail-hero" :style="heroFallbackStyle">
+      <ResponsiveImage
+        v-if="project.cover_image"
+        :src="project.cover_image"
+        alt=""
+        variant="lg"
+        class="detail-hero-bg"
+      />
+      <div class="detail-hero-overlay"></div>
       <div class="container">
         <h1 class="detail-title">{{ project.title }}</h1>
         <p class="detail-summary">{{ project.summary }}</p>
@@ -93,7 +101,7 @@
           <h2 class="detail-section-title">最新资讯</h2>
           <div class="news-list">
             <NuxtLink v-for="n in project.news" :key="n.id" :to="`/pages/${n.slug}`" class="news-item">
-              <img v-if="n.cover" :src="n.cover" :alt="n.title" class="news-cover" />
+              <ResponsiveImage v-if="n.cover" :src="n.cover" :alt="n.title" variant="thumb" class="news-cover" />
               <div class="news-body">
                 <h4 class="news-title">{{ n.title }}</h4>
                 <span v-if="n.date" class="news-date">{{ new Date(n.date).toLocaleDateString('zh-CN') }}</span>
@@ -106,49 +114,87 @@
           <h2 class="detail-section-title">项目对比</h2>
           <div v-if="comparePending" class="compare-loading">加载对比数据...</div>
           <div v-else-if="compareError" class="compare-error">{{ compareError }}</div>
-          <div v-else-if="compareData" class="compare-table-wrap">
-            <table class="compare-table">
-              <thead>
-                <tr>
-                  <th class="compare-label-col">对比项目</th>
-                  <th v-for="(proj, i) in compareData.projects" :key="i" class="compare-col-header">
-                    {{ proj.title }}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="row in compareData.rows" :key="row.label">
-                  <td class="compare-label">{{ row.label }}</td>
-                  <td v-for="(val, j) in row.values" :key="j" class="compare-value">
-                    <template v-if="row.items?.[j]?.length">
-                      <div class="compare-requirements-grid">
-                        <span v-for="(item, k) in row.items[j]" :key="k">{{ item }}</span>
-                      </div>
+          <template v-else-if="compareData">
+            <!-- 桌面端：传统表格 -->
+            <div class="compare-table-wrap" :class="{ 'hidden-mobile': true }">
+              <table class="compare-table">
+                <thead>
+                  <tr>
+                    <th class="compare-label-col">对比项目</th>
+                    <th v-for="(proj, i) in compareData.projects" :key="i" class="compare-col-header">
+                      {{ proj.title }}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in compareData.rows" :key="row.label">
+                    <td class="compare-label">{{ row.label }}</td>
+                    <td v-for="(val, j) in row.values" :key="j" class="compare-value">
+                      <template v-if="row.items?.[j]?.length">
+                        <div class="compare-requirements-grid">
+                          <span v-for="(item, k) in row.items[j]" :key="k">{{ item }}</span>
+                        </div>
+                      </template>
+                      <template v-else>{{ val }}</template>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- 移动端：下拉选择单属性对比 -->
+            <div
+              class="compare-switcher hidden-desktop"
+              ref="compareCardRef"
+              @touchstart="onCompareTouchStart"
+              @touchend="onCompareTouchEnd"
+            >
+              <!-- 属性下拉选择 -->
+              <div class="cmp-switch-select-wrap">
+                <select
+                  v-model="compareIdx"
+                  class="cmp-switch-select"
+                >
+                  <option v-for="(crow, ci) in compareData.rows" :key="crow.label" :value="ci">
+                    {{ crow.label }}{{ hasDiff(crow) ? ' · 有差异' : '' }}
+                  </option>
+                </select>
+                <svg class="cmp-switch-select-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </div>
+              <!-- 当前属性内容 -->
+              <div class="cmp-switch-body">
+                <div class="cmp-switch-cols" :class="{ 'cols-2': compareData.projects.length === 2, 'cols-3': compareData.projects.length >= 3 }">
+                  <div v-for="(proj, idx) in compareData.projects" :key="idx" class="cmp-switch-col">
+                    <span class="cmp-switch-proj">{{ proj.title }}</span>
+                    <template v-if="currentRow.items?.[idx]?.length">
+                      <ul class="cmp-switch-items">
+                        <li v-for="(item, k) in currentRow.items[idx]" :key="k">{{ item }}</li>
+                      </ul>
                     </template>
-                    <template v-else>{{ val }}</template>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                    <span v-else class="cmp-switch-val">{{ currentRow.values[idx] }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
         </section>
 
         <section id="faqs" v-if="faqs.length > 0" class="detail-section">
           <h2 class="detail-section-title">常见问题</h2>
-          <ProjectFAQAccordion :items="paginatedFaqs" />
-          <Pagination
+          <ProjectFaqListSection
+            :items="paginatedFaqs"
             :page="faqPage"
             :per-page="faqPerPage"
             :total="faqs.length"
-            @change="changeFaqPage"
+            @page-change="changeFaqPage"
           />
         </section>
 
-        <section class="detail-cta">
-          <h3>对{{ project.title }}感兴趣？</h3>
-          <p>立即联系我们，专业顾问为您一对一解答</p>
-          <NuxtLink to="/contact" class="btn-primary">免费咨询</NuxtLink>
-        </section>
+        <ConsultCTA
+          :title="`对${project.title}感兴趣？`"
+          description="立即联系我们，专业顾问为您一对一解答"
+        />
       </template>
     </div>
   </div>
@@ -303,16 +349,54 @@ const compareError = computed(() =>
   compareErrorRaw.value ? '加载对比数据失败' : null
 );
 
+// 移动端 — 当前对比属性索引 + 触摸滑动
+const compareIdx = ref(0);
+const compareCardRef = ref<HTMLElement | null>(null);
+let compareTouchStartX = 0;
+
+function goCompareIdx(idx: number) {
+  compareIdx.value = Math.max(0, Math.min(idx, (compareData.value?.rows.length || 1) - 1));
+}
+
+function onCompareTouchStart(e: TouchEvent) {
+  compareTouchStartX = e.touches[0].clientX;
+}
+
+function onCompareTouchEnd(e: TouchEvent) {
+  const diff = compareTouchStartX - e.changedTouches[0].clientX;
+  if (Math.abs(diff) > 50) {
+    goCompareIdx(compareIdx.value + (diff > 0 ? 1 : -1));
+  }
+}
+
+const currentRow = computed(() => {
+  return compareData.value?.rows[compareIdx.value] ?? { label: '', values: [], items: [] };
+});
+
+function hasDiff(row: { values: string[]; items?: string[][] }): boolean {
+  if (row.items) {
+    for (let i = 1; i < row.items.length; i++) {
+      if (row.items[i].length !== row.items[0].length) return true;
+      if (row.items[i].some((v, j) => v !== row.items[0][j])) return true;
+    }
+    return false;
+  }
+  const vals = row.values;
+  for (let i = 1; i < vals.length; i++) {
+    if (vals[i] !== vals[0]) return true;
+  }
+  return false;
+}
+
 useSeo({
   title: project.value.title || '项目详情',
   description: project.value.summary || '',
   breadcrumbLabel: project.value.title,
 });
 
-const heroStyle = computed(() => {
-  const img = project.value.cover_image;
-  return img
-    ? { backgroundImage: `linear-gradient(135deg, rgba(15, 36, 64, 0.85), rgba(26, 58, 92, 0.7)), url(${img})` }
+const heroFallbackStyle = computed(() => {
+  return project.value.cover_image
+    ? {}
     : { background: 'linear-gradient(135deg, #1a3a5c, #2d5a8e)' };
 });
 
@@ -375,6 +459,8 @@ let observer: IntersectionObserver | null = null;
 
 onMounted(() => {
   $fetch(`/api/v1/projects/${slug}`).then(v => { data.value = v }).catch(() => {})
+
+  const headerH = (document.querySelector('.site-header') as HTMLElement)?.offsetHeight || 64;
   observer = new IntersectionObserver(
     (entries) => {
       for (const entry of entries) {
@@ -383,17 +469,70 @@ onMounted(() => {
         }
       }
     },
-    { rootMargin: `-${(tabNavRef.value?.offsetHeight || 0) + 64}px 0px -60% 0px` },
+    { rootMargin: `-${(tabNavRef.value?.offsetHeight || 0) + headerH}px 0px -60% 0px` },
   );
   for (const tab of tabs.value) {
     const el = document.getElementById(tab.id);
     if (el) observer.observe(el);
   }
+
+  // 滚动指示器阴影
+  const scrollEl = tabNavRef.value?.querySelector('.tab-nav-scroll');
+  if (scrollEl) {
+    const updateShadows = () => {
+      const hasLeft = scrollEl.scrollLeft > 4;
+      const hasRight = scrollEl.scrollLeft + scrollEl.clientWidth < scrollEl.scrollWidth - 4;
+      tabNavRef.value?.classList.toggle('shadow-left', hasLeft);
+      tabNavRef.value?.classList.toggle('shadow-right', hasRight);
+      if (tabNavRef.value) {
+        tabNavRef.value.classList.toggle('shadow-right', hasRight);
+      }
+    };
+    updateShadows();
+    scrollEl.addEventListener('scroll', updateShadows, { passive: true });
+    window.addEventListener('resize', updateShadows, { passive: true });
+    (scrollEl as any)._shadowCleanup = () => {
+      scrollEl.removeEventListener('scroll', updateShadows);
+      window.removeEventListener('resize', updateShadows);
+    };
+  }
+
+  // 动态追踪 header 高度，消除 tab-nav 与 header 之间的间隔
+  const headerEl = document.querySelector('.site-header') as HTMLElement | null;
+  const syncTabTop = () => {
+    if (tabNavRef.value && headerEl) {
+      tabNavRef.value.style.top = headerEl.offsetHeight + 'px';
+    }
+  };
+  syncTabTop();
+  window.addEventListener('scroll', syncTabTop, { passive: true });
+  window.addEventListener('resize', syncTabTop, { passive: true });
+  (tabNavRef.value as any)._topCleanup = () => {
+    window.removeEventListener('scroll', syncTabTop);
+    window.removeEventListener('resize', syncTabTop);
+  };
+});
+
+// 切换 tab 时滚动按钮到可见区
+watch(activeTab, (id) => {
+  nextTick(() => {
+    const btn = tabNavRef.value?.querySelector('.tab-btn.active');
+    if (btn) {
+      btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  });
 });
 
 onUnmounted(() => {
   observer?.disconnect();
   observer = null;
+  const scrollEl = tabNavRef.value?.querySelector('.tab-nav-scroll');
+  if (scrollEl && (scrollEl as any)._shadowCleanup) {
+    (scrollEl as any)._shadowCleanup();
+  }
+  if (tabNavRef.value && (tabNavRef.value as any)._topCleanup) {
+    (tabNavRef.value as any)._topCleanup();
+  }
 });
 </script>
 
@@ -405,6 +544,37 @@ onUnmounted(() => {
   background: var(--bg-white);
   border-bottom: 1px solid var(--border-color);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.tab-nav::before,
+.tab-nav::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.tab-nav::before {
+  left: 0;
+  background: linear-gradient(to left, transparent, var(--bg-white));
+}
+
+.tab-nav::after {
+  right: 0;
+  background: linear-gradient(to right, transparent, var(--bg-white));
+}
+
+.tab-nav.shadow-left::before {
+  opacity: 1;
+}
+
+.tab-nav.shadow-right::after {
+  opacity: 1;
 }
 
 .tab-nav-scroll {
@@ -438,6 +608,10 @@ onUnmounted(() => {
   color: var(--primary);
 }
 
+.tab-btn:active {
+  background: rgba(0, 0, 0, 0.04);
+}
+
 .tab-btn.active {
   color: var(--primary);
   border-bottom-color: var(--primary);
@@ -445,11 +619,37 @@ onUnmounted(() => {
 }
 
 .detail-hero {
+  position: relative;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
   background-size: cover;
   background-position: center;
   padding: 80px 0;
   color: var(--bg-white);
   margin-bottom: 0;
+}
+
+.detail-hero-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 0;
+}
+
+.detail-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(15, 36, 64, 0.85), rgba(26, 58, 92, 0.7));
+  z-index: 1;
+}
+
+.detail-hero .container {
+  position: relative;
+  z-index: 2;
 }
 
 .detail-title {
@@ -500,27 +700,6 @@ onUnmounted(() => {
   line-height: 1.9;
 }
 
-.detail-cta {
-  text-align: center;
-  padding: 48px 0;
-  background-color: var(--bg-light);
-  border-radius: var(--radius-lg);
-  margin: 40px 0;
-}
-
-.detail-cta h3 {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.detail-cta p {
-  font-size: 15px;
-  color: var(--text-secondary);
-  margin-bottom: 24px;
-}
-
 .loading-state,
 .error-state {
   text-align: center;
@@ -537,6 +716,13 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 24px;
+}
+
+@media (max-width: 767px) {
+  .case-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 }
 
 .news-list {
@@ -560,9 +746,26 @@ onUnmounted(() => {
   box-shadow: var(--shadow-sm);
 }
 
+.news-item:active {
+  background: var(--bg-gray);
+  transform: scale(0.985);
+}
+
+@media (max-width: 767px) {
+  .news-cover {
+    width: 100px;
+    height: 68px;
+  }
+
+  .news-title {
+    font-size: 14px;
+  }
+}
+
 .news-cover {
   width: 120px;
   height: 80px;
+  aspect-ratio: 3 / 2;
   object-fit: cover;
   border-radius: 4px;
   flex-shrink: 0;
@@ -586,15 +789,37 @@ onUnmounted(() => {
 }
 
 .compare-table-wrap {
+  position: relative;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  background:
+    linear-gradient(to right, var(--bg-white) 30%, transparent),
+    linear-gradient(to right, transparent, var(--bg-white) 70%) 100% 0,
+    linear-gradient(to right, rgba(0,0,0,0.08), transparent),
+    linear-gradient(to left, rgba(0,0,0,0.08), transparent);
+  background-repeat: no-repeat;
+  background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
+
+/* 覆盖全局金色滚动条为低调灰色 */
+.compare-table-wrap::-webkit-scrollbar {
+  height: 6px;
+}
+.compare-table-wrap::-webkit-scrollbar-track {
+  background: var(--bg-light);
+  border-radius: 3px;
+}
+.compare-table-wrap::-webkit-scrollbar-thumb {
+  background: #c4c8cf;
+  border-radius: 3px;
 }
 
 .compare-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
-  min-width: max-content;
+  table-layout: fixed;
 }
 
 .compare-table thead {
@@ -606,7 +831,6 @@ onUnmounted(() => {
   padding: 14px 16px;
   font-weight: 600;
   text-align: left;
-  white-space: nowrap;
 }
 
 .compare-table thead th:first-child {
@@ -622,11 +846,14 @@ onUnmounted(() => {
   left: 0;
   z-index: 2;
   background-color: var(--primary);
-  min-width: 120px;
+  width: 120px;
 }
 
 .compare-col-header {
-  min-width: 180px;
+  /* table-layout:fixed 下自动等分剩余宽度 */
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .compare-table td {
@@ -634,6 +861,8 @@ onUnmounted(() => {
   border-bottom: 1px solid var(--border-color);
   color: var(--text-secondary);
   line-height: 1.6;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .compare-table tbody tr:nth-child(even) {
@@ -643,11 +872,10 @@ onUnmounted(() => {
 .compare-label {
   font-weight: 600;
   color: var(--text-primary);
-  white-space: nowrap;
   position: sticky;
   left: 0;
   z-index: 1;
-  min-width: 120px;
+  width: 120px;
 }
 
 .compare-table tbody tr:nth-child(even) .compare-label {
@@ -659,13 +887,22 @@ onUnmounted(() => {
 }
 
 .compare-value {
-  min-width: 180px;
+  /* table-layout:fixed 下自动等分 */
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .compare-requirements-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 4px;
+}
+
+.compare-requirements-grid span {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  line-height: 1.5;
 }
 
 .compare-loading,
@@ -680,8 +917,158 @@ onUnmounted(() => {
   color: #c62828;
 }
 
+/* ══════════════════════════════════════════════
+   桌面/移动端 显示切换
+   ══════════════════════════════════════════════ */
+@media (min-width: 768px) {
+  .hidden-desktop {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .hidden-mobile {
+    display: none;
+  }
+}
+
+/* ══════════════════════════════════════════════
+   移动端 — 下拉选择单属性对比
+   ══════════════════════════════════════════════ */
+@media (max-width: 767px) {
+.compare-switcher {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── 下拉选择器 ── */
+.cmp-switch-select-wrap {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.cmp-switch-select {
+  width: 100%;
+  padding: 12px 40px 12px 14px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  color: var(--color-primary);
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  min-height: 48px;
+  line-height: 1.4;
+}
+
+.cmp-switch-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-color: var(--accent);
+}
+
+.cmp-switch-select-arrow {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent);
+  pointer-events: none;
+}
+
+/* ── 内容区 ── */
+.cmp-switch-body {
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 20px 16px 16px;
+}
+
+.cmp-switch-cols {
+  display: flex;
+}
+
+.cmp-switch-cols.cols-2 .cmp-switch-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.cmp-switch-cols.cols-3 .cmp-switch-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.cmp-switch-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cmp-switch-col + .cmp-switch-col {
+  border-left: 1px solid var(--border-color);
+  padding-left: 16px;
+  margin-left: 0;
+}
+
+.cmp-switch-col:first-child {
+  padding-right: 16px;
+}
+
+/* 项目名 */
+.cmp-switch-proj {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-dark);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  word-break: break-word;
+}
+
+/* 普通值 */
+.cmp-switch-val {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+/* 申请条件列表 */
+.cmp-switch-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cmp-switch-items li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  padding-left: 14px;
+  position: relative;
+}
+
+.cmp-switch-items li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+} /* /@media mobile compare-switcher */
+
 @media (max-width: 767px) {
   .detail-hero {
+    min-height: 280px;
     padding: 48px 0;
   }
 
@@ -702,19 +1089,41 @@ onUnmounted(() => {
   }
 }
 
+@media (max-width: 374px) {
+  .detail-hero {
+    min-height: 220px;
+    padding: 36px 0;
+  }
+
+  .detail-title {
+    font-size: 26px;
+  }
+
+  .detail-summary {
+    font-size: 14px;
+  }
+}
+
 .advantages-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 24px;
 }
 
-@media (max-width: 992px) {
+@media (max-width: 1023px) {
   .advantages-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 576px) {
+@media (max-width: 767px) {
+  .advantages-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 374px) {
   .advantages-grid {
     grid-template-columns: 1fr;
   }
@@ -731,6 +1140,32 @@ onUnmounted(() => {
 .advantage-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.advantage-card:active {
+  transform: translateY(0);
+  box-shadow: none;
+  background: var(--bg-gray);
+}
+
+@media (max-width: 767px) {
+  .advantage-card {
+    padding: 16px 12px;
+  }
+
+  .advantage-icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 8px;
+  }
+
+  .advantage-title {
+    font-size: 14px;
+  }
+
+  .advantage-desc {
+    font-size: 12px;
+  }
 }
 
 .advantage-icon {

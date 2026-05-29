@@ -15,7 +15,7 @@
           </div>
           <div class="meta-item" v-if="item.project?.name">
             <span class="meta-label">所属项目</span>
-            <NuxtLink :to="'/projects/' + item.project_id" class="meta-value link">
+            <NuxtLink :to="'/projects/' + item.project.slug" class="meta-value link">
               {{ item.project.name }}
             </NuxtLink>
           </div>
@@ -79,6 +79,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .meta-label {
@@ -93,12 +94,17 @@ onMounted(() => {
 }
 
 .meta-value.link {
+  display: inline-block;
   color: var(--primary);
   text-decoration: none;
 }
 
 .meta-value.link:hover {
   text-decoration: underline;
+}
+
+.meta-value.link:active {
+  opacity: 0.7;
 }
 
 .case-content {
@@ -109,6 +115,7 @@ onMounted(() => {
   border-radius: var(--radius-lg);
   padding: 32px;
   box-shadow: var(--shadow-sm);
+  max-width: 720px;
 }
 
 .case-content :deep(img) {
@@ -118,6 +125,9 @@ onMounted(() => {
 }
 
 .case-content :deep(table) {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border-collapse: collapse;
   width: 100%;
   margin: 16px 0;
@@ -169,17 +179,46 @@ onMounted(() => {
 }
 
 @media (max-width: 767px) {
+  .case-detail-page {
+    padding: 40px 0;
+  }
+
   .case-title {
     font-size: 28px;
   }
 
   .case-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 16px;
     padding: 16px;
   }
 
+  .meta-label {
+    font-size: 14px;
+  }
+
+  .meta-value {
+    word-break: break-word;
+  }
+
+  .meta-value.link {
+    min-height: 44px;
+    line-height: 44px;
+  }
+
   .case-content {
     padding: 20px;
+  }
+}
+
+@media (max-width: 374px) {
+  .case-detail-page {
+    padding: 32px 0;
+  }
+
+  .case-title {
+    font-size: 24px;
   }
 }
 </style>

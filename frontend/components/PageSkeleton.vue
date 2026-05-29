@@ -404,6 +404,13 @@ defineProps({
   width: 70%;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .sk-block {
+    animation: none;
+    background: var(--color-bg-gray, #F0F1F3);
+  }
+}
+
 /* ── Responsive ── */
 @media (max-width: 1023px) {
   .sk-cards {

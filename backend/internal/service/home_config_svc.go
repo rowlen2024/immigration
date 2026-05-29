@@ -11,10 +11,10 @@ import (
 
 // HomeConfigService handles business logic for the homepage configuration.
 type HomeConfigService struct {
-	repo          *repository.HomeConfigRepo
-	projectRepo   *repository.ProjectRepo
-	caseRepo      *repository.CaseRepo
-	testimonialRepo *repository.TestimonialRepo
+	repo            repository.HomeConfigRepository
+	projectRepo     repository.ProjectRepository
+	caseRepo        repository.CaseRepository
+	testimonialRepo repository.TestimonialRepository
 }
 
 // HeroSlide represents a slide in the hero section of the homepage.
@@ -183,6 +183,23 @@ func (s *HomeConfigService) loadFeaturedProjects(psc *ProjectShowcaseConfig) {
 		logging.Logger.Warn("home_config: failed to load featured projects", "error", err)
 		return
 	}
+	// Self-healing: remove stale slugs
+	if len(projects) < len(psc.FeaturedSlugs) {
+		foundSlugs := make(map[string]bool, len(projects))
+		for _, p := range projects {
+			foundSlugs[p.Slug] = true
+		}
+		cleanSlugs := make([]string, 0, len(projects))
+		for _, slug := range psc.FeaturedSlugs {
+			if foundSlugs[slug] {
+				cleanSlugs = append(cleanSlugs, slug)
+			}
+		}
+		logging.Logger.Warn("home_config: detected stale featured project refs, auto-healing",
+			"before", len(psc.FeaturedSlugs), "after", len(cleanSlugs))
+		psc.FeaturedSlugs = cleanSlugs
+		_ = s.persistFromJSONArrayStr("project_showcase", "featured_slugs", cleanSlugs)
+	}
 	items := make([]FeaturedProject, 0, len(projects))
 	for _, p := range projects {
 		items = append(items, FeaturedProject{
@@ -204,6 +221,23 @@ func (s *HomeConfigService) loadFeaturedCases(csc *CaseShowcaseConfig) {
 	if err != nil {
 		logging.Logger.Warn("home_config: failed to load featured cases", "error", err)
 		return
+	}
+	// Self-healing: remove stale IDs (soft-deleted or hard-deleted records not returned by GORM)
+	if len(cases) < len(csc.FeaturedCaseIDs) {
+		foundIDs := make(map[uint64]bool, len(cases))
+		for _, c := range cases {
+			foundIDs[c.ID] = true
+		}
+		cleanIDs := make([]uint64, 0, len(cases))
+		for _, id := range csc.FeaturedCaseIDs {
+			if foundIDs[id] {
+				cleanIDs = append(cleanIDs, id)
+			}
+		}
+		logging.Logger.Warn("home_config: detected stale featured case refs, auto-healing",
+			"before", len(csc.FeaturedCaseIDs), "after", len(cleanIDs))
+		csc.FeaturedCaseIDs = cleanIDs
+		_ = s.persistFromJSONArray("case_showcase", "featured_case_ids", cleanIDs)
 	}
 	// Preserve configured order
 	orderMap := make(map[uint64]int)
@@ -245,6 +279,23 @@ func (s *HomeConfigService) loadFeaturedTestimonials(tsc *TestimonialShowcaseCon
 		logging.Logger.Warn("home_config: failed to load featured testimonials", "error", err)
 		return
 	}
+	// Self-healing: remove stale IDs
+	if len(testimonials) < len(tsc.FeaturedTestimonialIDs) {
+		foundIDs := make(map[uint64]bool, len(testimonials))
+		for _, t := range testimonials {
+			foundIDs[t.ID] = true
+		}
+		cleanIDs := make([]uint64, 0, len(testimonials))
+		for _, id := range tsc.FeaturedTestimonialIDs {
+			if foundIDs[id] {
+				cleanIDs = append(cleanIDs, id)
+			}
+		}
+		logging.Logger.Warn("home_config: detected stale featured testimonial refs, auto-healing",
+			"before", len(tsc.FeaturedTestimonialIDs), "after", len(cleanIDs))
+		tsc.FeaturedTestimonialIDs = cleanIDs
+		_ = s.persistFromJSONArray("testimonial_showcase", "featured_testimonial_ids", cleanIDs)
+	}
 	orderMap := make(map[uint64]int)
 	for i, id := range tsc.FeaturedTestimonialIDs {
 		orderMap[id] = i
@@ -268,6 +319,167 @@ func (s *HomeConfigService) loadFeaturedTestimonials(tsc *TestimonialShowcaseCon
 	tsc.FeaturedTestimonials = items
 }
 
+// removeFromJSONArray removes a uint64 value from a JSON array field within a home_config row.
+func (s *HomeConfigService) removeFromJSONArray(configKey, fieldName string, targetID uint64) error {
+	cfg, err := s.repo.FindByKey(configKey)
+	if err != nil {
+		return nil // row doesn't exist, nothing to clean
+	}
+	var m map[string]json.RawMessage
+	if err := json.Unmarshal(cfg.ConfigValue, &m); err != nil {
+		return fmt.Errorf("home_config: failed to unmarshal %s: %w", configKey, err)
+	}
+	rawIDs, ok := m[fieldName]
+	if !ok {
+		return nil
+	}
+	var ids []uint64
+	if err := json.Unmarshal(rawIDs, &ids); err != nil {
+		return fmt.Errorf("home_config: failed to unmarshal %s.%s: %w", configKey, fieldName, err)
+	}
+	newIDs := make([]uint64, 0, len(ids))
+	for _, id := range ids {
+		if id != targetID {
+			newIDs = append(newIDs, id)
+		}
+	}
+	if len(newIDs) == len(ids) {
+		return nil // target not found
+	}
+	newRaw, err := json.Marshal(newIDs)
+	if err != nil {
+		return fmt.Errorf("home_config: failed to marshal %s.%s: %w", configKey, fieldName, err)
+	}
+	m[fieldName] = newRaw
+	updated, err := json.Marshal(m)
+	if err != nil {
+		return fmt.Errorf("home_config: failed to marshal %s: %w", configKey, err)
+	}
+	cfg.ConfigValue = updated
+	return s.repo.Update(cfg)
+}
+
+// removeFromJSONArrayStr removes a string value from a JSON string array field.
+func (s *HomeConfigService) removeFromJSONArrayStr(configKey, fieldName string, target string) error {
+	cfg, err := s.repo.FindByKey(configKey)
+	if err != nil {
+		return nil
+	}
+	var m map[string]json.RawMessage
+	if err := json.Unmarshal(cfg.ConfigValue, &m); err != nil {
+		return fmt.Errorf("home_config: failed to unmarshal %s: %w", configKey, err)
+	}
+	rawSlugs, ok := m[fieldName]
+	if !ok {
+		return nil
+	}
+	var slugs []string
+	if err := json.Unmarshal(rawSlugs, &slugs); err != nil {
+		return fmt.Errorf("home_config: failed to unmarshal %s.%s: %w", configKey, fieldName, err)
+	}
+	newSlugs := make([]string, 0, len(slugs))
+	for _, s := range slugs {
+		if s != target {
+			newSlugs = append(newSlugs, s)
+		}
+	}
+	if len(newSlugs) == len(slugs) {
+		return nil
+	}
+	newRaw, err := json.Marshal(newSlugs)
+	if err != nil {
+		return fmt.Errorf("home_config: failed to marshal %s.%s: %w", configKey, fieldName, err)
+	}
+	m[fieldName] = newRaw
+	updated, err := json.Marshal(m)
+	if err != nil {
+		return fmt.Errorf("home_config: failed to marshal %s: %w", configKey, err)
+	}
+	cfg.ConfigValue = updated
+	return s.repo.Update(cfg)
+}
+
+// RemoveFeaturedCaseID removes a case ID from case_showcase.featured_case_ids.
+func (s *HomeConfigService) RemoveFeaturedCaseID(caseID uint64) error {
+	return s.removeFromJSONArray("case_showcase", "featured_case_ids", caseID)
+}
+
+// RemoveFeaturedProjectSlug removes a project slug from project_showcase.featured_slugs.
+func (s *HomeConfigService) RemoveFeaturedProjectSlug(slug string) error {
+	return s.removeFromJSONArrayStr("project_showcase", "featured_slugs", slug)
+}
+
+// RemoveFeaturedTestimonialID removes a testimonial ID from testimonial_showcase.featured_testimonial_ids.
+func (s *HomeConfigService) RemoveFeaturedTestimonialID(testimonialID uint64) error {
+	return s.removeFromJSONArray("testimonial_showcase", "featured_testimonial_ids", testimonialID)
+}
+
+// CleanupFeaturedRefs removes stale case and testimonial IDs from home_config featured lists.
+// Reads once, conditionally writes once per section — fixed 2-4 SQL regardless of stale count.
+func (s *HomeConfigService) CleanupFeaturedRefs(caseIDs, testimonialIDs []uint64) error {
+	if len(caseIDs) > 0 {
+		staleCaseSet := make(map[uint64]bool, len(caseIDs))
+		for _, id := range caseIDs {
+			staleCaseSet[id] = true
+		}
+		cfg, err := s.repo.FindByKey("case_showcase")
+		if err == nil {
+			var m map[string]json.RawMessage
+			if json.Unmarshal(cfg.ConfigValue, &m) == nil {
+				if raw, ok := m["featured_case_ids"]; ok {
+					var ids []uint64
+					if json.Unmarshal(raw, &ids) == nil {
+						cleaned := make([]uint64, 0, len(ids))
+						for _, id := range ids {
+							if !staleCaseSet[id] {
+								cleaned = append(cleaned, id)
+							}
+						}
+						if len(cleaned) < len(ids) {
+							newRaw, _ := json.Marshal(cleaned)
+							m["featured_case_ids"] = newRaw
+							updated, _ := json.Marshal(m)
+							cfg.ConfigValue = updated
+							_ = s.repo.Update(cfg)
+						}
+					}
+				}
+			}
+		}
+	}
+	if len(testimonialIDs) > 0 {
+		staleTestimonialSet := make(map[uint64]bool, len(testimonialIDs))
+		for _, id := range testimonialIDs {
+			staleTestimonialSet[id] = true
+		}
+		cfg, err := s.repo.FindByKey("testimonial_showcase")
+		if err == nil {
+			var m map[string]json.RawMessage
+			if json.Unmarshal(cfg.ConfigValue, &m) == nil {
+				if raw, ok := m["featured_testimonial_ids"]; ok {
+					var ids []uint64
+					if json.Unmarshal(raw, &ids) == nil {
+						cleaned := make([]uint64, 0, len(ids))
+						for _, id := range ids {
+							if !staleTestimonialSet[id] {
+								cleaned = append(cleaned, id)
+							}
+						}
+						if len(cleaned) < len(ids) {
+							newRaw, _ := json.Marshal(cleaned)
+							m["featured_testimonial_ids"] = newRaw
+							updated, _ := json.Marshal(m)
+							cfg.ConfigValue = updated
+							_ = s.repo.Update(cfg)
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
 func sortByOrder[T any](items []T, keyFn func(T) int) {
 	// insertion sort — items are small (typically < 10)
 	for i := 1; i < len(items); i++ {
@@ -277,6 +489,52 @@ func sortByOrder[T any](items []T, keyFn func(T) int) {
 			j--
 		}
 	}
+}
+
+// persistFromJSONArray writes a uint64 array back to a home_config JSON field.
+func (s *HomeConfigService) persistFromJSONArray(configKey, fieldName string, ids []uint64) error {
+	cfg, err := s.repo.FindByKey(configKey)
+	if err != nil {
+		return err
+	}
+	var m map[string]json.RawMessage
+	if err := json.Unmarshal(cfg.ConfigValue, &m); err != nil {
+		return err
+	}
+	raw, err := json.Marshal(ids)
+	if err != nil {
+		return err
+	}
+	m[fieldName] = raw
+	updated, err := json.Marshal(m)
+	if err != nil {
+		return err
+	}
+	cfg.ConfigValue = updated
+	return s.repo.Update(cfg)
+}
+
+// persistFromJSONArrayStr writes a string array back to a home_config JSON field.
+func (s *HomeConfigService) persistFromJSONArrayStr(configKey, fieldName string, items []string) error {
+	cfg, err := s.repo.FindByKey(configKey)
+	if err != nil {
+		return err
+	}
+	var m map[string]json.RawMessage
+	if err := json.Unmarshal(cfg.ConfigValue, &m); err != nil {
+		return err
+	}
+	raw, err := json.Marshal(items)
+	if err != nil {
+		return err
+	}
+	m[fieldName] = raw
+	updated, err := json.Marshal(m)
+	if err != nil {
+		return err
+	}
+	cfg.ConfigValue = updated
+	return s.repo.Update(cfg)
 }
 
 // SiteConfig holds all site-wide settings.

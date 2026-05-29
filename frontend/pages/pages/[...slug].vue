@@ -15,11 +15,9 @@
       <template v-else-if="page">
         <!-- default layout -->
         <template v-if="template === 'default'">
-          <div class="container">
-            <ProjectBreadcrumb :label="page.title" />
-            <h1 class="page-title">{{ page.title }}</h1>
-            <div class="page-content" v-html="page.content"></div>
-          </div>
+          <ProjectBreadcrumb :label="page.title" />
+          <h1 class="page-title">{{ page.title }}</h1>
+          <div class="page-content" v-html="page.content"></div>
         </template>
 
         <!-- fullwidth layout -->
@@ -88,7 +86,7 @@ useSeo({
 });
 
 onMounted(() => {
-  $fetch(`/api/v1/pages/${slug.value}`).then(v => { data.value = v }).catch(() => {})
+  $fetch(`/api/v1/pages/${slug.value}`).then(v => { data.value = (v as any)?.data ?? v }).catch(() => {})
 })
 </script>
 
@@ -161,9 +159,17 @@ onMounted(() => {
 }
 
 .page-content :deep(table) {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   width: 100%;
   border-collapse: collapse;
   margin: 20px 0;
+}
+
+.page-content :deep(pre) {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .page-content :deep(th),
@@ -215,10 +221,42 @@ onMounted(() => {
 @media (max-width: 767px) {
   .page-title {
     font-size: 28px;
+    margin-bottom: 24px;
   }
 
   .not-found-title {
     font-size: 80px;
+  }
+
+  .page-content {
+    font-size: 15px;
+    line-height: 1.75;
+  }
+
+  .page-content :deep(h2) {
+    font-size: 22px;
+    margin: 32px 0 16px;
+  }
+
+  .page-content :deep(h3) {
+    font-size: 18px;
+    margin: 24px 0 12px;
+  }
+
+  .page-content :deep(ul),
+  .page-content :deep(ol) {
+    padding-left: 20px;
+  }
+
+  .page-content :deep(th),
+  .page-content :deep(td) {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .page-content :deep(blockquote) {
+    padding: 10px 16px;
+    margin: 16px 0;
   }
 }
 

@@ -77,11 +77,10 @@
         </section>
 
         <!-- CTA -->
-        <section class="detail-cta">
-          <h3>需要专业建议？</h3>
-          <p>我们的专业顾问可以帮您分析最适合您的移民方案</p>
-          <NuxtLink to="/contact" class="btn-primary">免费咨询</NuxtLink>
-        </section>
+        <ConsultCTA
+          title="需要专业建议？"
+          description="我们的专业顾问可以帮您分析最适合您的移民方案"
+        />
       </template>
     </div>
   </div>
@@ -326,26 +325,7 @@ onMounted(() => {
   line-height: 1.9;
 }
 
-.detail-cta {
-  text-align: center;
-  padding: 48px 0;
-  background-color: var(--bg-light);
-  border-radius: var(--radius-lg);
-  margin: 40px 0;
-}
-
-.detail-cta h3 {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.detail-cta p {
-  font-size: 15px;
-  color: var(--text-secondary);
-  margin-bottom: 24px;
-}
+/* detail-cta styles moved to ConsultCTA component */
 
 .loading-state,
 .error-state {

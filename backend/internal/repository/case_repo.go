@@ -63,6 +63,28 @@ func (r *CaseRepo) FindAll(search string) ([]model.Case, error) {
 	return cases, nil
 }
 
+func (r *CaseRepo) FindAllPaginated(page, perPage int, search string) ([]model.Case, int64, error) {
+	var cases []model.Case
+	var total int64
+
+	q := r.db.Model(&model.Case{}).Preload("Project")
+	if search != "" {
+		q = q.Where("name LIKE ?", "%"+search+"%")
+	}
+
+	countQ := q.Session(&gorm.Session{})
+	if err := countQ.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * perPage
+	err := q.Order("sort_order asc").Offset(offset).Limit(perPage).Find(&cases).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return cases, total, nil
+}
+
 func (r *CaseRepo) Create(c *model.Case) error {
 	return r.db.Create(c).Error
 }
@@ -72,18 +94,27 @@ func (r *CaseRepo) Update(c *model.Case) error {
 }
 
 func (r *CaseRepo) Delete(id uint64) error {
-	return r.db.Delete(&model.Case{}, id).Error
-}
-
-// HardDelete permanently removes a case record (bypasses soft delete).
-func (r *CaseRepo) HardDelete(id uint64) error {
 	return r.db.Unscoped().Delete(&model.Case{}, id).Error
 }
 
+// DeleteByProjectID soft-deletes all cases belonging to a project.
+func (r *CaseRepo) DeleteByProjectID(projectID uint64) error {
+	return r.db.Unscoped().Where("project_id = ?", projectID).Delete(&model.Case{}).Error
+}
+
+
 func (r *CaseRepo) Count() (int64, error) {
-	var c int64
-	err := r.db.Model(&model.Case{}).Count(&c).Error
-	return c, err
+	return CountByModel[model.Case](r.db)
+}
+
+// FindAllPhotoURLs returns non-empty photo_url values referencing /uploads/ (unscoped).
+func (r *CaseRepo) FindAllPhotoURLs() ([]string, error) {
+	return PluckUploadsByColumn[model.Case](r.db, "photo_url")
+}
+
+// FindAllContents returns content values that contain /uploads/ references (unscoped).
+func (r *CaseRepo) FindAllContents() ([]string, error) {
+	return PluckUploadsByColumn[model.Case](r.db, "content")
 }
 
 func (r *CaseRepo) CountByRange(start, end time.Time) (int64, error) {

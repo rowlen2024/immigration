@@ -188,7 +188,7 @@
               <el-input v-model="form.hero_title" />
             </el-form-item>
             <el-form-item label="封面图片">
-              <ImageInput v-model="form.cover_image" placeholder="图片 URL 或上传" />
+              <ImageInput v-model="form.cover_image" placeholder="图片 URL 或上传" size-hint="推荐 800×450px (16:9 横向)" context="project" />
             </el-form-item>
             <el-form-item label="Hero 描述" prop="hero_desc">
               <el-input v-model="form.hero_desc" type="textarea" :rows="2" />
@@ -395,7 +395,7 @@
           <el-table :data="subData.testimonials" border size="small" max-height="360">
             <el-table-column label="头像" width="64">
               <template #default="{ row }">
-                <img v-if="row.avatar_url" :src="row.avatar_url" class="thumb-preview" />
+                <ResponsiveImage v-if="row.avatar_url" :src="row.avatar_url" variant="thumb" class="thumb-preview" />
                 <span v-else style="color:#c0c4cc">—</span>
               </template>
             </el-table-column>
@@ -560,7 +560,7 @@
             <RichEditor v-model="subForm.content" />
           </el-form-item>
           <el-form-item label="封面图片" prop="photo_url">
-            <ImageInput v-model="subForm.photo_url" placeholder="图片 URL 或上传" />
+            <ImageInput v-model="subForm.photo_url" placeholder="图片 URL 或上传" size-hint="推荐 800×450px (16:9 横向)" context="project" />
           </el-form-item>
           <el-form-item label="排序" prop="sort_order">
             <el-input-number v-model="subForm.sort_order" :min="0" />
@@ -582,7 +582,7 @@
         </template>
         <template v-else-if="subType === 'testimonial'">
           <el-form-item label="头像" prop="avatar_url">
-            <ImageInput v-model="subForm.avatar_url" placeholder="图片 URL 或上传" />
+            <ImageInput v-model="subForm.avatar_url" placeholder="图片 URL 或上传" size-hint="推荐 200×200px (1:1 正方形)" preview-ratio="1 / 1" context="testimonial" />
           </el-form-item>
           <el-form-item label="昵称" prop="nickname">
             <el-input v-model="subForm.nickname" />

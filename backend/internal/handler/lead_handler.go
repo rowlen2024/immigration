@@ -23,8 +23,8 @@ func (h *Handler) CreateLead(c *gin.Context) {
 
 	lead, err := h.svc.Lead.Create(&req)
 	if err != nil {
-		logging.Logger.Error("failed in CreateLead", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in CreateLead", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -78,8 +78,8 @@ func (h *Handler) UpdateLead(c *gin.Context) {
 
 	lead, err := h.svc.Lead.Update(id, req.Status, notes)
 	if err != nil {
-		logging.Logger.Error("failed in UpdateLead", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in UpdateLead", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 

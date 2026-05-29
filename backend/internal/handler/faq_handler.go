@@ -12,6 +12,8 @@ import (
 )
 
 func (h *Handler) ListFAQs(c *gin.Context) {
+	page, perPage := parsePagination(c)
+
 	var projectID *uint64
 	if v := c.Query("project_id"); v != "" {
 		id, err := strconv.ParseUint(v, 10, 64)
@@ -28,19 +30,17 @@ func (h *Handler) ListFAQs(c *gin.Context) {
 		}
 	}
 
-	faqs, _, err := h.svc.FAQ.List(projectID, isGlobal, 1, 10000)
+	faqs, total, err := h.svc.FAQ.List(projectID, isGlobal, page, perPage)
 	if err != nil {
 		logging.Logger.Error("failed in ListFAQs", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.Success(faqs))
+	c.JSON(http.StatusOK, dto.SuccessPaginated(faqs, page, perPage, total))
 }
 
 func (h *Handler) AdminListFAQs(c *gin.Context) {
-	page, perPage := parsePagination(c)
-
 	var projectID *uint64
 	if v := c.Query("project_id"); v != "" {
 		id, err := strconv.ParseUint(v, 10, 64)
@@ -51,6 +51,18 @@ func (h *Handler) AdminListFAQs(c *gin.Context) {
 
 	search := c.Query("search")
 
+	if c.Query("all") == "true" {
+		faqs, err := h.svc.FAQ.ListAll(projectID, search)
+		if err != nil {
+			logging.Logger.Error("failed in AdminListFAQs", "error", err)
+			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+			return
+		}
+		c.JSON(http.StatusOK, dto.Success(faqs))
+		return
+	}
+
+	page, perPage := parsePagination(c)
 	faqs, total, err := h.svc.FAQ.AdminList(projectID, search, page, perPage)
 	if err != nil {
 		logging.Logger.Error("failed in AdminListFAQs", "error", err)
@@ -81,8 +93,8 @@ func (h *Handler) CreateFAQ(c *gin.Context) {
 	faq.ID = 0 // ensure DB auto-increment
 	created, err := h.svc.FAQ.Create(&faq)
 	if err != nil {
-		logging.Logger.Error("failed in CreateFAQ", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in CreateFAQ", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -104,8 +116,8 @@ func (h *Handler) UpdateFAQ(c *gin.Context) {
 
 	updated, err := h.svc.FAQ.Update(id, req)
 	if err != nil {
-		logging.Logger.Error("failed in UpdateFAQ", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in UpdateFAQ", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
@@ -120,8 +132,8 @@ func (h *Handler) DeleteFAQ(c *gin.Context) {
 	}
 
 	if err := h.svc.FAQ.Delete(id); err != nil {
-		logging.Logger.Error("failed in DeleteFAQ", "error", err)
-		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		logging.Logger.Warn("business error in DeleteFAQ", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 

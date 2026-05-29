@@ -52,5 +52,10 @@ func (r *LawyerRepo) Update(item *model.Lawyer) error {
 }
 
 func (r *LawyerRepo) Delete(id uint64) error {
-	return r.db.Delete(&model.Lawyer{}, id).Error
+	return r.db.Unscoped().Delete(&model.Lawyer{}, id).Error
+}
+
+// FindAllPhotoURLs returns non-empty photo_url values referencing /uploads/ (unscoped).
+func (r *LawyerRepo) FindAllPhotoURLs() ([]string, error) {
+	return PluckUploadsByColumn[model.Lawyer](r.db, "photo_url")
 }

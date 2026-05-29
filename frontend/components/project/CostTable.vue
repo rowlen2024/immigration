@@ -34,6 +34,15 @@ defineProps<{
 <style scoped>
 .cost-table-wrapper {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background:
+    linear-gradient(to right, var(--bg-white) 30%, transparent),
+    linear-gradient(to right, transparent, var(--bg-white) 70%) 100% 0,
+    linear-gradient(to right, rgba(0,0,0,0.08), transparent),
+    linear-gradient(to left, rgba(0,0,0,0.08), transparent);
+  background-repeat: no-repeat;
+  background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+  background-attachment: local, local, scroll, scroll;
 }
 
 .cost-table {
@@ -91,5 +100,14 @@ defineProps<{
 .col-note {
   color: var(--text-light);
   font-size: 13px;
+}
+
+@media (max-width: 767px) {
+  .cost-table th,
+  .cost-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
 }
 </style>

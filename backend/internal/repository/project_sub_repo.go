@@ -28,7 +28,11 @@ func (r *RequirementRepo) Update(item *model.Requirement) error {
 }
 
 func (r *RequirementRepo) Delete(id uint64) error {
-	return r.db.Delete(&model.Requirement{}, id).Error
+	return r.db.Unscoped().Delete(&model.Requirement{}, id).Error
+}
+
+func (r *RequirementRepo) DeleteByProjectID(projectID uint64) error {
+	return r.db.Unscoped().Where("project_id = ?", projectID).Delete(&model.Requirement{}).Error
 }
 
 type CostItemRepo struct {
@@ -53,7 +57,11 @@ func (r *CostItemRepo) Update(item *model.CostItem) error {
 }
 
 func (r *CostItemRepo) Delete(id uint64) error {
-	return r.db.Delete(&model.CostItem{}, id).Error
+	return r.db.Unscoped().Delete(&model.CostItem{}, id).Error
+}
+
+func (r *CostItemRepo) DeleteByProjectID(projectID uint64) error {
+	return r.db.Unscoped().Where("project_id = ?", projectID).Delete(&model.CostItem{}).Error
 }
 
 type TimelinePhaseRepo struct {
@@ -78,7 +86,11 @@ func (r *TimelinePhaseRepo) Update(item *model.TimelinePhase) error {
 }
 
 func (r *TimelinePhaseRepo) Delete(id uint64) error {
-	return r.db.Delete(&model.TimelinePhase{}, id).Error
+	return r.db.Unscoped().Delete(&model.TimelinePhase{}, id).Error
+}
+
+func (r *TimelinePhaseRepo) DeleteByProjectID(projectID uint64) error {
+	return r.db.Unscoped().Where("project_id = ?", projectID).Delete(&model.TimelinePhase{}).Error
 }
 
 type ProjectAdvantageRepo struct {
@@ -103,5 +115,18 @@ func (r *ProjectAdvantageRepo) Update(item *model.ProjectAdvantage) error {
 }
 
 func (r *ProjectAdvantageRepo) Delete(id uint64) error {
-	return r.db.Delete(&model.ProjectAdvantage{}, id).Error
+	return r.db.Unscoped().Delete(&model.ProjectAdvantage{}, id).Error
+}
+
+func (r *ProjectAdvantageRepo) DeleteByProjectID(projectID uint64) error {
+	return r.db.Unscoped().Where("project_id = ?", projectID).Delete(&model.ProjectAdvantage{}).Error
+}
+
+// MilestoneRepo handles milestone data access.
+type MilestoneRepo struct {
+	db *gorm.DB
+}
+
+func (r *MilestoneRepo) DeleteByProjectID(projectID uint64) error {
+	return r.db.Unscoped().Where("project_id = ?", projectID).Delete(&model.Milestone{}).Error
 }

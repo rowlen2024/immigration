@@ -10,6 +10,7 @@ import (
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/service"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -56,7 +57,7 @@ func TestPageHandler_GetPage_Success(t *testing.T) {
 		},
 	}
 
-	pageSvc := service.NewPageService(mockRepo)
+	pageSvc := service.NewPageService(mockRepo, nil)
 	h := &Handler{svc: &service.Service{Page: pageSvc}}
 
 	w := httptest.NewRecorder()
@@ -86,7 +87,7 @@ func TestPageHandler_GetPage_NotFound(t *testing.T) {
 		},
 	}
 
-	pageSvc := service.NewPageService(mockRepo)
+	pageSvc := service.NewPageService(mockRepo, nil)
 	h := &Handler{svc: &service.Service{Page: pageSvc}}
 
 	w := httptest.NewRecorder()
@@ -114,3 +115,9 @@ func TestPageHandler_GetPage_MissingSlug(t *testing.T) {
 		t.Errorf("expected status 400, got %d", w.Code)
 	}
 }
+
+func (m *handlerMockPageRepo) FindAllPaginated(page, perPage int, pageType, search, status string) ([]model.Page, int64, error) { return nil, 0, nil }
+func (m *handlerMockPageRepo) FindAllCoverImages() ([]string, error) { return nil, nil }
+func (m *handlerMockPageRepo) FindAllContents() ([]string, error) { return nil, nil }
+func (m *handlerMockPageRepo) Count() (int64, error) { return 0, nil }
+func (m *handlerMockPageRepo) CountByRange(start, end time.Time) (int64, error) { return 0, nil }
