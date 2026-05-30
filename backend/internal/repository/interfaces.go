@@ -7,11 +7,19 @@ import (
 	"mygo-immigration/backend/internal/model"
 )
 
+// UserFilter holds optional filters for user queries.
+type UserFilter struct {
+	Role     string
+	Status   *int8
+	Username string
+	Page     int
+	PerPage  int
+}
+
 // UserRepository defines the interface for user data access.
 type UserRepository interface {
 	FindByUsername(username string) (*model.User, error)
-	FindAll() ([]model.User, error)
-	FindAllPaginated(page, perPage int) ([]model.User, int64, error)
+	FindAll(filter UserFilter) ([]model.User, int64, error)
 	Create(user *model.User) error
 	Update(user *model.User) error
 	FindByID(id uint64) (*model.User, error)
@@ -19,12 +27,19 @@ type UserRepository interface {
 	Delete(id uint64) error
 }
 
+// ProjectFilter holds optional query conditions for project list queries.
+type ProjectFilter struct {
+	Name    string
+	Status  string
+	Page    int
+	PerPage int
+}
+
 // ProjectRepository defines the interface for project data access.
 type ProjectRepository interface {
 	FindByID(id uint64) (*model.Project, error)
 	FindBySlug(slug string) (*model.Project, error)
-	FindAll(page, perPage int, search, status string) ([]model.Project, int64, error)
-	FindAllWithoutPagination(search, status string) ([]model.Project, error)
+	FindAll(filter ProjectFilter) ([]model.Project, int64, error)
 	FindBySlugs(slugs []string) ([]model.Project, error)
 	FindBySlugsLight(slugs []string) ([]model.Project, error)
 	Create(project *model.Project) error
@@ -52,7 +67,6 @@ type FAQQueryParams struct {
 type FAQRepository interface {
 	FindByID(id uint64) (*model.FAQ, error)
 	FindAll(params FAQQueryParams) ([]FAQWithProject, int64, error)
-	FindAllList(projectID *uint64, search string) ([]FAQWithProject, error)
 	FindDistinctProjects() ([]model.Project, error)
 	Create(faq *model.FAQ) error
 	Update(faq *model.FAQ) error
@@ -61,15 +75,21 @@ type FAQRepository interface {
 	Search(keyword string) ([]model.FAQ, error)
 }
 
+// PageFilter holds optional query conditions for page list queries.
+type PageFilter struct {
+	PageType string
+	Title    string
+	Status   string
+	Page     int
+	PerPage  int
+}
+
 // PageRepository defines the interface for page data access.
 type PageRepository interface {
 	FindByID(id uint64) (*model.Page, error)
 	FindBySlug(slug string) (*model.Page, error)
-	FindAll(pageType, search, status string) ([]model.Page, error)
-	FindAllPaginated(page, perPage int, pageType, search, status string) ([]model.Page, int64, error)
-	FindAllPublished() ([]model.Page, error)
+	FindAll(filter PageFilter) ([]model.Page, int64, error)
 	FindBySlugPublished(slug string) (*model.Page, error)
-	FindByProjectID(projectID uint64) ([]model.Page, error)
 	Create(page *model.Page) error
 	Update(page *model.Page) error
 	Delete(id uint64) error
@@ -80,9 +100,19 @@ type PageRepository interface {
 	CountByRange(start, end time.Time) (int64, error)
 }
 
+// LeadFilter holds optional filters for lead queries.
+type LeadFilter struct {
+	Status            string
+	Name              string
+	Email             string
+	InterestedProject string
+	Page              int
+	PerPage           int
+}
+
 // LeadRepository defines the interface for lead data access.
 type LeadRepository interface {
-	FindAll(page, perPage int, status string) ([]model.Lead, int64, error)
+	FindAll(filter LeadFilter) ([]model.Lead, int64, error)
 	Create(lead *model.Lead) error
 	UpdateStatus(id uint64, status string, notes string) error
 	Delete(id uint64) error
@@ -103,14 +133,20 @@ type NavigationRepository interface {
 	CountByPageID(pageID uint64) (int64, error)
 }
 
+// CaseFilter holds optional filters for case queries.
+type CaseFilter struct {
+	ProjectID   *uint64
+	CountryFrom string
+	Name        string
+	Page        int
+	PerPage     int
+}
+
 // CaseRepository defines the interface for case data access.
 type CaseRepository interface {
 	FindByID(id uint64) (*model.Case, error)
 	FindByIDs(ids []uint64) ([]model.Case, error)
-	FindByProjectID(projectID uint64) ([]model.Case, error)
-	FindAll(search string) ([]model.Case, error)
-	FindAllPaginated(page, perPage int, search string) ([]model.Case, int64, error)
-	FindFilteredPaginated(projectID *uint64, countryFrom string, page, perPage int) ([]model.Case, int64, error)
+	FindAll(filter CaseFilter) ([]model.Case, int64, error)
 	FindBySlug(slug string) (*model.Case, error)
 	Create(c *model.Case) error
 	Update(c *model.Case) error
@@ -170,12 +206,20 @@ type MilestoneRepository interface {
 	DeleteByProjectID(projectID uint64) error
 }
 
+// TestimonialFilter holds optional filters for testimonial queries.
+type TestimonialFilter struct {
+	ProjectID *uint64
+	Nickname  string
+	Rating    *uint8
+	Page      int
+	PerPage   int
+}
+
 // TestimonialRepository defines the interface for testimonial data access.
 type TestimonialRepository interface {
 	FindByID(id uint64) (*model.Testimonial, error)
 	FindByIDs(ids []uint64) ([]model.Testimonial, error)
-	FindByProjectID(projectID uint64) ([]model.Testimonial, error)
-	FindAll() ([]model.Testimonial, error)
+	FindAll(filter TestimonialFilter) ([]model.Testimonial, int64, error)
 	Create(t *model.Testimonial) error
 	Update(t *model.Testimonial) error
 	Delete(id uint64) error
@@ -201,13 +245,21 @@ type MediaRepository interface {
 	DeleteByIDPermanently(id uint64) error
 }
 
+// LawyerFilter holds optional query conditions for lawyer list queries.
+type LawyerFilter struct {
+	Name    string
+	Page    int
+	PerPage int
+}
+
 // LawyerRepository defines the interface for lawyer data access.
 type LawyerRepository interface {
-	FindAll() ([]model.Lawyer, error)
-	FindPaginated(page, perPage int, search string) ([]model.Lawyer, int64, error)
+	FindAll(filter LawyerFilter) ([]model.Lawyer, int64, error)
 	FindByID(id uint64) (*model.Lawyer, error)
 	Create(item *model.Lawyer) error
 	Update(item *model.Lawyer) error
 	Delete(id uint64) error
 	FindAllPhotoURLs() ([]string, error)
+	Count() (int64, error)
+	CountByRange(start, end time.Time) (int64, error)
 }

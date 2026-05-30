@@ -45,8 +45,10 @@ func registerAdminRoutes(api *gin.RouterGroup, h *handler.Handler, cfg *config.C
 		admin.PUT("/leads/:id", middleware.RBAC("leads:read"), h.UpdateLead)
 
 		admin.GET("/users", middleware.RBAC("admin:write"), h.AdminListUsers)
+		admin.GET("/users/:id", middleware.RBAC("admin:write"), h.AdminGetUser)
 		admin.POST("/users", middleware.RBAC("admin:write"), h.AdminCreateUser)
 		admin.PUT("/users/:id", middleware.RBAC("admin:write"), h.AdminUpdateUser)
+		admin.DELETE("/users/:id", middleware.RBAC("admin:write"), h.AdminDeleteUser)
 
 		admin.POST("/media/upload", middleware.RBAC("content:write"), h.UploadMedia)
 		admin.GET("/media", middleware.RBAC("content:write"), h.ListMedia)

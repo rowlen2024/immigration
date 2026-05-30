@@ -23,7 +23,7 @@
           <div v-else class="admin-recent-list">
             <div v-for="lead in recentLeads" :key="lead.id" class="admin-recent-item">
               <span class="admin-recent-name">{{ lead.name }}</span>
-              <span class="admin-recent-project">{{ lead.interested_project || '—' }}</span>
+              <span class="admin-recent-project">{{ lead.project_name || lead.interested_project || '—' }}</span>
               <span class="admin-recent-time">{{ formatRelativeTime(lead.created_at) }}</span>
             </div>
           </div>
@@ -81,6 +81,7 @@ interface RecentLead {
   id: string;
   name: string;
   interested_project: string;
+  project_name: string;
   created_at: string;
 }
 

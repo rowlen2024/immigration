@@ -7,19 +7,20 @@ import (
 
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
+	"mygo-immigration/backend/internal/repository"
 )
 
 // mockLeadRepo implements repository.LeadRepository for testing.
 type mockLeadRepo struct {
-	findAllFn      func(page, perPage int, status string) ([]model.Lead, int64, error)
+	findAllFn      func(filter repository.LeadFilter) ([]model.Lead, int64, error)
 	createFn       func(lead *model.Lead) error
 	updateStatusFn func(id uint64, status string, notes string) error
 	deleteFn       func(id uint64) error
 }
 
-func (m *mockLeadRepo) FindAll(page, perPage int, status string) ([]model.Lead, int64, error) {
+func (m *mockLeadRepo) FindAll(filter repository.LeadFilter) ([]model.Lead, int64, error) {
 	if m.findAllFn != nil {
-		return m.findAllFn(page, perPage, status)
+		return m.findAllFn(filter)
 	}
 	return nil, 0, nil
 }
@@ -145,14 +146,14 @@ func TestLead_AdminList_Success(t *testing.T) {
 	}
 
 	repo := &mockLeadRepo{
-		findAllFn: func(page, perPage int, status string) ([]model.Lead, int64, error) {
+		findAllFn: func(filter repository.LeadFilter) ([]model.Lead, int64, error) {
 			return sampleLeads, int64(len(sampleLeads)), nil
 		},
 	}
 
 	svc := NewLeadService(repo)
 
-	leads, total, err := svc.AdminList(1, 10, "")
+	leads, total, err := svc.List(dto.LeadListRequest{PaginationRequest: dto.PaginationRequest{Page: 1, PerPage: 10}})
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -164,38 +165,35 @@ func TestLead_AdminList_Success(t *testing.T) {
 	}
 }
 
-func TestLead_AdminList_FilterByStatus(t *testing.T) {
+func TestLead_List_FilterByStatus(t *testing.T) {
 	repo := &mockLeadRepo{
-		findAllFn: func(page, perPage int, status string) ([]model.Lead, int64, error) {
-			if status != "new" {
-				t.Errorf("expected status filter 'new', got '%s'", status)
+		findAllFn: func(filter repository.LeadFilter) ([]model.Lead, int64, error) {
+			if filter.Status != "new" {
+				t.Errorf("expected status filter 'new', got '%s'", filter.Status)
 			}
 			return []model.Lead{{ID: 1, Status: "new"}}, 1, nil
 		},
 	}
 
 	svc := NewLeadService(repo)
-	_, _, err := svc.AdminList(1, 10, "new")
+	_, _, err := svc.List(dto.LeadListRequest{PaginationRequest: dto.PaginationRequest{Page: 1, PerPage: 10}, Status: "new"})
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
 }
 
-func TestLead_AdminList_DefaultPagination(t *testing.T) {
+func TestLead_List_NoPagination(t *testing.T) {
 	repo := &mockLeadRepo{
-		findAllFn: func(page, perPage int, status string) ([]model.Lead, int64, error) {
-			if page != 1 {
-				t.Errorf("expected page 1 (default), got %d", page)
-			}
-			if perPage != 10 {
-				t.Errorf("expected perPage 10 (default), got %d", perPage)
+		findAllFn: func(filter repository.LeadFilter) ([]model.Lead, int64, error) {
+			if filter.Page != 0 {
+				t.Errorf("expected page 0 (no pagination), got %d", filter.Page)
 			}
 			return []model.Lead{}, 0, nil
 		},
 	}
 
 	svc := NewLeadService(repo)
-	_, _, err := svc.AdminList(0, 0, "")
+	_, _, err := svc.List(dto.LeadListRequest{})
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -306,16 +304,16 @@ func TestLead_UpdateStatus_RepoError(t *testing.T) {
 	}
 }
 
-func TestLead_AdminList_RepoError(t *testing.T) {
+func TestLead_List_RepoError(t *testing.T) {
 	repo := &mockLeadRepo{
-		findAllFn: func(page, perPage int, status string) ([]model.Lead, int64, error) {
+		findAllFn: func(filter repository.LeadFilter) ([]model.Lead, int64, error) {
 			return nil, 0, errors.New("db error")
 		},
 	}
 
 	svc := NewLeadService(repo)
 
-	_, _, err := svc.AdminList(1, 10, "")
+	_, _, err := svc.List(dto.LeadListRequest{PaginationRequest: dto.PaginationRequest{Page: 1, PerPage: 10}})
 	if err == nil {
 		t.Fatal("expected error from repo")
 	}

@@ -44,33 +44,18 @@ func (s *ProjectService) GetBySlug(slug string) (*model.Project, error) {
 	return project, nil
 }
 
-// List returns paginated projects.
-func (s *ProjectService) List(page, perPage int, search, status string) ([]model.Project, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if perPage < 1 {
-		perPage = 10
-	}
-	projects, total, err := s.repo.FindAll(page, perPage, search, status)
+// List returns projects with optional filtering and pagination.
+func (s *ProjectService) List(req dto.ProjectListRequest) ([]model.Project, int64, error) {
+	projects, total, err := s.repo.FindAll(repository.ProjectFilter{
+		Name:    req.Name,
+		Status:  req.Status,
+		Page:    req.Page,
+		PerPage: req.PerPage,
+	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list projects: %w", err)
 	}
 	return projects, total, nil
-}
-
-// AdminList returns paginated projects (alias for List).
-func (s *ProjectService) AdminList(page, perPage int, search, status string) ([]model.Project, int64, error) {
-	return s.List(page, perPage, search, status)
-}
-
-// ListAll returns all projects without pagination.
-func (s *ProjectService) ListAll(search, status string) ([]model.Project, error) {
-	projects, err := s.repo.FindAllWithoutPagination(search, status)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list all projects: %w", err)
-	}
-	return projects, nil
 }
 
 // Compare returns multiple projects by their slugs for side-by-side comparison.
@@ -362,14 +347,14 @@ func (s *ProjectService) preDeleteCleanup(id uint64) (slug string, caseIDs, test
 		}
 	}
 	if s.caseRepo != nil {
-		if cases, err := s.caseRepo.FindByProjectID(id); err == nil {
+		if cases, _, err := s.caseRepo.FindAll(repository.CaseFilter{ProjectID: &id}); err == nil {
 			for _, c := range cases {
 				caseIDs = append(caseIDs, c.ID)
 			}
 		}
 	}
 	if s.testimonialRepo != nil {
-		if testimonials, err := s.testimonialRepo.FindByProjectID(id); err == nil {
+		if testimonials, _, err := s.testimonialRepo.FindAll(repository.TestimonialFilter{ProjectID: &id}); err == nil {
 			for _, t := range testimonials {
 				testimonialIDs = append(testimonialIDs, t.ID)
 			}

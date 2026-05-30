@@ -32,30 +32,24 @@ func (h *Handler) CreateLead(c *gin.Context) {
 }
 
 func (h *Handler) AdminListLeads(c *gin.Context) {
-	var pagination dto.PaginationRequest
-	if err := c.ShouldBindQuery(&pagination); err != nil {
-		pagination.Page = defaultPage
-		pagination.PerPage = defaultPerPage
+	var req dto.LeadListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid query params"))
+		return
 	}
 
-	page := pagination.Page
-	if page < 1 {
-		page = defaultPage
-	}
-
-	perPage := pagination.PerPage
-	if perPage < 1 {
-		perPage = defaultPerPage
-	}
-
-	leads, total, err := h.svc.Lead.AdminList(page, perPage, pagination.Status)
+	leads, total, err := h.svc.Lead.List(req)
 	if err != nil {
 		logging.Logger.Error("failed in AdminListLeads", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessPaginated(leads, page, perPage, total))
+	if req.Page > 0 && req.PerPage > 0 {
+		c.JSON(http.StatusOK, dto.SuccessPaginated(leads, req.Page, req.PerPage, total))
+	} else {
+		c.JSON(http.StatusOK, dto.Success(leads))
+	}
 }
 
 func (h *Handler) UpdateLead(c *gin.Context) {

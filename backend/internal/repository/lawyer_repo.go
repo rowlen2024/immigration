@@ -2,6 +2,7 @@ package repository
 
 import (
 	"mygo-immigration/backend/internal/model"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -10,28 +11,29 @@ type LawyerRepo struct {
 	db *gorm.DB
 }
 
-func (r *LawyerRepo) FindAll() ([]model.Lawyer, error) {
-	var items []model.Lawyer
-	err := r.db.Order("sort_order ASC, id ASC").Find(&items).Error
-	return items, err
-}
-
-func (r *LawyerRepo) FindPaginated(page, perPage int, search string) ([]model.Lawyer, int64, error) {
+func (r *LawyerRepo) FindAll(filter LawyerFilter) ([]model.Lawyer, int64, error) {
 	var items []model.Lawyer
 	var total int64
 
 	q := r.db.Model(&model.Lawyer{})
-	if search != "" {
-		q = q.Where("name LIKE ?", "%"+search+"%")
+	if filter.Name != "" {
+		q = q.Where("name LIKE ?", "%"+filter.Name+"%")
 	}
 
-	if err := q.Count(&total).Error; err != nil {
+	if err := q.Session(&gorm.Session{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	offset := (page - 1) * perPage
-	err := q.Order("sort_order ASC, id ASC").Offset(offset).Limit(perPage).Find(&items).Error
-	return items, total, err
+	q = q.Order("sort_order ASC, id ASC")
+	if filter.Page > 0 && filter.PerPage > 0 {
+		offset := (filter.Page - 1) * filter.PerPage
+		q = q.Offset(offset).Limit(filter.PerPage)
+	}
+
+	if err := q.Find(&items).Error; err != nil {
+		return nil, 0, err
+	}
+	return items, total, nil
 }
 
 func (r *LawyerRepo) FindByID(id uint64) (*model.Lawyer, error) {
@@ -55,7 +57,16 @@ func (r *LawyerRepo) Delete(id uint64) error {
 	return r.db.Unscoped().Delete(&model.Lawyer{}, id).Error
 }
 
-// FindAllPhotoURLs returns non-empty photo_url values referencing /uploads/ (unscoped).
 func (r *LawyerRepo) FindAllPhotoURLs() ([]string, error) {
 	return PluckUploadsByColumn[model.Lawyer](r.db, "photo_url")
+}
+
+func (r *LawyerRepo) Count() (int64, error) {
+	return CountByModel[model.Lawyer](r.db)
+}
+
+func (r *LawyerRepo) CountByRange(start, end time.Time) (int64, error) {
+	var c int64
+	err := r.db.Model(&model.Lawyer{}).Where("created_at >= ? AND created_at < ?", start, end).Count(&c).Error
+	return c, err
 }

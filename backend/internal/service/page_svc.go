@@ -44,34 +44,15 @@ func (s *PageService) GetBySlugPreview(slug string) (*model.Page, error) {
 	return page, nil
 }
 
-// List returns all published pages.
-func (s *PageService) List() ([]model.Page, error) {
-	pages, err := s.repo.FindAllPublished()
-	if err != nil {
-		return nil, fmt.Errorf("failed to list pages: %w", err)
-	}
-	return pages, nil
-}
-
-// ListAll returns all pages without pagination, optionally filtered.
-func (s *PageService) ListAll(pageType, search, status string) ([]model.Page, error) {
-	pages, err := s.repo.FindAll(pageType, search, status)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list all pages: %w", err)
-	}
-	return pages, nil
-}
-
-// AdminList returns paginated pages, optionally filtered by page_type, search, and status.
-func (s *PageService) AdminList(page, perPage int, pageType, search, status string) ([]model.Page, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if perPage < 1 {
-		perPage = 10
-	}
-
-	pages, total, err := s.repo.FindAllPaginated(page, perPage, pageType, search, status)
+// List returns pages with optional filtering and pagination.
+func (s *PageService) List(req dto.PageListRequest) ([]model.Page, int64, error) {
+	pages, total, err := s.repo.FindAll(repository.PageFilter{
+		PageType: req.PageType,
+		Title:    req.Title,
+		Status:   req.Status,
+		Page:     req.Page,
+		PerPage:  req.PerPage,
+	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list pages: %w", err)
 	}

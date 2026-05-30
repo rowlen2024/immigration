@@ -12,6 +12,7 @@ type Lead struct {
 	Phone             string         `gorm:"size:32;not null;default:''" json:"phone"`
 	Email             string         `gorm:"size:128;not null;default:''" json:"email"`
 	InterestedProject string         `gorm:"size:64;not null;default:'';index" json:"interested_project"`
+	ProjectName       string         `gorm:"-" json:"project_name,omitempty"`
 	Message           string         `gorm:"type:text" json:"message"`
 	Status            string         `gorm:"type:enum('new','contacted','qualified','closed');not null;default:'new';index" json:"status"`
 	Notes             string         `gorm:"type:text" json:"notes"`

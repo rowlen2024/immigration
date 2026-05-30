@@ -7,6 +7,7 @@ import (
 
 	"mygo-immigration/backend/internal/config"
 	"mygo-immigration/backend/internal/model"
+	"mygo-immigration/backend/internal/repository"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -14,7 +15,7 @@ import (
 // mockUserRepo implements repository.UserRepository for testing.
 type mockUserRepo struct {
 	findByUsernameFn  func(username string) (*model.User, error)
-	findAllFn         func() ([]model.User, error)
+	findAllFn         func(filter repository.UserFilter) ([]model.User, int64, error)
 	createFn          func(user *model.User) error
 	updateFn          func(user *model.User) error
 	findByIDFn        func(id uint64) (*model.User, error)
@@ -29,11 +30,11 @@ func (m *mockUserRepo) FindByUsername(username string) (*model.User, error) {
 	return nil, errors.New("not found")
 }
 
-func (m *mockUserRepo) FindAll() ([]model.User, error) {
+func (m *mockUserRepo) FindAll(filter repository.UserFilter) ([]model.User, int64, error) {
 	if m.findAllFn != nil {
-		return m.findAllFn()
+		return m.findAllFn(filter)
 	}
-	return nil, nil
+	return nil, 0, nil
 }
 
 func (m *mockUserRepo) Create(user *model.User) error {
@@ -69,10 +70,6 @@ func (m *mockUserRepo) Delete(id uint64) error {
 		return m.deleteFn(id)
 	}
 	return nil
-}
-
-func (m *mockUserRepo) FindAllPaginated(page, perPage int) ([]model.User, int64, error) {
-	return nil, 0, nil
 }
 
 func testConfig() *config.Config {

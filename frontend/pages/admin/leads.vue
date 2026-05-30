@@ -28,8 +28,8 @@
         <el-table-column prop="email" label="邮箱" min-width="180">
           <template #default="{ row }">{{ row.email || '—' }}</template>
         </el-table-column>
-        <el-table-column prop="interested_project" label="感兴趣项目" width="150">
-          <template #default="{ row }">{{ row.interested_project || '—' }}</template>
+        <el-table-column label="感兴趣项目" width="150">
+          <template #default="{ row }">{{ row.project_name || row.interested_project || '—' }}</template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
@@ -74,7 +74,7 @@
         </div>
         <div class="admin-detail-row">
           <span class="admin-detail-label">感兴趣项目</span>
-          <span class="admin-detail-value">{{ currentLead.interested_project || '-' }}</span>
+          <span class="admin-detail-value">{{ currentLead.project_name || currentLead.interested_project || '-' }}</span>
         </div>
         <div class="admin-detail-row">
           <span class="admin-detail-label">创建时间</span>
@@ -121,6 +121,7 @@ interface Lead {
   phone: string;
   email: string;
   interested_project: string;
+  project_name: string;
   status: string;
   notes: string;
   created_at: string;

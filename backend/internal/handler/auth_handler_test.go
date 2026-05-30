@@ -12,6 +12,7 @@ import (
 	"mygo-immigration/backend/internal/config"
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
+	"mygo-immigration/backend/internal/repository"
 	"mygo-immigration/backend/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -31,8 +32,7 @@ func (m *handlerMockUserRepo) FindByUsername(username string) (*model.User, erro
 	return m.findByUsername(username)
 }
 
-func (m *handlerMockUserRepo) FindAll() ([]model.User, error)                    { return nil, nil }
-func (m *handlerMockUserRepo) FindAllPaginated(page, perPage int) ([]model.User, int64, error) {
+func (m *handlerMockUserRepo) FindAll(filter repository.UserFilter) ([]model.User, int64, error) {
 	return nil, 0, nil
 }
 func (m *handlerMockUserRepo) Create(user *model.User) error                     { return nil }

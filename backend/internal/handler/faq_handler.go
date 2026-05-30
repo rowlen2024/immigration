@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/logging"
@@ -12,65 +11,45 @@ import (
 )
 
 func (h *Handler) ListFAQs(c *gin.Context) {
-	page, perPage := parsePagination(c)
-
-	var projectID *uint64
-	if v := c.Query("project_id"); v != "" {
-		id, err := strconv.ParseUint(v, 10, 64)
-		if err == nil {
-			projectID = &id
-		}
+	var req dto.FAQListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid query params"))
+		return
 	}
 
-	var isGlobal *bool
-	if v := c.Query("is_global"); v != "" {
-		b, err := strconv.ParseBool(v)
-		if err == nil {
-			isGlobal = &b
-		}
-	}
-
-	faqs, total, err := h.svc.FAQ.List(projectID, isGlobal, page, perPage)
+	faqs, total, err := h.svc.FAQ.List(req)
 	if err != nil {
 		logging.Logger.Error("failed in ListFAQs", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessPaginated(faqs, page, perPage, total))
+	if req.Page > 0 && req.PerPage > 0 {
+		c.JSON(http.StatusOK, dto.SuccessPaginated(faqs, req.Page, req.PerPage, total))
+	} else {
+		c.JSON(http.StatusOK, dto.Success(faqs))
+	}
 }
 
 func (h *Handler) AdminListFAQs(c *gin.Context) {
-	var projectID *uint64
-	if v := c.Query("project_id"); v != "" {
-		id, err := strconv.ParseUint(v, 10, 64)
-		if err == nil {
-			projectID = &id
-		}
-	}
-
-	search := c.Query("search")
-
-	if c.Query("all") == "true" {
-		faqs, err := h.svc.FAQ.ListAll(projectID, search)
-		if err != nil {
-			logging.Logger.Error("failed in AdminListFAQs", "error", err)
-			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
-			return
-		}
-		c.JSON(http.StatusOK, dto.Success(faqs))
+	var req dto.FAQListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid query params"))
 		return
 	}
 
-	page, perPage := parsePagination(c)
-	faqs, total, err := h.svc.FAQ.AdminList(projectID, search, page, perPage)
+	faqs, total, err := h.svc.FAQ.List(req)
 	if err != nil {
 		logging.Logger.Error("failed in AdminListFAQs", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessPaginated(faqs, page, perPage, total))
+	if req.Page > 0 && req.PerPage > 0 {
+		c.JSON(http.StatusOK, dto.SuccessPaginated(faqs, req.Page, req.PerPage, total))
+	} else {
+		c.JSON(http.StatusOK, dto.Success(faqs))
+	}
 }
 
 func (h *Handler) ListFAQProjects(c *gin.Context) {
@@ -90,7 +69,7 @@ func (h *Handler) CreateFAQ(c *gin.Context) {
 		return
 	}
 
-	faq.ID = 0 // ensure DB auto-increment
+	faq.ID = 0
 	created, err := h.svc.FAQ.Create(&faq)
 	if err != nil {
 		logging.Logger.Warn("business error in CreateFAQ", "error", err)

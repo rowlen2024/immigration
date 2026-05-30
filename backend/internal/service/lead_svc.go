@@ -13,7 +13,8 @@ import (
 
 // LeadService handles business logic for customer leads.
 type LeadService struct {
-	repo repository.LeadRepository
+	repo        repository.LeadRepository
+	projectRepo repository.ProjectRepository
 }
 
 // NewLeadService creates a new LeadService with the given repository.
@@ -48,19 +49,48 @@ func (s *LeadService) Create(req *dto.LeadRequest) (*model.Lead, error) {
 	return lead, nil
 }
 
-// AdminList returns paginated leads, optionally filtered by status.
-func (s *LeadService) AdminList(page, perPage int, status string) ([]model.Lead, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if perPage < 1 || perPage > 100 {
-		perPage = 10
-	}
-
-	leads, total, err := s.repo.FindAll(page, perPage, status)
+// List returns leads with optional filters and pagination.
+func (s *LeadService) List(req dto.LeadListRequest) ([]model.Lead, int64, error) {
+	leads, total, err := s.repo.FindAll(repository.LeadFilter{
+		Status:            req.Status,
+		Name:              req.Name,
+		Email:             req.Email,
+		InterestedProject: req.InterestedProject,
+		Page:              req.Page,
+		PerPage:           req.PerPage,
+	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list leads: %w", err)
 	}
+
+	// preload 项目名称
+	if s.projectRepo != nil && len(leads) > 0 {
+		slugSet := make(map[string]struct{})
+		for _, l := range leads {
+			if l.InterestedProject != "" {
+				slugSet[l.InterestedProject] = struct{}{}
+			}
+		}
+		if len(slugSet) > 0 {
+			slugs := make([]string, 0, len(slugSet))
+			for slug := range slugSet {
+				slugs = append(slugs, slug)
+			}
+			projects, err := s.projectRepo.FindBySlugsLight(slugs)
+			if err == nil {
+				nameBySlug := make(map[string]string, len(projects))
+				for _, p := range projects {
+					nameBySlug[p.Slug] = p.Name
+				}
+				for i := range leads {
+					if name, ok := nameBySlug[leads[i].InterestedProject]; ok {
+						leads[i].ProjectName = name
+					}
+				}
+			}
+		}
+	}
+
 	return leads, total, nil
 }
 

@@ -227,24 +227,17 @@ func (s *NavService) lookupProjectSlug(id uint64) string {
 	}
 	projectSlugMu.RUnlock()
 
-	projects, _, err := s.projectRepo.FindAll(1, 1000, "", "")
+	p, err := s.projectRepo.FindByID(id)
 	if err != nil {
-		logging.Logger.Warn("nav: failed to lookup project slugs", "error", err)
+		logging.Logger.Warn("nav: failed to lookup project slug", "id", id, "error", err)
 		return ""
 	}
 
 	projectSlugMu.Lock()
-	for _, p := range projects {
-		projectSlugCache[p.ID] = p.Slug
-	}
+	projectSlugCache[p.ID] = p.Slug
 	projectSlugMu.Unlock()
 
-	for _, p := range projects {
-		if p.ID == id {
-			return p.Slug
-		}
-	}
-	return ""
+	return p.Slug
 }
 
 func (s *NavService) lookupPageSlug(id uint64) string {
@@ -255,24 +248,17 @@ func (s *NavService) lookupPageSlug(id uint64) string {
 	}
 	pageSlugMu.RUnlock()
 
-	pages, err := s.pageRepo.FindAll("", "", "")
+	p, err := s.pageRepo.FindByID(id)
 	if err != nil {
-		logging.Logger.Warn("nav: failed to lookup page slugs", "error", err)
+		logging.Logger.Warn("nav: failed to lookup page slug", "id", id, "error", err)
 		return ""
 	}
 
 	pageSlugMu.Lock()
-	for _, p := range pages {
-		pageSlugCache[p.ID] = p.Slug
-	}
+	pageSlugCache[p.ID] = p.Slug
 	pageSlugMu.Unlock()
 
-	for _, p := range pages {
-		if p.ID == id {
-			return p.Slug
-		}
-	}
-	return ""
+	return p.Slug
 }
 
 func (s *NavService) CountByProjectID(projectID uint64) (int64, error) {

@@ -77,6 +77,6 @@ type UpdateTestimonialRequest struct {
 type UpdateUserRequest struct {
 	DisplayName string `json:"display_name"`
 	Role        string `json:"role"`
-	Status      int8   `json:"status"`
+	Status      *int8  `json:"status"`
 	Password    string `json:"password,omitempty"`
 }

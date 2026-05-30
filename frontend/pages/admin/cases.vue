@@ -179,7 +179,7 @@ const rules: FormRules = {
 const loadProjects = async () => {
   try {
     const api = useApi();
-    const data = await api<{ id: string; name: string }[]>('/admin/projects?all=true');
+    const data = await api<{ id: string; name: string }[]>('/admin/projects');
     projects.value = data ?? [];
   } catch {
     projects.value = [];
@@ -191,7 +191,7 @@ const loadList = async () => {
   try {
     const api = useApi();
     let url = `/admin/cases?page=${page.value}&per_page=${pageSize.value}`;
-    if (searchQuery.value) url += `&search=${encodeURIComponent(searchQuery.value)}`;
+    if (searchQuery.value) url += `&name=${encodeURIComponent(searchQuery.value)}`;
     const data = await api<{ items: CaseItem[]; total: number }>(url);
     list.value = data.items ?? [];
     total.value = data.total ?? 0;

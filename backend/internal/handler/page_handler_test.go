@@ -6,11 +6,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
+	"mygo-immigration/backend/internal/repository"
 	"mygo-immigration/backend/internal/service"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,18 +32,20 @@ func (m *handlerMockPageRepo) FindByID(id uint64) (*model.Page, error) {
 func (m *handlerMockPageRepo) FindBySlug(slug string) (*model.Page, error) {
 	return m.findBySlug(slug)
 }
-func (m *handlerMockPageRepo) FindAll(pageType, search, status string) ([]model.Page, error) { return nil, nil }
-func (m *handlerMockPageRepo) FindAllPublished() ([]model.Page, error)           { return nil, nil }
+func (m *handlerMockPageRepo) FindAll(filter repository.PageFilter) ([]model.Page, int64, error) {
+	return nil, 0, nil
+}
 func (m *handlerMockPageRepo) FindBySlugPublished(slug string) (*model.Page, error) {
 	return m.findBySlug(slug)
-}
-func (m *handlerMockPageRepo) FindByProjectID(projectID uint64) ([]model.Page, error) {
-	return nil, nil
 }
 func (m *handlerMockPageRepo) Create(page *model.Page) error { return nil }
 func (m *handlerMockPageRepo) Update(page *model.Page) error { return nil }
 func (m *handlerMockPageRepo) Delete(id uint64) error        { return nil }
 func (m *handlerMockPageRepo) Search(keyword string) ([]model.Page, error) { return nil, nil }
+func (m *handlerMockPageRepo) FindAllCoverImages() ([]string, error) { return nil, nil }
+func (m *handlerMockPageRepo) FindAllContents() ([]string, error) { return nil, nil }
+func (m *handlerMockPageRepo) Count() (int64, error) { return 0, nil }
+func (m *handlerMockPageRepo) CountByRange(start, end time.Time) (int64, error) { return 0, nil }
 
 func TestPageHandler_GetPage_Success(t *testing.T) {
 	mockRepo := &handlerMockPageRepo{
@@ -115,9 +118,3 @@ func TestPageHandler_GetPage_MissingSlug(t *testing.T) {
 		t.Errorf("expected status 400, got %d", w.Code)
 	}
 }
-
-func (m *handlerMockPageRepo) FindAllPaginated(page, perPage int, pageType, search, status string) ([]model.Page, int64, error) { return nil, 0, nil }
-func (m *handlerMockPageRepo) FindAllCoverImages() ([]string, error) { return nil, nil }
-func (m *handlerMockPageRepo) FindAllContents() ([]string, error) { return nil, nil }
-func (m *handlerMockPageRepo) Count() (int64, error) { return 0, nil }
-func (m *handlerMockPageRepo) CountByRange(start, end time.Time) (int64, error) { return 0, nil }

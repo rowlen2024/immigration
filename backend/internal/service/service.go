@@ -37,12 +37,12 @@ func New(repo *repository.Repository, cfg *config.Config) *Service {
 		repo:          repo,
 		Project: NewProjectService(repo.Project, repo.Nav),
 		Auth:    NewAuthService(repo.User, cfg),
-		User:          &UserService{repo: repo.User},
+		User:          NewUserService(repo.User),
 		FAQ:     NewFAQService(repo.FAQ),
 		Page:    NewPageService(repo.Page, repo.Nav),
 		Case:    NewCaseService(repo.Case, nil),
 		Lead:    NewLeadService(repo.Lead),
-		Lawyer:        &LawyerService{repo: repo.Lawyer},
+		Lawyer:        NewLawyerService(repo.Lawyer),
 		HomeConfig:    &HomeConfigService{repo: repo.HomeConfig, projectRepo: repo.Project, caseRepo: repo.Case, testimonialRepo: repo.Testimonial},
 		Media: &MediaService{
 			repo:             repo.Media,
@@ -67,6 +67,9 @@ func New(repo *repository.Repository, cfg *config.Config) *Service {
 	svc.Case.homeConfigSvc = svc.HomeConfig
 	svc.Project.homeConfigSvc = svc.HomeConfig
 	svc.Testimonial.homeConfigSvc = svc.HomeConfig
+
+	// Wire projectRepo into LeadService for preloading project names
+	svc.Lead.projectRepo = repo.Project
 
 	// Post-wire cascade delete dependencies into ProjectService
 	svc.Project.requirementRepo = repo.Requirement

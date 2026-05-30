@@ -6,12 +6,13 @@ import (
 
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
+	"mygo-immigration/backend/internal/repository"
 )
 
 // userSvcMockUserRepo implements repository.UserRepository for user service tests.
 type userSvcMockUserRepo struct {
 	findByUsernameFn func(username string) (*model.User, error)
-	findAllFn        func() ([]model.User, error)
+	findAllFn        func(filter repository.UserFilter) ([]model.User, int64, error)
 	createFn         func(user *model.User) error
 	updateFn         func(user *model.User) error
 	findByIDFn       func(id uint64) (*model.User, error)
@@ -26,11 +27,11 @@ func (m *userSvcMockUserRepo) FindByUsername(username string) (*model.User, erro
 	return nil, errors.New("not found")
 }
 
-func (m *userSvcMockUserRepo) FindAll() ([]model.User, error) {
+func (m *userSvcMockUserRepo) FindAll(filter repository.UserFilter) ([]model.User, int64, error) {
 	if m.findAllFn != nil {
-		return m.findAllFn()
+		return m.findAllFn(filter)
 	}
-	return nil, nil
+	return nil, 0, nil
 }
 
 func (m *userSvcMockUserRepo) Create(user *model.User) error {
@@ -61,10 +62,6 @@ func (m *userSvcMockUserRepo) PatchUpdate(id uint64, updates map[string]interfac
 	return nil
 }
 
-func (m *userSvcMockUserRepo) FindAllPaginated(page, perPage int) ([]model.User, int64, error) {
-	return nil, 0, nil
-}
-
 func (m *userSvcMockUserRepo) Delete(id uint64) error {
 	if m.deleteFn != nil {
 		return m.deleteFn(id)
@@ -79,16 +76,19 @@ func TestUser_List(t *testing.T) {
 	}
 
 	repo := &userSvcMockUserRepo{
-		findAllFn: func() ([]model.User, error) {
-			return sampleUsers, nil
+		findAllFn: func(filter repository.UserFilter) ([]model.User, int64, error) {
+			return sampleUsers, 2, nil
 		},
 	}
 
-	svc := &UserService{repo: repo}
+	svc := NewUserService(repo)
 
-	users, err := svc.List()
+	users, total, err := svc.List(dto.UserListRequest{})
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
+	}
+	if total != 2 {
+		t.Errorf("expected total 2, got %d", total)
 	}
 	if len(users) != 2 {
 		t.Errorf("expected 2 users, got %d", len(users))
@@ -100,16 +100,68 @@ func TestUser_List(t *testing.T) {
 
 func TestUser_List_Error(t *testing.T) {
 	repo := &userSvcMockUserRepo{
-		findAllFn: func() ([]model.User, error) {
-			return nil, errors.New("db down")
+		findAllFn: func(filter repository.UserFilter) ([]model.User, int64, error) {
+			return nil, 0, errors.New("db down")
 		},
 	}
 
-	svc := &UserService{repo: repo}
+	svc := NewUserService(repo)
 
-	_, err := svc.List()
+	_, _, err := svc.List(dto.UserListRequest{})
 	if err == nil {
 		t.Fatal("expected error from repo")
+	}
+}
+
+func TestUser_List_FilterByRole(t *testing.T) {
+	repo := &userSvcMockUserRepo{
+		findAllFn: func(filter repository.UserFilter) ([]model.User, int64, error) {
+			if filter.Role != "admin" {
+				t.Errorf("expected role filter 'admin', got '%s'", filter.Role)
+			}
+			return []model.User{{ID: 1, Role: "admin"}}, 1, nil
+		},
+	}
+
+	svc := NewUserService(repo)
+	_, _, err := svc.List(dto.UserListRequest{Role: "admin"})
+	if err != nil {
+		t.Fatalf("expected success, got error: %v", err)
+	}
+}
+
+func TestUser_List_FilterByStatus(t *testing.T) {
+	status := int8(0)
+	repo := &userSvcMockUserRepo{
+		findAllFn: func(filter repository.UserFilter) ([]model.User, int64, error) {
+			if filter.Status == nil || *filter.Status != 0 {
+				t.Errorf("expected status filter 0, got %v", filter.Status)
+			}
+			return []model.User{}, 0, nil
+		},
+	}
+
+	svc := NewUserService(repo)
+	_, _, err := svc.List(dto.UserListRequest{Status: &status})
+	if err != nil {
+		t.Fatalf("expected success, got error: %v", err)
+	}
+}
+
+func TestUser_List_NoPagination(t *testing.T) {
+	repo := &userSvcMockUserRepo{
+		findAllFn: func(filter repository.UserFilter) ([]model.User, int64, error) {
+			if filter.Page != 0 {
+				t.Errorf("expected page 0 (no pagination), got %d", filter.Page)
+			}
+			return []model.User{}, 0, nil
+		},
+	}
+
+	svc := NewUserService(repo)
+	_, _, err := svc.List(dto.UserListRequest{})
+	if err != nil {
+		t.Fatalf("expected success, got error: %v", err)
 	}
 }
 
@@ -123,7 +175,7 @@ func TestUser_Create_Success(t *testing.T) {
 		},
 	}
 
-	svc := &UserService{repo: repo}
+	svc := NewUserService(repo)
 
 	user, err := svc.Create("newuser", "password123", "New User", "editor")
 	if err != nil {
@@ -164,7 +216,7 @@ func TestUser_Create_PasswordHashing(t *testing.T) {
 		},
 	}
 
-	svc := &UserService{repo: repo}
+	svc := NewUserService(repo)
 
 	_, err := svc.Create("testuser", "secret123", "Test", "viewer")
 	if err != nil {
@@ -185,7 +237,7 @@ func TestUser_Create_PasswordHashing(t *testing.T) {
 
 func TestUser_Create_EmptyUsername(t *testing.T) {
 	repo := &userSvcMockUserRepo{}
-	svc := &UserService{repo: repo}
+	svc := NewUserService(repo)
 
 	_, err := svc.Create("", "password", "Display", "admin")
 	if err == nil {
@@ -195,7 +247,7 @@ func TestUser_Create_EmptyUsername(t *testing.T) {
 
 func TestUser_Create_EmptyPassword(t *testing.T) {
 	repo := &userSvcMockUserRepo{}
-	svc := &UserService{repo: repo}
+	svc := NewUserService(repo)
 
 	_, err := svc.Create("username", "", "Display", "admin")
 	if err == nil {
@@ -212,7 +264,7 @@ func TestUser_Create_DefaultRole(t *testing.T) {
 		},
 	}
 
-	svc := &UserService{repo: repo}
+	svc := NewUserService(repo)
 
 	_, err := svc.Create("newuser", "password", "New User", "")
 	if err != nil {
@@ -230,7 +282,7 @@ func TestUser_Create_RepoError(t *testing.T) {
 		},
 	}
 
-	svc := &UserService{repo: repo}
+	svc := NewUserService(repo)
 
 	_, err := svc.Create("user", "pass", "Display", "viewer")
 	if err == nil {
@@ -250,7 +302,7 @@ func TestUser_Update_Success(t *testing.T) {
 		},
 	}
 
-	svc := &UserService{repo: repo}
+	svc := NewUserService(repo)
 
 	user, err := svc.Update(5, dto.UpdateUserRequest{DisplayName: "Updated Display", Role: "editor"})
 	if err != nil {
@@ -279,7 +331,7 @@ func TestUser_Update_WithPassword(t *testing.T) {
 		},
 	}
 
-	svc := &UserService{repo: repo}
+	svc := NewUserService(repo)
 
 	_, err := svc.Update(1, dto.UpdateUserRequest{Password: "newpassword"})
 	if err != nil {
@@ -292,7 +344,7 @@ func TestUser_Update_WithPassword(t *testing.T) {
 
 func TestUser_Update_ZeroID(t *testing.T) {
 	repo := &userSvcMockUserRepo{}
-	svc := &UserService{repo: repo}
+	svc := NewUserService(repo)
 
 	_, err := svc.Update(0, dto.UpdateUserRequest{Role: "editor"})
 	if err == nil {
@@ -306,7 +358,7 @@ func TestUser_Update_NotFound(t *testing.T) {
 			return nil, errors.New("not found")
 		},
 	}
-	svc := &UserService{repo: repo}
+	svc := NewUserService(repo)
 
 	_, err := svc.Update(1, dto.UpdateUserRequest{Role: "editor"})
 	if err == nil {
@@ -324,11 +376,123 @@ func TestUser_Update_RepoError(t *testing.T) {
 		},
 	}
 
-	svc := &UserService{repo: repo}
+	svc := NewUserService(repo)
 
 	_, err := svc.Update(1, dto.UpdateUserRequest{Role: "editor"})
 	if err == nil {
 		t.Fatal("expected error from repo")
+	}
+}
+
+func TestUser_Update_StatusToZero(t *testing.T) {
+	var updated *model.User
+	status := int8(0)
+	repo := &userSvcMockUserRepo{
+		findByIDFn: func(id uint64) (*model.User, error) {
+			return &model.User{ID: id, Username: "user", Status: 1}, nil
+		},
+		updateFn: func(user *model.User) error {
+			updated = user
+			return nil
+		},
+	}
+
+	svc := NewUserService(repo)
+
+	_, err := svc.Update(1, dto.UpdateUserRequest{Status: &status})
+	if err != nil {
+		t.Fatalf("expected success, got error: %v", err)
+	}
+	if updated.Status != 0 {
+		t.Errorf("expected status 0 (disabled), got %d", updated.Status)
+	}
+}
+
+func TestUser_Delete_Success(t *testing.T) {
+	var deletedID uint64
+	repo := &userSvcMockUserRepo{
+		deleteFn: func(id uint64) error {
+			deletedID = id
+			return nil
+		},
+	}
+
+	svc := NewUserService(repo)
+
+	err := svc.Delete(5)
+	if err != nil {
+		t.Fatalf("expected success, got error: %v", err)
+	}
+	if deletedID != 5 {
+		t.Errorf("expected deleted ID 5, got %d", deletedID)
+	}
+}
+
+func TestUser_Delete_ZeroID(t *testing.T) {
+	repo := &userSvcMockUserRepo{}
+	svc := NewUserService(repo)
+
+	err := svc.Delete(0)
+	if err == nil {
+		t.Fatal("expected error for zero id")
+	}
+}
+
+func TestUser_Delete_RepoError(t *testing.T) {
+	repo := &userSvcMockUserRepo{
+		deleteFn: func(id uint64) error {
+			return errors.New("db error")
+		},
+	}
+
+	svc := NewUserService(repo)
+
+	err := svc.Delete(1)
+	if err == nil {
+		t.Fatal("expected error from repo")
+	}
+}
+
+func TestUser_GetByID_Success(t *testing.T) {
+	expected := &model.User{ID: 1, Username: "admin", Role: "admin"}
+	repo := &userSvcMockUserRepo{
+		findByIDFn: func(id uint64) (*model.User, error) {
+			return expected, nil
+		},
+	}
+
+	svc := NewUserService(repo)
+
+	user, err := svc.GetByID(1)
+	if err != nil {
+		t.Fatalf("expected success, got error: %v", err)
+	}
+	if user.Username != "admin" {
+		t.Errorf("expected username 'admin', got '%s'", user.Username)
+	}
+}
+
+func TestUser_GetByID_ZeroID(t *testing.T) {
+	repo := &userSvcMockUserRepo{}
+	svc := NewUserService(repo)
+
+	_, err := svc.GetByID(0)
+	if err == nil {
+		t.Fatal("expected error for zero id")
+	}
+}
+
+func TestUser_GetByID_NotFound(t *testing.T) {
+	repo := &userSvcMockUserRepo{
+		findByIDFn: func(id uint64) (*model.User, error) {
+			return nil, errors.New("not found")
+		},
+	}
+	svc := NewUserService(repo)
+
+	_, err := svc.GetByID(999)
+	if err == nil {
+		t.Fatal("expected error for not found")
 	}
 }
 
@@ -343,7 +507,7 @@ func TestUser_FindByUsername_Success(t *testing.T) {
 		},
 	}
 
-	svc := &UserService{repo: repo}
+	svc := NewUserService(repo)
 
 	user, err := svc.FindByUsername("admin")
 	if err != nil {
@@ -359,7 +523,7 @@ func TestUser_FindByUsername_Success(t *testing.T) {
 
 func TestUser_FindByUsername_Empty(t *testing.T) {
 	repo := &userSvcMockUserRepo{}
-	svc := &UserService{repo: repo}
+	svc := NewUserService(repo)
 
 	_, err := svc.FindByUsername("")
 	if err == nil {
@@ -374,7 +538,7 @@ func TestUser_FindByUsername_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := &UserService{repo: repo}
+	svc := NewUserService(repo)
 
 	_, err := svc.FindByUsername("nonexistent")
 	if err == nil {

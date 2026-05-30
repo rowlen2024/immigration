@@ -819,7 +819,7 @@ const loadList = async () => {
   try {
     const api = useApi();
     let url = `/admin/projects?page=${page.value}&per_page=${pageSize.value}`;
-    if (searchQuery.value) url += `&search=${encodeURIComponent(searchQuery.value)}`;
+    if (searchQuery.value) url += `&name=${encodeURIComponent(searchQuery.value)}`;
     if (statusFilter.value) url += `&status=${statusFilter.value}`;
     const data = await api<{ items: Project[]; total: number }>(url);
     list.value = data.items ?? [];
@@ -1023,7 +1023,7 @@ const loadNews = async () => {
 const openNewsDialog = async () => {
   try {
     const api = useApi();
-    const data = await api<NewsItem[]>('/admin/pages?page_type=news&status=published&all=true');
+    const data = await api<NewsItem[]>('/admin/pages?page_type=news&status=published');
     newsOptions.value = data ?? [];
   } catch { newsOptions.value = []; }
   newsSelected.value = [];
@@ -1078,7 +1078,7 @@ const loadCompareConfig = async () => {
 const loadProjectOptions = async () => {
   try {
     const api = useApi();
-    const data = await api<ProjectOption[]>('/admin/projects?all=true');
+    const data = await api<ProjectOption[]>('/admin/projects');
     projectOptions.value = data ?? [];
   } catch { projectOptions.value = []; }
 };

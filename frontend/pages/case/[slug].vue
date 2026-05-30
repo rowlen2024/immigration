@@ -110,7 +110,7 @@ async function fetchRelatedCases() {
 
     // 先按项目筛选
     if (cur.project?.id) {
-      const res: any = await $fetch(`/api/v1/cases?project_id=${cur.project.id}&per_page=4`)
+      const res: any = await $fetch(`/api/v1/cases?project_id=${cur.project.id}&page=1&per_page=4`)
       cases = Array.isArray(res?.data)? res.data: []
     }
 
@@ -118,7 +118,7 @@ async function fetchRelatedCases() {
     if (cases.length < 4 && cur.country_from) {
       const remain = 4 - cases.length
       const existingIds = new Set(cases.map((c: any) => c.id))
-      const res2: any = await $fetch(`/api/v1/cases?country_from=${encodeURIComponent(cur.country_from)}&per_page=${remain}`)
+      const res2: any = await $fetch(`/api/v1/cases?country_from=${encodeURIComponent(cur.country_from)}&page=1&per_page=${remain}`)
       const byCountry = Array.isArray(res2?.data)? res2.data: []
       const filtered = byCountry.filter((c: any) => !existingIds.has(c.id))
       cases = [...cases, ...filtered].slice(0, 4)

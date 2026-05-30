@@ -20,34 +20,14 @@ func NewFAQService(repo repository.FAQRepository) *FAQService {
 	return &FAQService{repo: repo}
 }
 
-// ListAll returns all FAQs matching the given filters without pagination.
-func (s *FAQService) ListAll(projectID *uint64, search string) ([]dto.FAQResponse, error) {
-	results, err := s.repo.FindAllList(projectID, search)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list faqs: %w", err)
-	}
-	return toFAQResponses(results), nil
-}
-
-// List returns paginated FAQs, optionally filtered by project or global flag.
-func (s *FAQService) List(projectID *uint64, isGlobal *bool, page, perPage int) ([]dto.FAQResponse, int64, error) {
-	return s.AdminList(projectID, "", page, perPage)
-}
-
-// AdminList returns paginated FAQs with optional project filter and search.
-func (s *FAQService) AdminList(projectID *uint64, search string, page, perPage int) ([]dto.FAQResponse, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if perPage < 1 {
-		perPage = 10
-	}
-
+// List returns FAQs with optional filtering and pagination.
+func (s *FAQService) List(req dto.FAQListRequest) ([]dto.FAQResponse, int64, error) {
 	results, total, err := s.repo.FindAll(repository.FAQQueryParams{
-		ProjectID: projectID,
-		Search:    search,
-		Page:      page,
-		PerPage:   perPage,
+		ProjectID: req.ProjectID,
+		IsGlobal:  req.IsGlobal,
+		Search:    req.Search,
+		Page:      req.Page,
+		PerPage:   req.PerPage,
 	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list faqs: %w", err)
@@ -55,7 +35,6 @@ func (s *FAQService) AdminList(projectID *uint64, search string, page, perPage i
 	return toFAQResponses(results), total, nil
 }
 
-// toFAQResponses converts FAQWithProject rows to DTO responses.
 func toFAQResponses(rows []repository.FAQWithProject) []dto.FAQResponse {
 	result := make([]dto.FAQResponse, len(rows))
 	for i, r := range rows {

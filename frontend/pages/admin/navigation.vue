@@ -386,8 +386,8 @@ const loadOptions = async () => {
   try {
     const api = useApi();
     const [projRes, pageRes] = await Promise.all([
-      api<ProjectBrief[]>('/admin/projects?all=true'),
-      api<PageBrief[]>('/admin/pages?all=true'),
+      api<ProjectBrief[]>('/admin/projects'),
+      api<PageBrief[]>('/admin/pages'),
     ]);
     projects.value = projRes || [];
     pages.value = pageRes || [];

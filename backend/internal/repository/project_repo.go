@@ -62,44 +62,32 @@ func (r *ProjectRepo) FindBySlug(slug string) (*model.Project, error) {
 	return &project, nil
 }
 
-func (r *ProjectRepo) FindAll(page, perPage int, search, status string) ([]model.Project, int64, error) {
+func (r *ProjectRepo) FindAll(filter ProjectFilter) ([]model.Project, int64, error) {
 	var projects []model.Project
 	var total int64
 
 	q := r.db.Model(&model.Project{})
-	if search != "" {
-		q = q.Where("name LIKE ?", "%"+search+"%")
+	if filter.Name != "" {
+		q = q.Where("name LIKE ?", "%"+filter.Name+"%")
 	}
-	if status != "" {
-		q = q.Where("status = ?", status)
+	if filter.Status != "" {
+		q = q.Where("status = ?", filter.Status)
 	}
 
-	// Clone for count to avoid mutation
-	countQ := q.Session(&gorm.Session{})
-	if err := countQ.Count(&total).Error; err != nil {
+	if err := q.Session(&gorm.Session{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	offset := (page - 1) * perPage
-	err := q.Order("sort_order asc").Offset(offset).Limit(perPage).Find(&projects).Error
-	if err != nil {
+	q = q.Order("sort_order asc")
+	if filter.Page > 0 && filter.PerPage > 0 {
+		offset := (filter.Page - 1) * filter.PerPage
+		q = q.Offset(offset).Limit(filter.PerPage)
+	}
+
+	if err := q.Find(&projects).Error; err != nil {
 		return nil, 0, err
 	}
 	return projects, total, nil
-}
-
-// FindAllWithoutPagination returns all projects matching filters, no pagination.
-func (r *ProjectRepo) FindAllWithoutPagination(search, status string) ([]model.Project, error) {
-	var projects []model.Project
-	q := r.db.Model(&model.Project{})
-	if search != "" {
-		q = q.Where("name LIKE ?", "%"+search+"%")
-	}
-	if status != "" {
-		q = q.Where("status = ?", status)
-	}
-	err := q.Order("sort_order asc").Find(&projects).Error
-	return projects, err
 }
 
 func (r *ProjectRepo) FindBySlugs(slugs []string) ([]model.Project, error) {

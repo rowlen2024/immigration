@@ -16,7 +16,10 @@ func (h *Handler) ListProjectTestimonials(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid project id"))
 		return
 	}
-	items, err := h.svc.Testimonial.ListByProject(projectID)
+
+	items, _, err := h.svc.Testimonial.List(dto.TestimonialListRequest{
+		ProjectID: &projectID,
+	})
 	if err != nil {
 		logging.Logger.Error("failed in ListProjectTestimonials", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
@@ -26,36 +29,45 @@ func (h *Handler) ListProjectTestimonials(c *gin.Context) {
 }
 
 func (h *Handler) ListAllTestimonials(c *gin.Context) {
-	items, err := h.svc.Testimonial.ListAll()
+	var req dto.TestimonialListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid query params"))
+		return
+	}
+
+	items, total, err := h.svc.Testimonial.List(req)
 	if err != nil {
 		logging.Logger.Error("failed in ListAllTestimonials", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
-	c.JSON(http.StatusOK, dto.Success(items))
+
+	if req.Page > 0 && req.PerPage > 0 {
+		c.JSON(http.StatusOK, dto.SuccessPaginated(items, req.Page, req.PerPage, total))
+	} else {
+		c.JSON(http.StatusOK, dto.Success(items))
+	}
 }
 
 func (h *Handler) AdminListTestimonials(c *gin.Context) {
-	var items []model.Testimonial
-	var err error
-
-	if pidStr := c.Query("project_id"); pidStr != "" {
-		pid, parseErr := parseIDParam(c, "project_id")
-		if parseErr != nil {
-			c.JSON(http.StatusBadRequest, dto.Error(400, "invalid project_id"))
-			return
-		}
-		items, err = h.svc.Testimonial.ListByProject(pid)
-	} else {
-		items, err = h.svc.Testimonial.ListAll()
+	var req dto.TestimonialListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid query params"))
+		return
 	}
 
+	items, total, err := h.svc.Testimonial.List(req)
 	if err != nil {
 		logging.Logger.Error("failed in AdminListTestimonials", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
-	c.JSON(http.StatusOK, dto.Success(items))
+
+	if req.Page > 0 && req.PerPage > 0 {
+		c.JSON(http.StatusOK, dto.SuccessPaginated(items, req.Page, req.PerPage, total))
+	} else {
+		c.JSON(http.StatusOK, dto.Success(items))
+	}
 }
 
 func (h *Handler) CreateProjectTestimonial(c *gin.Context) {

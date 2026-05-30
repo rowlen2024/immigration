@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/logging"
@@ -23,64 +22,45 @@ func (h *Handler) GetCase(c *gin.Context) {
 }
 
 func (h *Handler) ListCases(c *gin.Context) {
-	countryFrom := c.Query("country_from")
-	projectIDStr := c.Query("project_id")
-
-	if countryFrom != "" || projectIDStr != "" {
-		var projectID *uint64
-		if projectIDStr != "" {
-			id, err := strconv.ParseUint(projectIDStr, 10, 64)
-			if err != nil {
-				c.JSON(http.StatusBadRequest, dto.Error(400, "invalid project_id"))
-				return
-			}
-			projectID = &id
-		}
-		page, perPage := parsePagination(c)
-		cases, total, err := h.svc.Case.ListFilteredPaginated(projectID, countryFrom, page, perPage)
-		if err != nil {
-			logging.Logger.Error("failed in ListCases (filtered)", "error", err)
-			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
-			return
-		}
-		c.JSON(http.StatusOK, dto.SuccessPaginated(cases, page, perPage, total))
+	var req dto.CaseListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid query params"))
 		return
 	}
 
-	page, perPage := parsePagination(c)
-	cases, total, err := h.svc.Case.ListPaginated(page, perPage)
+	cases, total, err := h.svc.Case.List(req)
 	if err != nil {
 		logging.Logger.Error("failed in ListCases", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessPaginated(cases, page, perPage, total))
+	if req.Page > 0 && req.PerPage > 0 {
+		c.JSON(http.StatusOK, dto.SuccessPaginated(cases, req.Page, req.PerPage, total))
+	} else {
+		c.JSON(http.StatusOK, dto.Success(cases))
+	}
 }
 
 func (h *Handler) AdminListCases(c *gin.Context) {
-	search := c.Query("search")
-
-	if c.Query("all") == "true" {
-		cases, err := h.svc.Case.ListAll(search)
-		if err != nil {
-			logging.Logger.Error("failed in AdminListCases", "error", err)
-			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
-			return
-		}
-		c.JSON(http.StatusOK, dto.Success(cases))
+	var req dto.CaseListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid query params"))
 		return
 	}
 
-	page, perPage := parsePagination(c)
-	cases, total, err := h.svc.Case.AdminList(page, perPage, search)
+	cases, total, err := h.svc.Case.List(req)
 	if err != nil {
 		logging.Logger.Error("failed in AdminListCases", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessPaginated(cases, page, perPage, total))
+	if req.Page > 0 && req.PerPage > 0 {
+		c.JSON(http.StatusOK, dto.SuccessPaginated(cases, req.Page, req.PerPage, total))
+	} else {
+		c.JSON(http.StatusOK, dto.Success(cases))
+	}
 }
 
 func (h *Handler) CreateCase(c *gin.Context) {
@@ -148,7 +128,9 @@ func (h *Handler) ListProjectCases(c *gin.Context) {
 		return
 	}
 
-	cases, err := h.svc.Case.ListByProject(projectID)
+	cases, _, err := h.svc.Case.List(dto.CaseListRequest{
+		ProjectID: &projectID,
+	})
 	if err != nil {
 		logging.Logger.Error("failed in ListProjectCases", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))

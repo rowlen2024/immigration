@@ -11,23 +11,35 @@ type LeadRepo struct {
 	db *gorm.DB
 }
 
-func (r *LeadRepo) FindAll(page, perPage int, status string) ([]model.Lead, int64, error) {
+func (r *LeadRepo) FindAll(filter LeadFilter) ([]model.Lead, int64, error) {
 	var leads []model.Lead
 	var total int64
 
 	q := r.db.Model(&model.Lead{})
-	if status != "" {
-		q = q.Where("status = ?", status)
+	if filter.Status != "" {
+		q = q.Where("status = ?", filter.Status)
+	}
+	if filter.Name != "" {
+		q = q.Where("name LIKE ?", "%"+filter.Name+"%")
+	}
+	if filter.Email != "" {
+		q = q.Where("email = ?", filter.Email)
+	}
+	if filter.InterestedProject != "" {
+		q = q.Where("interested_project = ?", filter.InterestedProject)
 	}
 
-	countQ := q.Session(&gorm.Session{})
-	if err := countQ.Count(&total).Error; err != nil {
+	if err := q.Session(&gorm.Session{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	offset := (page - 1) * perPage
-	err := q.Order("created_at desc").Offset(offset).Limit(perPage).Find(&leads).Error
-	if err != nil {
+	q = q.Order("created_at desc")
+	if filter.Page > 0 && filter.PerPage > 0 {
+		offset := (filter.Page - 1) * filter.PerPage
+		q = q.Offset(offset).Limit(filter.PerPage)
+	}
+
+	if err := q.Find(&leads).Error; err != nil {
 		return nil, 0, err
 	}
 	return leads, total, nil

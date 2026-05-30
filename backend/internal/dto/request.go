@@ -14,8 +14,6 @@ type LeadRequest struct {
 }
 
 type PaginationRequest struct {
-	Page    int    `form:"page" binding:"omitempty,min=1"`
-	PerPage int    `form:"per_page" binding:"omitempty,min=1,max=100"`
-	Status  string `form:"status"`
-	Q       string `form:"q"`
+	Page    int `form:"page" binding:"omitempty,min=1"`
+	PerPage int `form:"per_page" binding:"omitempty,min=1,max=100"`
 }

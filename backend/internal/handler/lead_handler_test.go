@@ -8,6 +8,7 @@ import (
 
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
+	"mygo-immigration/backend/internal/repository"
 	"mygo-immigration/backend/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -15,15 +16,15 @@ import (
 
 // handlerMockLeadRepo implements repository.LeadRepository.
 type handlerMockLeadRepo struct {
-	findAll      func(page, perPage int, status string) ([]model.Lead, int64, error)
+	findAll      func(filter repository.LeadFilter) ([]model.Lead, int64, error)
 	create       func(lead *model.Lead) error
 	updateStatus func(id uint64, status string, notes string) error
 	delete       func(id uint64) error
 }
 
-func (m *handlerMockLeadRepo) FindAll(page, perPage int, status string) ([]model.Lead, int64, error) {
+func (m *handlerMockLeadRepo) FindAll(filter repository.LeadFilter) ([]model.Lead, int64, error) {
 	if m.findAll != nil {
-		return m.findAll(page, perPage, status)
+		return m.findAll(filter)
 	}
 	return nil, 0, nil
 }

@@ -15,7 +15,6 @@ type searchMockFAQRepo struct {
 }
 
 func (m *searchMockFAQRepo) FindByID(id uint64) (*model.FAQ, error) { return nil, nil }
-func (m *searchMockFAQRepo) FindAllList(projectID *uint64, search string) ([]repository.FAQWithProject, error) { return nil, nil }
 func (m *searchMockFAQRepo) FindDistinctProjects() ([]model.Project, error) { return nil, nil }
 func (m *searchMockFAQRepo) FindAll(params repository.FAQQueryParams) ([]repository.FAQWithProject, int64, error) {
 	return nil, 0, nil
@@ -37,18 +36,16 @@ type searchMockPageRepo struct {
 }
 
 func (m *searchMockPageRepo) FindByID(id uint64) (*model.Page, error) { return nil, nil }
-func (m *searchMockPageRepo) FindBySlug(slug string) (*model.Page, error)      { return nil, nil }
-func (m *searchMockPageRepo) FindAll(pageType, search, status string) ([]model.Page, error) { return nil, nil }
-func (m *searchMockPageRepo) FindAllPublished() ([]model.Page, error)           { return nil, nil }
+func (m *searchMockPageRepo) FindBySlug(slug string) (*model.Page, error) { return nil, nil }
+func (m *searchMockPageRepo) FindAll(filter repository.PageFilter) ([]model.Page, int64, error) {
+	return nil, 0, nil
+}
 func (m *searchMockPageRepo) FindBySlugPublished(slug string) (*model.Page, error) {
 	return nil, nil
 }
-func (m *searchMockPageRepo) FindByProjectID(projectID uint64) ([]model.Page, error) {
-	return nil, nil
-}
-func (m *searchMockPageRepo) Create(page *model.Page) error                    { return nil }
-func (m *searchMockPageRepo) Update(page *model.Page) error                    { return nil }
-func (m *searchMockPageRepo) Delete(id uint64) error                           { return nil }
+func (m *searchMockPageRepo) Create(page *model.Page) error { return nil }
+func (m *searchMockPageRepo) Update(page *model.Page) error { return nil }
+func (m *searchMockPageRepo) Delete(id uint64) error        { return nil }
 func (m *searchMockPageRepo) Search(keyword string) ([]model.Page, error) {
 	if m.searchFn != nil {
 		return m.searchFn(keyword)
@@ -205,7 +202,6 @@ func TestSearch_KeywordForwardedCorrectly(t *testing.T) {
 	}
 }
 
-func (m *searchMockPageRepo) FindAllPaginated(page, perPage int, pageType, search, status string) ([]model.Page, int64, error) { return nil, 0, nil }
 func (m *searchMockPageRepo) FindAllCoverImages() ([]string, error) { return nil, nil }
 func (m *searchMockPageRepo) FindAllContents() ([]string, error) { return nil, nil }
 func (m *searchMockPageRepo) Count() (int64, error) { return 0, nil }

@@ -12,9 +12,8 @@ import (
 
 // GET /api/v1/lawyers — public
 func (h *Handler) ListLawyers(c *gin.Context) {
-	items, err := h.svc.Lawyer.List()
+	items, _, err := h.svc.Lawyer.List(dto.LawyerListRequest{})
 	if err != nil {
-		logging.Logger.Error("failed in ListLawyers", "error", err)
 		logging.Logger.Error("failed in ListLawyers", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
@@ -24,28 +23,24 @@ func (h *Handler) ListLawyers(c *gin.Context) {
 
 // GET /api/v1/admin/lawyers — admin list
 func (h *Handler) AdminListLawyers(c *gin.Context) {
-	if c.Query("all") == "true" {
-		items, err := h.svc.Lawyer.List()
-		if err != nil {
-			logging.Logger.Error("failed in AdminListLawyers", "error", err)
-			logging.Logger.Error("failed in AdminListLawyers", "error", err)
-			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
-			return
-		}
-		c.JSON(http.StatusOK, dto.Success(items))
+	var req dto.LawyerListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid query params"))
 		return
 	}
 
-	page, perPage := parsePagination(c)
-	search := c.Query("search")
-	items, total, err := h.svc.Lawyer.ListPaginated(page, perPage, search)
+	items, total, err := h.svc.Lawyer.List(req)
 	if err != nil {
-		logging.Logger.Error("failed in AdminListLawyers", "error", err)
 		logging.Logger.Error("failed in AdminListLawyers", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
-	c.JSON(http.StatusOK, dto.SuccessPaginated(items, page, perPage, total))
+
+	if req.Page > 0 && req.PerPage > 0 {
+		c.JSON(http.StatusOK, dto.SuccessPaginated(items, req.Page, req.PerPage, total))
+	} else {
+		c.JSON(http.StatusOK, dto.Success(items))
+	}
 }
 
 // GET /api/v1/admin/lawyers/:id

@@ -1,5 +1,12 @@
 package dto
 
+// ProjectListRequest 项目列表查询请求
+type ProjectListRequest struct {
+	PaginationRequest
+	Name   string `form:"name"`
+	Status string `form:"status"`
+}
+
 // DashboardStats holds admin dashboard statistics.
 type DashboardStats struct {
 	TotalProjects int64   `json:"totalProjects"`

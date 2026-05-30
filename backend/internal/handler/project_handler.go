@@ -12,31 +12,26 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const defaultPage = 1
-const defaultPerPage = 10
 
 func (h *Handler) ListProjects(c *gin.Context) {
-	if c.Query("all") == "true" {
-		projects, err := h.svc.Project.ListAll("", "")
-		if err != nil {
-			logging.Logger.Error("failed in ListProjects", "error", err)
-			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
-			return
-		}
-		c.JSON(http.StatusOK, dto.Success(projects))
+	var req dto.ProjectListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid query params"))
 		return
 	}
 
-	page, perPage := parsePagination(c)
-
-	projects, total, err := h.svc.Project.List(page, perPage, "", "")
+	projects, total, err := h.svc.Project.List(req)
 	if err != nil {
 		logging.Logger.Error("failed in ListProjects", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessPaginated(projects, page, perPage, total))
+	if req.Page > 0 && req.PerPage > 0 {
+		c.JSON(http.StatusOK, dto.SuccessPaginated(projects, req.Page, req.PerPage, total))
+	} else {
+		c.JSON(http.StatusOK, dto.Success(projects))
+	}
 }
 
 func (h *Handler) GetProject(c *gin.Context) {
@@ -80,30 +75,24 @@ func (h *Handler) CompareProjects(c *gin.Context) {
 }
 
 func (h *Handler) AdminListProjects(c *gin.Context) {
-	search := c.Query("search")
-	status := c.Query("status")
-
-	if c.Query("all") == "true" {
-		projects, err := h.svc.Project.ListAll(search, status)
-		if err != nil {
-			logging.Logger.Error("failed in AdminListProjects", "error", err)
-			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
-			return
-		}
-		c.JSON(http.StatusOK, dto.Success(projects))
+	var req dto.ProjectListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid query params"))
 		return
 	}
 
-	page, perPage := parsePagination(c)
-
-	projects, total, err := h.svc.Project.AdminList(page, perPage, search, status)
+	projects, total, err := h.svc.Project.List(req)
 	if err != nil {
 		logging.Logger.Error("failed in AdminListProjects", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessPaginated(projects, page, perPage, total))
+	if req.Page > 0 && req.PerPage > 0 {
+		c.JSON(http.StatusOK, dto.SuccessPaginated(projects, req.Page, req.PerPage, total))
+	} else {
+		c.JSON(http.StatusOK, dto.Success(projects))
+	}
 }
 
 func (h *Handler) CreateProject(c *gin.Context) {
@@ -162,6 +151,9 @@ func (h *Handler) DeleteProject(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.Success(nil))
 }
+
+const defaultPage = 1
+const defaultPerPage = 10
 
 func parsePagination(c *gin.Context) (int, int) {
 	var req dto.PaginationRequest

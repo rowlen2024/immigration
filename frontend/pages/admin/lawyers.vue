@@ -156,7 +156,7 @@ const loadList = async () => {
   try {
     const api = useApi();
     let url = `/admin/lawyers?page=${page.value}&per_page=${pageSize.value}`;
-    if (searchQuery.value) url += `&search=${encodeURIComponent(searchQuery.value)}`;
+    if (searchQuery.value) url += `&name=${encodeURIComponent(searchQuery.value)}`;
     const data = await api<{ items: Lawyer[]; total: number }>(url);
     lawyers.value = data.items ?? [];
     total.value = data.total ?? 0;

@@ -230,7 +230,7 @@ const loadList = async () => {
   try {
     const api = useApi();
     let url = `/admin/pages?page=${page.value}&per_page=${pageSize.value}`;
-    if (searchQuery.value) url += `&search=${encodeURIComponent(searchQuery.value)}`;
+    if (searchQuery.value) url += `&title=${encodeURIComponent(searchQuery.value)}`;
     if (statusFilter.value) url += `&status=${statusFilter.value}`;
     if (pageTypeFilter.value) url += `&page_type=${encodeURIComponent(pageTypeFilter.value)}`;
     const data = await api<{ items: Page[]; total: number }>(url);

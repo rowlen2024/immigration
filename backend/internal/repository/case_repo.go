@@ -11,18 +11,6 @@ type CaseRepo struct {
 	db *gorm.DB
 }
 
-func (r *CaseRepo) FindByProjectID(projectID uint64) ([]model.Case, error) {
-	var cases []model.Case
-	err := r.db.
-		Where("project_id = ?", projectID).
-		Order("sort_order asc").
-		Find(&cases).Error
-	if err != nil {
-		return nil, err
-	}
-	return cases, nil
-}
-
 func (r *CaseRepo) FindByID(id uint64) (*model.Case, error) {
 	var c model.Case
 	err := r.db.Preload("Project").First(&c, id).Error
@@ -50,36 +38,32 @@ func (r *CaseRepo) FindByIDs(ids []uint64) ([]model.Case, error) {
 	return cases, nil
 }
 
-func (r *CaseRepo) FindAll(search string) ([]model.Case, error) {
-	var cases []model.Case
-	q := r.db.Preload("Project").Order("sort_order asc")
-	if search != "" {
-		q = q.Where("name LIKE ?", "%"+search+"%")
-	}
-	err := q.Find(&cases).Error
-	if err != nil {
-		return nil, err
-	}
-	return cases, nil
-}
-
-func (r *CaseRepo) FindAllPaginated(page, perPage int, search string) ([]model.Case, int64, error) {
+func (r *CaseRepo) FindAll(filter CaseFilter) ([]model.Case, int64, error) {
 	var cases []model.Case
 	var total int64
 
 	q := r.db.Model(&model.Case{}).Preload("Project")
-	if search != "" {
-		q = q.Where("name LIKE ?", "%"+search+"%")
+	if filter.ProjectID != nil {
+		q = q.Where("project_id = ?", *filter.ProjectID)
+	}
+	if filter.CountryFrom != "" {
+		q = q.Where("country_from = ?", filter.CountryFrom)
+	}
+	if filter.Name != "" {
+		q = q.Where("name LIKE ?", "%"+filter.Name+"%")
 	}
 
-	countQ := q.Session(&gorm.Session{})
-	if err := countQ.Count(&total).Error; err != nil {
+	if err := q.Session(&gorm.Session{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	offset := (page - 1) * perPage
-	err := q.Order("sort_order asc").Offset(offset).Limit(perPage).Find(&cases).Error
-	if err != nil {
+	q = q.Order("sort_order asc")
+	if filter.Page > 0 && filter.PerPage > 0 {
+		offset := (filter.Page - 1) * filter.PerPage
+		q = q.Offset(offset).Limit(filter.PerPage)
+	}
+
+	if err := q.Find(&cases).Error; err != nil {
 		return nil, 0, err
 	}
 	return cases, total, nil
@@ -106,33 +90,6 @@ func (r *CaseRepo) DeleteByProjectID(projectID uint64) error {
 func (r *CaseRepo) Count() (int64, error) {
 	return CountByModel[model.Case](r.db)
 }
-
-// FindFilteredPaginated returns paginated cases matching optional projectID / countryFrom.
-func (r *CaseRepo) FindFilteredPaginated(projectID *uint64, countryFrom string, page, perPage int) ([]model.Case, int64, error) {
-	var cases []model.Case
-	var total int64
-
-	q := r.db.Model(&model.Case{}).Preload("Project")
-	if projectID != nil {
-		q = q.Where("project_id = ?", *projectID)
-	}
-	if countryFrom != "" {
-		q = q.Where("country_from = ?", countryFrom)
-	}
-
-	countQ := q.Session(&gorm.Session{})
-	if err := countQ.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-
-	offset := (page - 1) * perPage
-	err := q.Order("sort_order asc").Offset(offset).Limit(perPage).Find(&cases).Error
-	if err != nil {
-		return nil, 0, err
-	}
-	return cases, total, nil
-}
-
 // FindAllPhotoURLs returns non-empty photo_url values referencing /uploads/ (unscoped).
 func (r *CaseRepo) FindAllPhotoURLs() ([]string, error) {
 	return PluckUploadsByColumn[model.Case](r.db, "photo_url")

@@ -18,15 +18,14 @@ import (
 
 // handlerMockFAQRepo implements repository.FAQRepository.
 type handlerMockFAQRepo struct {
-	findByIDFn            func(id uint64) (*model.FAQ, error)
-	findAllFn             func(params repository.FAQQueryParams) ([]repository.FAQWithProject, int64, error)
-	findAllListFn         func(projectID *uint64, search string) ([]repository.FAQWithProject, error)
+	findByIDFn             func(id uint64) (*model.FAQ, error)
+	findAllFn              func(params repository.FAQQueryParams) ([]repository.FAQWithProject, int64, error)
 	findDistinctProjectsFn func() ([]model.Project, error)
-	createFn              func(faq *model.FAQ) error
-	updateFn              func(faq *model.FAQ) error
-	deleteFn              func(id uint64) error
-	deleteByProjectIDFn   func(projectID uint64) error
-	searchFn              func(keyword string) ([]model.FAQ, error)
+	createFn               func(faq *model.FAQ) error
+	updateFn               func(faq *model.FAQ) error
+	deleteFn               func(id uint64) error
+	deleteByProjectIDFn    func(projectID uint64) error
+	searchFn               func(keyword string) ([]model.FAQ, error)
 }
 
 func (m *handlerMockFAQRepo) FindByID(id uint64) (*model.FAQ, error) {
@@ -40,12 +39,6 @@ func (m *handlerMockFAQRepo) FindAll(params repository.FAQQueryParams) ([]reposi
 		return m.findAllFn(params)
 	}
 	return nil, 0, nil
-}
-func (m *handlerMockFAQRepo) FindAllList(projectID *uint64, search string) ([]repository.FAQWithProject, error) {
-	if m.findAllListFn != nil {
-		return m.findAllListFn(projectID, search)
-	}
-	return nil, nil
 }
 func (m *handlerMockFAQRepo) FindDistinctProjects() ([]model.Project, error) {
 	if m.findDistinctProjectsFn != nil {
@@ -261,7 +254,6 @@ func TestFAQHandler_CreateFAQ_MissingFields(t *testing.T) {
 
 	h.CreateFAQ(c)
 
-	// Should get 500 because service validation fails
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("expected status 400 for missing fields, got %d", w.Code)
 	}

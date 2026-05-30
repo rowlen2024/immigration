@@ -1,4 +1,4 @@
-﻿package service
+package service
 
 import (
 	"fmt"
@@ -13,83 +13,31 @@ type LawyerService struct {
 	repo repository.LawyerRepository
 }
 
-// LawyerResponse is the API-facing representation with tags as array.
-type LawyerResponse struct {
-	ID        uint64   `json:"id"`
-	PhotoURL  string   `json:"photo_url"`
-	Name      string   `json:"name"`
-	Title     string   `json:"title"`
-	Tags      []string `json:"tags"`
-	SortOrder int      `json:"sort_order"`
-	CreatedAt string   `json:"created_at"`
-	UpdatedAt string   `json:"updated_at"`
+func NewLawyerService(repo repository.LawyerRepository) *LawyerService {
+	return &LawyerService{repo: repo}
 }
 
-func toLawyerResponse(l *model.Lawyer) LawyerResponse {
-	tags := []string{}
-	if l.Tags != "" {
-		for _, t := range strings.Split(l.Tags, ",") {
-			trimmed := strings.TrimSpace(t)
-			if trimmed != "" {
-				tags = append(tags, trimmed)
-			}
-		}
-	}
-	return LawyerResponse{
-		ID:        l.ID,
-		PhotoURL:  l.PhotoURL,
-		Name:      l.Name,
-		Title:     l.Title,
-		Tags:      tags,
-		SortOrder: l.SortOrder,
-		CreatedAt: l.CreatedAt.Format("2006-01-02 15:04:05"),
-		UpdatedAt: l.UpdatedAt.Format("2006-01-02 15:04:05"),
-	}
-}
-
-func (s *LawyerService) List() ([]LawyerResponse, error) {
-	items, err := s.repo.FindAll()
-	if err != nil {
-		return nil, fmt.Errorf("failed to list lawyers: %w", err)
-	}
-	result := make([]LawyerResponse, len(items))
-	for i, item := range items {
-		result[i] = toLawyerResponse(&item)
-	}
-	return result, nil
-}
-
-func (s *LawyerService) ListPaginated(page, perPage int, search string) ([]LawyerResponse, int64, error) {
-	items, total, err := s.repo.FindPaginated(page, perPage, search)
+func (s *LawyerService) List(req dto.LawyerListRequest) ([]model.Lawyer, int64, error) {
+	items, total, err := s.repo.FindAll(repository.LawyerFilter{
+		Name:    req.Name,
+		Page:    req.Page,
+		PerPage: req.PerPage,
+	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list lawyers: %w", err)
 	}
-	result := make([]LawyerResponse, len(items))
-	for i, item := range items {
-		result[i] = toLawyerResponse(&item)
-	}
-	return result, total, nil
+	return items, total, nil
 }
 
-func (s *LawyerService) GetByID(id uint64) (*LawyerResponse, error) {
+func (s *LawyerService) GetByID(id uint64) (*model.Lawyer, error) {
 	item, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, fmt.Errorf("lawyer not found: %w", err)
 	}
-	resp := toLawyerResponse(item)
-	return &resp, nil
+	return item, nil
 }
 
-// CreateLawyerInput is used for both creating and updating.
-type CreateLawyerInput struct {
-	PhotoURL  string   `json:"photo_url"`
-	Name      string   `json:"name"`
-	Title     string   `json:"title"`
-	Tags      []string `json:"tags"`
-	SortOrder int      `json:"sort_order"`
-}
-
-func (s *LawyerService) Create(input *dto.CreateLawyerInput) (*LawyerResponse, error) {
+func (s *LawyerService) Create(input *dto.CreateLawyerInput) (*model.Lawyer, error) {
 	item := &model.Lawyer{
 		PhotoURL:  input.PhotoURL,
 		Name:      input.Name,
@@ -100,11 +48,10 @@ func (s *LawyerService) Create(input *dto.CreateLawyerInput) (*LawyerResponse, e
 	if err := s.repo.Create(item); err != nil {
 		return nil, fmt.Errorf("failed to create lawyer: %w", err)
 	}
-	resp := toLawyerResponse(item)
-	return &resp, nil
+	return item, nil
 }
 
-func (s *LawyerService) Update(id uint64, input *dto.CreateLawyerInput) (*LawyerResponse, error) {
+func (s *LawyerService) Update(id uint64, input *dto.CreateLawyerInput) (*model.Lawyer, error) {
 	item, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, fmt.Errorf("lawyer not found: %w", err)
@@ -117,8 +64,7 @@ func (s *LawyerService) Update(id uint64, input *dto.CreateLawyerInput) (*Lawyer
 	if err := s.repo.Update(item); err != nil {
 		return nil, fmt.Errorf("failed to update lawyer: %w", err)
 	}
-	resp := toLawyerResponse(item)
-	return &resp, nil
+	return item, nil
 }
 
 func (s *LawyerService) Delete(id uint64) error {

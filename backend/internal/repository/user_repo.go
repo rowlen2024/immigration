@@ -19,26 +19,32 @@ func (r *UserRepo) FindByUsername(username string) (*model.User, error) {
 	return &user, nil
 }
 
-func (r *UserRepo) FindAll() ([]model.User, error) {
-	var users []model.User
-	err := r.db.Find(&users).Error
-	if err != nil {
-		return nil, err
-	}
-	return users, nil
-}
-
-func (r *UserRepo) FindAllPaginated(page, perPage int) ([]model.User, int64, error) {
+func (r *UserRepo) FindAll(filter UserFilter) ([]model.User, int64, error) {
 	var users []model.User
 	var total int64
 
-	if err := r.db.Model(&model.User{}).Count(&total).Error; err != nil {
+	q := r.db.Model(&model.User{})
+	if filter.Role != "" {
+		q = q.Where("role = ?", filter.Role)
+	}
+	if filter.Status != nil {
+		q = q.Where("status = ?", *filter.Status)
+	}
+	if filter.Username != "" {
+		q = q.Where("username LIKE ?", "%"+filter.Username+"%")
+	}
+
+	if err := q.Session(&gorm.Session{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	offset := (page - 1) * perPage
-	err := r.db.Offset(offset).Limit(perPage).Find(&users).Error
-	if err != nil {
+	q = q.Order("id asc")
+	if filter.Page > 0 && filter.PerPage > 0 {
+		offset := (filter.Page - 1) * filter.PerPage
+		q = q.Offset(offset).Limit(filter.PerPage)
+	}
+
+	if err := q.Find(&users).Error; err != nil {
 		return nil, 0, err
 	}
 	return users, total, nil

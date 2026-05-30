@@ -15,20 +15,18 @@ type TestimonialService struct {
 	homeConfigSvc *HomeConfigService
 }
 
-func (s *TestimonialService) ListByProject(projectID uint64) ([]model.Testimonial, error) {
-	items, err := s.repo.FindByProjectID(projectID)
+func (s *TestimonialService) List(req dto.TestimonialListRequest) ([]model.Testimonial, int64, error) {
+	items, total, err := s.repo.FindAll(repository.TestimonialFilter{
+		ProjectID: req.ProjectID,
+		Nickname:  req.Nickname,
+		Rating:    req.Rating,
+		Page:      req.Page,
+		PerPage:   req.PerPage,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to list testimonials: %w", err)
+		return nil, 0, fmt.Errorf("failed to list testimonials: %w", err)
 	}
-	return items, nil
-}
-
-func (s *TestimonialService) ListAll() ([]model.Testimonial, error) {
-	items, err := s.repo.FindAll()
-	if err != nil {
-		return nil, fmt.Errorf("failed to list testimonials: %w", err)
-	}
-	return items, nil
+	return items, total, nil
 }
 
 func (s *TestimonialService) Delete(id uint64) error {

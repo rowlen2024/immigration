@@ -279,7 +279,7 @@
         </el-form-item>
         <el-form-item label="关联项目">
           <el-select v-model="slideForm.project_slug" placeholder="(可选)" clearable>
-            <el-option v-for="p in allProjects" :key="p.slug" :label="p.title" :value="p.slug" />
+            <el-option v-for="p in allProjects" :key="p.slug" :label="p.name" :value="p.slug" />
           </el-select>
         </el-form-item>
         <el-form-item label="背景渐变色">
@@ -472,9 +472,9 @@ const load = async () => {
         testimonial_showcase: TestimonialShowcase | null;
         hero_trust: TrustItem[] | null;
       }>('/admin/home-config'),
-      api<ProjectOption[]>('/admin/projects?all=true'),
-      api<CaseOption[]>('/admin/cases?all=true'),
-      api<TestimonialOption[]>('/admin/testimonials?all=true'),
+      api<ProjectOption[]>('/admin/projects'),
+      api<CaseOption[]>('/admin/cases'),
+      api<TestimonialOption[]>('/admin/testimonials'),
     ]);
 
     if (config) {

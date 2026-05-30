@@ -10,16 +10,40 @@ import (
 )
 
 func (h *Handler) AdminListUsers(c *gin.Context) {
-	page, perPage := parsePagination(c)
+	var req dto.UserListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid query params"))
+		return
+	}
 
-	users, total, err := h.svc.User.ListPaginated(page, perPage)
+	users, total, err := h.svc.User.List(req)
 	if err != nil {
 		logging.Logger.Error("failed in AdminListUsers", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessPaginated(users, page, perPage, total))
+	if req.Page > 0 && req.PerPage > 0 {
+		c.JSON(http.StatusOK, dto.SuccessPaginated(users, req.Page, req.PerPage, total))
+	} else {
+		c.JSON(http.StatusOK, dto.Success(users))
+	}
+}
+
+func (h *Handler) AdminGetUser(c *gin.Context) {
+	id, err := parseIDParam(c, "id")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid user id"))
+		return
+	}
+
+	user, err := h.svc.User.GetByID(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.Error(404, "user not found"))
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Success(user))
 }
 
 func (h *Handler) AdminCreateUser(c *gin.Context) {
@@ -60,4 +84,20 @@ func (h *Handler) AdminUpdateUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.Success(user))
+}
+
+func (h *Handler) AdminDeleteUser(c *gin.Context) {
+	id, err := parseIDParam(c, "id")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid user id"))
+		return
+	}
+
+	if err := h.svc.User.Delete(id); err != nil {
+		logging.Logger.Warn("business error in AdminDeleteUser", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Success(nil))
 }

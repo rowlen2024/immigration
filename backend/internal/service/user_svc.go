@@ -16,18 +16,20 @@ type UserService struct {
 	repo repository.UserRepository
 }
 
-// List returns all users.
-func (s *UserService) List() ([]model.User, error) {
-	users, err := s.repo.FindAll()
-	if err != nil {
-		return nil, fmt.Errorf("failed to list users: %w", err)
-	}
-	return users, nil
+// NewUserService creates a new UserService with the given repository.
+func NewUserService(repo repository.UserRepository) *UserService {
+	return &UserService{repo: repo}
 }
 
-// ListPaginated returns users with pagination.
-func (s *UserService) ListPaginated(page, perPage int) ([]model.User, int64, error) {
-	users, total, err := s.repo.FindAllPaginated(page, perPage)
+// List returns users with optional filters and pagination.
+func (s *UserService) List(req dto.UserListRequest) ([]model.User, int64, error) {
+	users, total, err := s.repo.FindAll(repository.UserFilter{
+		Role:     req.Role,
+		Status:   req.Status,
+		Username: req.Username,
+		Page:     req.Page,
+		PerPage:  req.PerPage,
+	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list users: %w", err)
 	}
@@ -81,8 +83,8 @@ func (s *UserService) Update(id uint64, req dto.UpdateUserRequest) (*model.User,
 	if req.Role != "" {
 		existing.Role = req.Role
 	}
-	if req.Status != 0 {
-		existing.Status = req.Status
+	if req.Status != nil {
+		existing.Status = *req.Status
 	}
 	if req.Password != "" {
 		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
@@ -97,6 +99,29 @@ func (s *UserService) Update(id uint64, req dto.UpdateUserRequest) (*model.User,
 	}
 
 	return existing, nil
+}
+
+// Delete hard-deletes a user by ID.
+func (s *UserService) Delete(id uint64) error {
+	if id == 0 {
+		return errors.New("user id is required")
+	}
+	if err := s.repo.Delete(id); err != nil {
+		return fmt.Errorf("failed to delete user: %w", err)
+	}
+	return nil
+}
+
+// GetByID returns a user by ID.
+func (s *UserService) GetByID(id uint64) (*model.User, error) {
+	if id == 0 {
+		return nil, errors.New("user id is required")
+	}
+	user, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("user not found: %w", err)
+	}
+	return user, nil
 }
 
 // FindByUsername returns a user by username (used by auth).

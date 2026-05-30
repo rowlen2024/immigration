@@ -6,22 +6,19 @@ import (
 
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
+	"mygo-immigration/backend/internal/repository"
 	"time"
 )
 
 // mockCaseRepo implements repository.CaseRepository for testing.
 type mockCaseRepo struct {
-	findByIDFn        func(id uint64) (*model.Case, error)
-	findByProjectIDFn func(projectID uint64) ([]model.Case, error)
-	findAllFn           func(search string) ([]model.Case, error)
-	findAllPaginatedFn  func(page, perPage int, search string) ([]model.Case, int64, error)
-	findFilteredPaginatedFn func(projectID *uint64, countryFrom string, page, perPage int) ([]model.Case, int64, error)
-	createFn          func(c *model.Case) error
-	updateFn          func(c *model.Case) error
-	deleteFn          func(id uint64) error
-	hardDeleteFn      func(id uint64) error
+	findByIDFn    func(id uint64) (*model.Case, error)
+	findBySlugFn  func(slug string) (*model.Case, error)
+	findAllFn     func(filter repository.CaseFilter) ([]model.Case, int64, error)
+	createFn      func(c *model.Case) error
+	updateFn      func(c *model.Case) error
+	deleteFn      func(id uint64) error
 	deleteByProjectIDFn func(projectID uint64) error
-	findBySlugFn      func(slug string) (*model.Case, error)
 }
 
 func (m *mockCaseRepo) FindByID(id uint64) (*model.Case, error) {
@@ -31,23 +28,16 @@ func (m *mockCaseRepo) FindByID(id uint64) (*model.Case, error) {
 	return nil, nil
 }
 
-func (m *mockCaseRepo) FindByProjectID(projectID uint64) ([]model.Case, error) {
-	if m.findByProjectIDFn != nil {
-		return m.findByProjectIDFn(projectID)
+func (m *mockCaseRepo) FindBySlug(slug string) (*model.Case, error) {
+	if m.findBySlugFn != nil {
+		return m.findBySlugFn(slug)
 	}
 	return nil, nil
 }
 
-func (m *mockCaseRepo) FindAll(search string) ([]model.Case, error) {
+func (m *mockCaseRepo) FindAll(filter repository.CaseFilter) ([]model.Case, int64, error) {
 	if m.findAllFn != nil {
-		return m.findAllFn(search)
-	}
-	return nil, nil
-}
-
-func (m *mockCaseRepo) FindAllPaginated(page, perPage int, search string) ([]model.Case, int64, error) {
-	if m.findAllPaginatedFn != nil {
-		return m.findAllPaginatedFn(page, perPage, search)
+		return m.findAllFn(filter)
 	}
 	return nil, 0, nil
 }
@@ -80,26 +70,11 @@ func (m *mockCaseRepo) DeleteByProjectID(projectID uint64) error {
 	return nil
 }
 
-func (m *mockCaseRepo) HardDelete(id uint64) error {
-	if m.hardDeleteFn != nil {
-		return m.hardDeleteFn(id)
-	}
-	return nil
-}
-
-func (m *mockCaseRepo) FindBySlug(slug string) (*model.Case, error) {
-	if m.findBySlugFn != nil {
-		return m.findBySlugFn(slug)
-	}
-	return nil, nil
-}
-
-func (m *mockCaseRepo) FindFilteredPaginated(projectID *uint64, countryFrom string, page, perPage int) ([]model.Case, int64, error) {
-	if m.findFilteredPaginatedFn != nil {
-		return m.findFilteredPaginatedFn(projectID, countryFrom, page, perPage)
-	}
-	return nil, 0, nil
-}
+func (m *mockCaseRepo) FindByIDs(ids []uint64) ([]model.Case, error) { return nil, nil }
+func (m *mockCaseRepo) FindAllPhotoURLs() ([]string, error)           { return nil, nil }
+func (m *mockCaseRepo) FindAllContents() ([]string, error)            { return nil, nil }
+func (m *mockCaseRepo) Count() (int64, error)                         { return 0, nil }
+func (m *mockCaseRepo) CountByRange(start, end time.Time) (int64, error) { return 0, nil }
 
 func TestCase_List(t *testing.T) {
 	sampleCases := []model.Case{
@@ -109,16 +84,19 @@ func TestCase_List(t *testing.T) {
 	}
 
 	repo := &mockCaseRepo{
-		findAllFn: func(search string) ([]model.Case, error) {
-			return sampleCases, nil
+		findAllFn: func(filter repository.CaseFilter) ([]model.Case, int64, error) {
+			return sampleCases, 3, nil
 		},
 	}
 
 	svc := NewCaseService(repo, nil)
 
-	cases, err := svc.List()
+	cases, total, err := svc.List(dto.CaseListRequest{})
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
+	}
+	if total != 3 {
+		t.Errorf("expected total 3, got %d", total)
 	}
 	if len(cases) != 3 {
 		t.Errorf("expected 3 cases, got %d", len(cases))
@@ -127,16 +105,150 @@ func TestCase_List(t *testing.T) {
 
 func TestCase_List_Error(t *testing.T) {
 	repo := &mockCaseRepo{
-		findAllFn: func(search string) ([]model.Case, error) {
-			return nil, errors.New("db error")
+		findAllFn: func(filter repository.CaseFilter) ([]model.Case, int64, error) {
+			return nil, 0, errors.New("db error")
 		},
 	}
 
 	svc := NewCaseService(repo, nil)
 
-	_, err := svc.List()
+	_, _, err := svc.List(dto.CaseListRequest{})
 	if err == nil {
 		t.Fatal("expected error from repo")
+	}
+}
+
+func TestCase_List_Paginated(t *testing.T) {
+	repo := &mockCaseRepo{
+		findAllFn: func(filter repository.CaseFilter) ([]model.Case, int64, error) {
+			return []model.Case{
+				{ID: 1, Name: "Case A"},
+				{ID: 2, Name: "Case B"},
+			}, 5, nil
+		},
+	}
+
+	svc := NewCaseService(repo, nil)
+
+	cases, total, err := svc.List(dto.CaseListRequest{
+		PaginationRequest: dto.PaginationRequest{Page: 1, PerPage: 2},
+	})
+	if err != nil {
+		t.Fatalf("expected success, got error: %v", err)
+	}
+	if total != 5 {
+		t.Errorf("expected total 5, got %d", total)
+	}
+	if len(cases) != 2 {
+		t.Errorf("expected 2 cases on page 1 with perPage=2, got %d", len(cases))
+	}
+}
+
+func TestCase_List_Page2(t *testing.T) {
+	repo := &mockCaseRepo{
+		findAllFn: func(filter repository.CaseFilter) ([]model.Case, int64, error) {
+			return []model.Case{
+				{ID: 3, Name: "Case C"},
+			}, 3, nil
+		},
+	}
+
+	svc := NewCaseService(repo, nil)
+
+	cases, total, err := svc.List(dto.CaseListRequest{
+		PaginationRequest: dto.PaginationRequest{Page: 2, PerPage: 2},
+	})
+	if err != nil {
+		t.Fatalf("expected success, got error: %v", err)
+	}
+	if total != 3 {
+		t.Errorf("expected total 3, got %d", total)
+	}
+	if len(cases) != 1 {
+		t.Errorf("expected 1 case on page 2 with perPage=2, got %d", len(cases))
+	}
+}
+
+func TestCase_List_BeyondRange(t *testing.T) {
+	repo := &mockCaseRepo{
+		findAllFn: func(filter repository.CaseFilter) ([]model.Case, int64, error) {
+			return []model.Case{}, 1, nil
+		},
+	}
+
+	svc := NewCaseService(repo, nil)
+
+	cases, total, err := svc.List(dto.CaseListRequest{
+		PaginationRequest: dto.PaginationRequest{Page: 5, PerPage: 10},
+	})
+	if err != nil {
+		t.Fatalf("expected success, got error: %v", err)
+	}
+	if total != 1 {
+		t.Errorf("expected total 1, got %d", total)
+	}
+	if len(cases) != 0 {
+		t.Errorf("expected empty slice when page exceeds range, got %d cases", len(cases))
+	}
+}
+
+func TestCase_List_RepoError(t *testing.T) {
+	repo := &mockCaseRepo{
+		findAllFn: func(filter repository.CaseFilter) ([]model.Case, int64, error) {
+			return nil, 0, errors.New("db error")
+		},
+	}
+
+	svc := NewCaseService(repo, nil)
+
+	_, _, err := svc.List(dto.CaseListRequest{
+		PaginationRequest: dto.PaginationRequest{Page: 1, PerPage: 10},
+	})
+	if err == nil {
+		t.Fatal("expected error from repo")
+	}
+}
+
+func TestCase_List_FilterByName(t *testing.T) {
+	repo := &mockCaseRepo{
+		findAllFn: func(filter repository.CaseFilter) ([]model.Case, int64, error) {
+			if filter.Name != "test" {
+				t.Errorf("expected Name='test', got '%s'", filter.Name)
+			}
+			return []model.Case{{ID: 1, Name: "Test Case"}}, 1, nil
+		},
+	}
+
+	svc := NewCaseService(repo, nil)
+
+	cases, total, err := svc.List(dto.CaseListRequest{Name: "test"})
+	if err != nil {
+		t.Fatalf("expected success, got error: %v", err)
+	}
+	if total != 1 {
+		t.Errorf("expected total 1, got %d", total)
+	}
+	if len(cases) != 1 {
+		t.Errorf("expected 1 case, got %d", len(cases))
+	}
+}
+
+func TestCase_List_FilterByProject(t *testing.T) {
+	projectID := uint64(10)
+	repo := &mockCaseRepo{
+		findAllFn: func(filter repository.CaseFilter) ([]model.Case, int64, error) {
+			if filter.ProjectID == nil || *filter.ProjectID != 10 {
+				t.Errorf("expected ProjectID=10, got %v", filter.ProjectID)
+			}
+			return []model.Case{{ID: 1, Name: "Project Case"}}, 1, nil
+		},
+	}
+
+	svc := NewCaseService(repo, nil)
+
+	_, _, err := svc.List(dto.CaseListRequest{ProjectID: &projectID})
+	if err != nil {
+		t.Fatalf("expected success, got error: %v", err)
 	}
 }
 
@@ -316,130 +428,3 @@ func TestCase_Create_RepoError(t *testing.T) {
 		t.Fatal("expected error from repo")
 	}
 }
-
-func TestCase_AdminList_Success(t *testing.T) {
-	repo := &mockCaseRepo{
-		findAllPaginatedFn: func(page, perPage int, search string) ([]model.Case, int64, error) {
-			return []model.Case{
-				{ID: 1, Name: "Case A"},
-				{ID: 2, Name: "Case B"},
-			}, 5, nil
-		},
-	}
-
-	svc := NewCaseService(repo, nil)
-
-	cases, total, err := svc.AdminList(1, 2, "")
-	if err != nil {
-		t.Fatalf("expected success, got error: %v", err)
-	}
-	if total != 5 {
-		t.Errorf("expected total 5, got %d", total)
-	}
-	if len(cases) != 2 {
-		t.Errorf("expected 2 cases on page 1 with perPage=2, got %d", len(cases))
-	}
-}
-
-func TestCase_AdminList_Page2(t *testing.T) {
-	repo := &mockCaseRepo{
-		findAllPaginatedFn: func(page, perPage int, search string) ([]model.Case, int64, error) {
-			return []model.Case{
-				{ID: 3, Name: "Case C"},
-			}, 3, nil
-		},
-	}
-
-	svc := NewCaseService(repo, nil)
-
-	cases, total, err := svc.AdminList(2, 2, "")
-	if err != nil {
-		t.Fatalf("expected success, got error: %v", err)
-	}
-	if total != 3 {
-		t.Errorf("expected total 3, got %d", total)
-	}
-	if len(cases) != 1 {
-		t.Errorf("expected 1 case on page 2 with perPage=2, got %d", len(cases))
-	}
-}
-
-func TestCase_AdminList_BeyondRange(t *testing.T) {
-	repo := &mockCaseRepo{
-		findAllPaginatedFn: func(page, perPage int, search string) ([]model.Case, int64, error) {
-			return []model.Case{}, 1, nil
-		},
-	}
-
-	svc := NewCaseService(repo, nil)
-
-	cases, total, err := svc.AdminList(5, 10, "")
-	if err != nil {
-		t.Fatalf("expected success, got error: %v", err)
-	}
-	if total != 1 {
-		t.Errorf("expected total 1, got %d", total)
-	}
-	if len(cases) != 0 {
-		t.Errorf("expected empty slice when page exceeds range, got %d cases", len(cases))
-	}
-}
-
-func TestCase_AdminList_DefaultPagination(t *testing.T) {
-	repo := &mockCaseRepo{
-		findAllPaginatedFn: func(page, perPage int, search string) ([]model.Case, int64, error) {
-			return []model.Case{}, 0, nil
-		},
-	}
-
-	svc := NewCaseService(repo, nil)
-	_, _, err := svc.AdminList(0, 0, "")
-	if err != nil {
-		t.Fatalf("expected success, got error: %v", err)
-	}
-}
-
-func TestCase_AdminList_RepoError(t *testing.T) {
-	repo := &mockCaseRepo{
-		findAllPaginatedFn: func(page, perPage int, search string) ([]model.Case, int64, error) {
-			return nil, 0, errors.New("db error")
-		},
-	}
-
-	svc := NewCaseService(repo, nil)
-
-	_, _, err := svc.AdminList(1, 10, "")
-	if err == nil {
-		t.Fatal("expected error from repo")
-	}
-}
-
-func TestCase_ListPaginated_Success(t *testing.T) {
-	repo := &mockCaseRepo{
-		findAllPaginatedFn: func(page, perPage int, search string) ([]model.Case, int64, error) {
-			return []model.Case{
-				{ID: 1, Name: "Case A"},
-				{ID: 2, Name: "Case B"},
-			}, 2, nil
-		},
-	}
-
-	svc := NewCaseService(repo, nil)
-
-	cases, total, err := svc.ListPaginated(1, 10)
-	if err != nil {
-		t.Fatalf("expected success, got error: %v", err)
-	}
-	if total != 2 {
-		t.Errorf("expected total 2, got %d", total)
-	}
-	if len(cases) != 2 {
-		t.Errorf("expected 2 cases, got %d", len(cases))
-	}
-}
-
-func (m *mockCaseRepo) FindByIDs(ids []uint64) ([]model.Case, error) { return nil, nil }
-func (m *mockCaseRepo) FindAllPhotoURLs() ([]string, error) { return nil, nil }
-func (m *mockCaseRepo) FindAllContents() ([]string, error) { return nil, nil }
-func (m *mockCaseRepo) Count() (int64, error) { return 0, nil }
-func (m *mockCaseRepo) CountByRange(start, end time.Time) (int64, error) { return 0, nil }

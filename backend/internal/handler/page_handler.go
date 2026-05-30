@@ -12,7 +12,7 @@ import (
 )
 
 func (h *Handler) ListPages(c *gin.Context) {
-	pages, err := h.svc.Page.List()
+	pages, _, err := h.svc.Page.List(dto.PageListRequest{Status: "published"})
 	if err != nil {
 		logging.Logger.Error("failed in ListPages", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
@@ -55,31 +55,24 @@ func (h *Handler) PreviewPage(c *gin.Context) {
 }
 
 func (h *Handler) AdminListPages(c *gin.Context) {
-	pageType := c.Query("page_type")
-	search := c.Query("search")
-	status := c.Query("status")
-
-	if c.Query("all") == "true" {
-		pages, err := h.svc.Page.ListAll(pageType, search, status)
-		if err != nil {
-			logging.Logger.Error("failed in AdminListPages", "error", err)
-			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
-			return
-		}
-		c.JSON(http.StatusOK, dto.Success(pages))
+	var req dto.PageListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid query params"))
 		return
 	}
 
-	paginationPage, perPage := parsePagination(c)
-
-	pages, total, err := h.svc.Page.AdminList(paginationPage, perPage, pageType, search, status)
+	pages, total, err := h.svc.Page.List(req)
 	if err != nil {
 		logging.Logger.Error("failed in AdminListPages", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessPaginated(pages, paginationPage, perPage, total))
+	if req.Page > 0 && req.PerPage > 0 {
+		c.JSON(http.StatusOK, dto.SuccessPaginated(pages, req.Page, req.PerPage, total))
+	} else {
+		c.JSON(http.StatusOK, dto.Success(pages))
+	}
 }
 
 func (h *Handler) CreatePage(c *gin.Context) {
