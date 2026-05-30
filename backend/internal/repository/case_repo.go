@@ -107,6 +107,32 @@ func (r *CaseRepo) Count() (int64, error) {
 	return CountByModel[model.Case](r.db)
 }
 
+// FindFilteredPaginated returns paginated cases matching optional projectID / countryFrom.
+func (r *CaseRepo) FindFilteredPaginated(projectID *uint64, countryFrom string, page, perPage int) ([]model.Case, int64, error) {
+	var cases []model.Case
+	var total int64
+
+	q := r.db.Model(&model.Case{}).Preload("Project")
+	if projectID != nil {
+		q = q.Where("project_id = ?", *projectID)
+	}
+	if countryFrom != "" {
+		q = q.Where("country_from = ?", countryFrom)
+	}
+
+	countQ := q.Session(&gorm.Session{})
+	if err := countQ.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * perPage
+	err := q.Order("sort_order asc").Offset(offset).Limit(perPage).Find(&cases).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return cases, total, nil
+}
+
 // FindAllPhotoURLs returns non-empty photo_url values referencing /uploads/ (unscoped).
 func (r *CaseRepo) FindAllPhotoURLs() ([]string, error) {
 	return PluckUploadsByColumn[model.Case](r.db, "photo_url")

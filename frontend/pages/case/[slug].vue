@@ -29,13 +29,65 @@
           </div>
         </div>
 
-        <div class="case-content" v-html="item.content" />
+        <div class="case-layout">
+          <div class="case-main">
+            <div class="case-content" v-html="item.content" />
+          </div>
+
+          <aside class="case-sidebar">
+            <!-- 关键信息 -->
+            <div class="sb-card">
+              <h4 class="sb-title">关键信息</h4>
+              <dl class="sb-info-list">
+                <div v-if="item.country_from" class="sb-info-item">
+                  <dt>来源国家</dt>
+                  <dd>{{ item.country_from }}</dd>
+                </div>
+                <div v-if="item.investment_amount" class="sb-info-item">
+                  <dt>投资金额</dt>
+                  <dd>{{ item.investment_amount }}</dd>
+                </div>
+                <div v-if="item.processing_period" class="sb-info-item">
+                  <dt>办理周期</dt>
+                  <dd>{{ item.processing_period }}</dd>
+                </div>
+                <div v-if="item.project?.name" class="sb-info-item">
+                  <dt>所属项目</dt>
+                  <dd>
+                    <NuxtLink :to="'/projects/' + item.project.slug">{{ item.project.name }}</NuxtLink>
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            <!-- 相关案例 -->
+            <div v-if="relatedCases.length > 0" class="sb-card">
+              <h4 class="sb-title">相关案例</h4>
+              <ul class="sb-related">
+                <li v-for="rc in relatedCases" :key="rc.slug">
+                  <NuxtLink :to="'/case/' + rc.slug">
+                    <span class="sb-related-name">{{ rc.name }}</span>
+                    <span class="sb-related-meta">{{ rc.country_from }}</span>
+                  </NuxtLink>
+                </li>
+              </ul>
+            </div>
+
+            <!-- CTA -->
+            <div class="sb-cta">
+              <p class="sb-cta-text">正在规划类似方案？</p>
+              <NuxtLink to="/contact" class="btn-primary sb-cta-btn">咨询同类方案</NuxtLink>
+            </div>
+          </aside>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { getIconSvg } from '~/composables/lucideIcons'
+
 const route = useRoute();
 const slug = route.params.slug as string;
 
@@ -47,9 +99,42 @@ useSeo({
   title: item.value?.name ?? '案例详情',
 });
 
+// 相关案例：同项目或同国家，排除当前，最多 4 条
+const relatedCases = ref<any[]>([])
+
+async function fetchRelatedCases() {
+  try {
+    const cur = item.value
+    if (!cur) return
+    let cases: any[] = []
+
+    // 先按项目筛选
+    if (cur.project?.id) {
+      const res: any = await $fetch(`/api/v1/cases?project_id=${cur.project.id}&per_page=4`)
+      cases = Array.isArray(res?.data)? res.data: []
+    }
+
+    // 项目结果不足 4 条，再按国家补充
+    if (cases.length < 4 && cur.country_from) {
+      const remain = 4 - cases.length
+      const existingIds = new Set(cases.map((c: any) => c.id))
+      const res2: any = await $fetch(`/api/v1/cases?country_from=${encodeURIComponent(cur.country_from)}&per_page=${remain}`)
+      const byCountry = Array.isArray(res2?.data)? res2.data: []
+      const filtered = byCountry.filter((c: any) => !existingIds.has(c.id))
+      cases = [...cases, ...filtered].slice(0, 4)
+    }
+
+    // 前端过滤掉当前案例
+    relatedCases.value = cases.filter((c: any) => c.slug !== slug)
+  } catch { relatedCases.value = [] }
+}
+
 onMounted(() => {
   $fetch(`/api/v1/cases/${slug}`).then(v => { data.value = v }).catch(() => {})
+  if (item.value) fetchRelatedCases()
 })
+
+watch(item, (v) => { if (v) fetchRelatedCases() })
 </script>
 
 <style scoped>
@@ -115,7 +200,137 @@ onMounted(() => {
   border-radius: var(--radius-lg);
   padding: 32px;
   box-shadow: var(--shadow-sm);
-  max-width: 720px;
+}
+
+/* ══════ Two-column layout ══════ */
+.case-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 40px;
+  align-items: start;
+}
+
+/* ══════ Sidebar ══════ */
+.case-sidebar {
+  position: sticky;
+  top: calc(var(--header-height) + 24px);
+}
+
+.sb-card {
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 20px;
+}
+
+.sb-title {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--accent-soft);
+}
+
+.sb-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sb-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.sb-info-item dt {
+  font-size: 13px;
+  color: var(--text-light);
+  flex-shrink: 0;
+}
+
+.sb-info-item dd {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.sb-info-item dd a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.sb-info-item dd a:hover {
+  text-decoration: underline;
+}
+
+.sb-related {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.sb-related li {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sb-related li:last-child {
+  border-bottom: none;
+}
+
+.sb-related a {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 0;
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.sb-related a:hover .sb-related-name {
+  color: var(--accent-dark);
+}
+
+.sb-related-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.4;
+  transition: color .2s;
+}
+
+.sb-related-meta {
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+.sb-cta {
+  background: var(--gradient-hero);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  text-align: center;
+}
+
+.sb-cta-text {
+  font-size: 15px;
+  color: rgba(255,255,255,.78);
+  margin-bottom: 16px;
+}
+
+.sb-cta-btn {
+  width: 100%;
+  display: block;
+  text-align: center;
+  padding: 12px 0;
+  font-size: 15px;
 }
 
 .case-content :deep(img) {
@@ -178,6 +393,17 @@ onMounted(() => {
   color: #c62828;
 }
 
+@media (max-width: 1023px) {
+  .case-layout {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .case-sidebar {
+    position: static;
+  }
+}
+
 @media (max-width: 767px) {
   .case-detail-page {
     padding: 40px 0;
@@ -209,6 +435,14 @@ onMounted(() => {
 
   .case-content {
     padding: 20px;
+  }
+
+  .sb-card {
+    padding: 20px;
+  }
+
+  .sb-cta {
+    padding: 24px 20px;
   }
 }
 

@@ -15,6 +15,7 @@ type mockCaseRepo struct {
 	findByProjectIDFn func(projectID uint64) ([]model.Case, error)
 	findAllFn           func(search string) ([]model.Case, error)
 	findAllPaginatedFn  func(page, perPage int, search string) ([]model.Case, int64, error)
+	findFilteredPaginatedFn func(projectID *uint64, countryFrom string, page, perPage int) ([]model.Case, int64, error)
 	createFn          func(c *model.Case) error
 	updateFn          func(c *model.Case) error
 	deleteFn          func(id uint64) error
@@ -91,6 +92,13 @@ func (m *mockCaseRepo) FindBySlug(slug string) (*model.Case, error) {
 		return m.findBySlugFn(slug)
 	}
 	return nil, nil
+}
+
+func (m *mockCaseRepo) FindFilteredPaginated(projectID *uint64, countryFrom string, page, perPage int) ([]model.Case, int64, error) {
+	if m.findFilteredPaginatedFn != nil {
+		return m.findFilteredPaginatedFn(projectID, countryFrom, page, perPage)
+	}
+	return nil, 0, nil
 }
 
 func TestCase_List(t *testing.T) {

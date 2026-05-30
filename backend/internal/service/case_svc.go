@@ -58,6 +58,20 @@ func (s *CaseService) ListAll(search string) ([]model.Case, error) {
 	return cases, nil
 }
 
+func (s *CaseService) ListFilteredPaginated(projectID *uint64, countryFrom string, page, perPage int) ([]model.Case, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if perPage < 1 {
+		perPage = 10
+	}
+	cases, total, err := s.repo.FindFilteredPaginated(projectID, countryFrom, page, perPage)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to list filtered cases: %w", err)
+	}
+	return cases, total, nil
+}
+
 func (s *CaseService) ListByProject(projectID uint64) ([]model.Case, error) {
 	cases, err := s.repo.FindByProjectID(projectID)
 	if err != nil {

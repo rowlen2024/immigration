@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/logging"
@@ -22,6 +23,30 @@ func (h *Handler) GetCase(c *gin.Context) {
 }
 
 func (h *Handler) ListCases(c *gin.Context) {
+	countryFrom := c.Query("country_from")
+	projectIDStr := c.Query("project_id")
+
+	if countryFrom != "" || projectIDStr != "" {
+		var projectID *uint64
+		if projectIDStr != "" {
+			id, err := strconv.ParseUint(projectIDStr, 10, 64)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, dto.Error(400, "invalid project_id"))
+				return
+			}
+			projectID = &id
+		}
+		page, perPage := parsePagination(c)
+		cases, total, err := h.svc.Case.ListFilteredPaginated(projectID, countryFrom, page, perPage)
+		if err != nil {
+			logging.Logger.Error("failed in ListCases (filtered)", "error", err)
+			c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+			return
+		}
+		c.JSON(http.StatusOK, dto.SuccessPaginated(cases, page, perPage, total))
+		return
+	}
+
 	page, perPage := parsePagination(c)
 	cases, total, err := h.svc.Case.ListPaginated(page, perPage)
 	if err != nil {
