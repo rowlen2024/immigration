@@ -64,14 +64,11 @@
 
     <div class="footer-bottom">
       <div class="footer-container">
-        <p class="copyright">{{ copyrightText }}</p>
-        <!--
+        <p class="copyright">{{ copyrightText }}    &nbsp; &nbsp;&nbsp;&nbsp; <a href="https://beian.miit.gov.cn/">粤ICP备2023029687号</a></p>
         <div class="footer-legal">
-          <span>隐私政策</span>
-          <span>免责声明</span>
-          <span>服务条款</span>
+<!--          <span>免责声明</span>-->
+<!--          <span>服务条款</span>-->
         </div>
-        -->
       </div>
     </div>
   </footer>
