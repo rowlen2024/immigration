@@ -86,7 +86,7 @@ const { data: faqRaw, pending, error: fetchError, refresh } = await useFetch(
       per_page: String(perPage),
     })
     if (activeFilter.value !== 'all') {
-      const filter = projectFilters.value.find(f => f.slug === activeFilter.value)
+      const filter = projectFilters.value.find((f: any) => f.slug === activeFilter.value)
       if (filter) params.set('project_id', String(filter.id))
     }
     return `/api/v1/faqs?${params.toString()}`

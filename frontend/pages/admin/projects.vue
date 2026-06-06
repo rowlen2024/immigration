@@ -663,6 +663,7 @@ interface Project {
   status: number;
   created_at: string;
   updated_at: string;
+  deleted_at?: string;
 }
 
 interface CaseItem {
@@ -724,8 +725,8 @@ const onSearch = () => {
   }, 300);
 };
 
-const defaultForm = (): Partial<Project> => ({
-  id: undefined,
+const defaultForm = () => ({
+  id: undefined as string | undefined,
   slug: '',
   name: '',
   country: '',
@@ -748,9 +749,9 @@ const defaultForm = (): Partial<Project> => ({
   cover_image: '',
   sort_order: 0,
   status: 0,
-});
+} as Project);
 
-const form = reactive<Partial<Project>>(defaultForm());
+const form = reactive(defaultForm());
 
 const rules: FormRules = {
   slug: [{ required: true, message: '请输入标识', trigger: 'blur' }],

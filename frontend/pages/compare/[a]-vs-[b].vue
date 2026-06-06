@@ -180,7 +180,7 @@ const comparison = computed(() => {
 });
 
 onMounted(() => {
-  $fetch(`/api/v1/projects/compare?slugs=${slugA.value},${slugB.value}`).then(v => { data.value = v }).catch(() => {})
+  $fetch<any>(`/api/v1/projects/compare?slugs=${slugA.value},${slugB.value}`).then(v => { data.value = v }).catch(() => {})
 })
 </script>
 

@@ -55,7 +55,7 @@
         </h3>
         <ul class="footer-links" :class="{ 'footer-links-open': footerExpanded.has(col.id) }">
           <li v-for="child in col.children" :key="child.id">
-            <NuxtLink :to="child.link" class="footer-link">{{ child.label }}</NuxtLink>
+            <NuxtLink :to="child.link || ''" class="footer-link">{{ child.label }}</NuxtLink>
           </li>
         </ul>
       </div>
@@ -64,7 +64,7 @@
 
     <div class="footer-bottom">
       <div class="footer-container">
-        <p class="copyright">{{ copyrightText }}    &nbsp; &nbsp;&nbsp;&nbsp; <a href="https://beian.miit.gov.cn/" v-if="siteConfig?.icp_number">{{ siteConfig?.icp_number }}</a></p>
+        <p class="copyright">{{ copyrightText }}    &nbsp; &nbsp;&nbsp;&nbsp; <a href="https://beian.miit.gov.cn/" target="_blank" v-if="siteConfig?.icp_number">{{ siteConfig?.icp_number }}</a></p>
         <div class="footer-legal">
 <!--          <span>免责声明</span>-->
 <!--          <span>服务条款</span>-->

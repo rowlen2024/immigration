@@ -207,6 +207,7 @@
 
 <script setup lang="ts">
 import { getIconByName, getIconSvg } from '~/composables/lucideIcons';
+import type { ImageVariantInfo } from '~/utils/image'
 
 function stripHtml(html: string): string {
   if (!html) return '';
@@ -220,9 +221,9 @@ interface ApiRequirement { label: string; is_required: boolean; }
 interface ApiCostItem { name: string; amount: string; note: string; }
 interface ApiTimelinePhase { phase_number: number; title: string; description: string; duration: string; }
 interface ApiFAQ { question: string; answer: string; }
-interface ApiCase { slug: string; name: string; country_from: string; investment_amount: string; processing_period: string; content: string; photo_url: string; photo_variants?: Record<string, { url: string; width: number }>; }
-interface ApiTestimonial { id: number; avatar_url: string; avatar_variants?: Record<string, { url: string; width: number }>; nickname: string; rating: number; content: string; }
-interface ApiNewsPage { id: number; title: string; slug: string; cover_image: string; cover_image_variants?: Record<string, { url: string; width: number }>; created_at: string; }
+interface ApiCase { slug: string; name: string; country_from: string; investment_amount: string; processing_period: string; content: string; photo_url: string; photo_variants?: Record<string, ImageVariantInfo>; }
+interface ApiTestimonial { id: number; avatar_url: string; avatar_variants?: Record<string, ImageVariantInfo>; nickname: string; rating: number; content: string; }
+interface ApiNewsPage { id: number; title: string; slug: string; cover_image: string; cover_image_variants?: Record<string, ImageVariantInfo>; created_at: string; }
 interface ApiCompareConfig { compare_with: string[]; compare_fields: string[]; }
 
 interface ApiAdvantage { icon: string; icon_type: string; title: string; description: string; }
@@ -232,7 +233,7 @@ interface ApiProject {
   tagline: string;
   country: string;
   cover_image: string;
-  cover_image_variants?: Record<string, { url: string; width: number }>;
+  cover_image_variants?: Record<string, ImageVariantInfo>;
   investment_amount: string;
   processing_period: string;
   target_crowd: string;
@@ -262,7 +263,7 @@ const project = computed(() => {
     summary: p?.tagline || '',
     description: p?.overview_text || '',
     cover_image: p?.cover_image || '',
-    cover_image_variants: (p as any)?.cover_image_variants,
+    cover_image_variants: p?.cover_image_variants,
     investment_amount: p?.investment_amount || '',
     processing_period: p?.processing_period || '',
     target_crowd: p?.target_crowd || '',
@@ -384,10 +385,12 @@ const currentRow = computed(() => {
 });
 
 function hasDiff(row: { values: string[]; items?: string[][] }): boolean {
-  if (row.items) {
-    for (let i = 1; i < row.items.length; i++) {
-      if (row.items[i].length !== row.items[0].length) return true;
-      if (row.items[i].some((v, j) => v !== row.items[0][j])) return true;
+  const items = row.items;
+  if (items && items[0]) {
+    const base = items[0];
+    for (let i = 1; i < items.length; i++) {
+      if (!items[i] || base.length !== items[i].length) return true;
+      if (items[i].some((v, j) => v !== base[j])) return true;
     }
     return false;
   }
@@ -468,7 +471,7 @@ function scrollToSection(id: string) {
 let observer: IntersectionObserver | null = null;
 
 onMounted(() => {
-  $fetch(`/api/v1/projects/${slug}`).then(v => { data.value = v }).catch(() => {})
+  $fetch<{ data: ApiProject }>(`/api/v1/projects/${slug}`).then(v => { data.value = v }).catch(() => {})
 
   const headerH = (document.querySelector('.site-header') as HTMLElement)?.offsetHeight || 64;
   observer = new IntersectionObserver(

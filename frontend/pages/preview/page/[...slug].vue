@@ -63,8 +63,8 @@ const load = async () => {
 };
 
 useSeo({
-  title: () => page.value?.title || '预览页面',
-  description: () => '',
+  title: page.value?.title || '预览页面',
+  description: '',
   robots: 'noindex, nofollow',
 });
 

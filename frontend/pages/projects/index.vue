@@ -45,13 +45,15 @@
 <script setup lang="ts">
 useSeo({ title: '移民项目', description: '探索最适合您的投资移民项目' })
 
+import type { ImageVariantInfo } from '~/utils/image'
+
 interface ApiProject {
   slug: string
   name: string
   tagline: string
   overview_text: string
   cover_image: string
-  cover_image_variants?: Record<string, { url: string; width: number }>
+  cover_image_variants?: Record<string, ImageVariantInfo>
   investment_amount: string
   processing_period: string
   target_crowd: string
@@ -62,7 +64,7 @@ interface ProjectItem {
   title: string
   description: string
   image: string
-  imageVariants?: Record<string, { url: string; width: number }>
+  imageVariants?: Record<string, ImageVariantInfo>
   features: string[]
   link: string
 }

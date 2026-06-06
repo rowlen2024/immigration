@@ -12,8 +12,8 @@ const isPublicPage = computed(() => !route.path.startsWith('/admin'));
 
 // Head scripts (GA, Baidu, custom_head_code) & favicon
 useHead(() => {
-  const links: Record<string, unknown>[] = [];
-  const scripts: Record<string, unknown>[] = [];
+  const links: any[] = [];
+  const scripts: any[] = [];
 
   if (siteConfig.value?.site_favicon) {
     links.push({ rel: 'icon', type: 'image/x-icon', href: siteConfig.value.site_favicon });

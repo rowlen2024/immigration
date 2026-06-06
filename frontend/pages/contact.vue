@@ -318,7 +318,7 @@ const resetForm = () => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
-  $fetch('/api/v1/projects').then(v => { projectListRaw.value = v }).catch(() => {})
+  $fetch<any>('/api/v1/projects').then(v => { projectListRaw.value = v }).catch(() => {})
 })
 
 onUnmounted(() => {

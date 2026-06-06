@@ -55,13 +55,15 @@
 </template>
 
 <script setup lang="ts">
+import type { ImageVariantInfo } from '~/utils/image'
+
 export interface TestimonialItem {
   id: number;
   nickname: string;
   content: string;
   rating: number;
   avatar_url?: string;
-  avatar_variants?: Record<string, { url: string; width: number }>;
+  avatar_variants?: Record<string, ImageVariantInfo>;
 }
 
 const props = defineProps<{

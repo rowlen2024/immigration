@@ -90,7 +90,7 @@ export default defineNuxtConfig({
         {
           rel: 'preconnect',
           href: 'https://fonts.gstatic.com',
-          crossorigin: true,
+          crossorigin: 'anonymous',
         },
         {
           rel: 'stylesheet',

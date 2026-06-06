@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/logging"
 
 	"mygo-immigration/backend/internal/model"
@@ -27,7 +26,7 @@ type HeroSlide struct {
 	Image       string `json:"image"`
 	Link        string `json:"link"`
 
-	ImageVariants map[string]dto.ImageVariantInfo `json:"image_variants,omitempty"`
+	ImageVariants map[string]model.ImageVariantInfo `json:"image_variants,omitempty"`
 }
 
 // TrustItem represents a single trust stat in the hero section.
@@ -50,7 +49,7 @@ type AdvantageSectionConfig struct {
 	SectionSubtitle string `json:"section_subtitle"`
 	Image           string `json:"image"`
 
-	ImageVariants map[string]dto.ImageVariantInfo `json:"image_variants,omitempty"`
+	ImageVariants map[string]model.ImageVariantInfo `json:"image_variants,omitempty"`
 }
 
 // FeaturedProject holds lightweight project data embedded in home-config.
@@ -61,7 +60,7 @@ type FeaturedProject struct {
 	CoverImage   string `json:"cover_image"`
 	OverviewText string `json:"overview_text"`
 
-	CoverImageVariants map[string]dto.ImageVariantInfo `json:"cover_image_variants,omitempty"`
+	CoverImageVariants map[string]model.ImageVariantInfo `json:"cover_image_variants,omitempty"`
 }
 
 // FeaturedCase holds lightweight case data embedded in home-config.
@@ -74,7 +73,7 @@ type FeaturedCase struct {
 	Content     string `json:"content"`
 	ProjectName string `json:"project_name"`
 
-	PhotoVariants map[string]dto.ImageVariantInfo `json:"photo_variants,omitempty"`
+	PhotoVariants map[string]model.ImageVariantInfo `json:"photo_variants,omitempty"`
 }
 
 // FeaturedTestimonial holds lightweight testimonial data embedded in home-config.
@@ -85,7 +84,7 @@ type FeaturedTestimonial struct {
 	Rating    uint8  `json:"rating"`
 	Content   string `json:"content"`
 
-	AvatarVariants map[string]dto.ImageVariantInfo `json:"avatar_variants,omitempty"`
+	AvatarVariants map[string]model.ImageVariantInfo `json:"avatar_variants,omitempty"`
 }
 
 // ProjectShowcaseConfig holds the project showcase section settings.
@@ -133,9 +132,7 @@ func (s *HomeConfigService) Get() (*HomeConfigData, error) {
 		}
 	}
 	for i := range data.HeroSlides {
-		if data.HeroSlides[i].Image != "" {
-			data.HeroSlides[i].ImageVariants = ResolveImageVariants(data.HeroSlides[i].Image, UploadContextHomepageSlide)
-		}
+		data.HeroSlides[i].ImageVariants = ResolveImageVariants(data.HeroSlides[i].Image, UploadContextHomepageSlide)
 	}
 	if advCfg, err := s.repo.FindByKey("advantage_items"); err == nil {
 		if err := json.Unmarshal(advCfg.ConfigValue, &data.AdvantageItems); err != nil {
@@ -145,9 +142,7 @@ func (s *HomeConfigService) Get() (*HomeConfigData, error) {
 	if advSecCfg, err := s.repo.FindByKey("advantage_section"); err == nil {
 		var asc AdvantageSectionConfig
 		if err := json.Unmarshal(advSecCfg.ConfigValue, &asc); err == nil {
-			if asc.Image != "" {
-				asc.ImageVariants = ResolveImageVariants(asc.Image, UploadContextGeneral)
-			}
+			asc.ImageVariants = ResolveImageVariants(asc.Image, UploadContextGeneral)
 			data.AdvantageSection = &asc
 		}
 	}
@@ -221,16 +216,12 @@ func (s *HomeConfigService) loadFeaturedProjects(psc *ProjectShowcaseConfig) {
 	}
 	items := make([]FeaturedProject, 0, len(projects))
 	for _, p := range projects {
-		var imageVariants map[string]dto.ImageVariantInfo
-		if p.CoverImage != "" {
-			imageVariants = ResolveImageVariants(p.CoverImage, UploadContextProject)
-		}
 		items = append(items, FeaturedProject{
 			Name:               p.Name,
 			Slug:               p.Slug,
 			Tagline:            p.Tagline,
 			CoverImage:         p.CoverImage,
-			CoverImageVariants: imageVariants,
+			CoverImageVariants: ResolveImageVariants(p.CoverImage, UploadContextProject),
 			OverviewText:       p.OverviewText,
 		})
 	}
@@ -274,17 +265,13 @@ func (s *HomeConfigService) loadFeaturedCases(csc *CaseShowcaseConfig) {
 		if c.Project != nil {
 			projectName = c.Project.Name
 		}
-		var photoVariants map[string]dto.ImageVariantInfo
-		if c.PhotoURL != "" {
-			photoVariants = ResolveImageVariants(c.PhotoURL, UploadContextCase)
-		}
 		items[i] = FeaturedCase{
 			ID:            c.ID,
 			Slug:          c.Slug,
 			Name:          c.Name,
 			CountryFrom:   c.CountryFrom,
 			PhotoURL:      c.PhotoURL,
-			PhotoVariants: photoVariants,
+			PhotoVariants: ResolveImageVariants(c.PhotoURL, UploadContextCase),
 			Content:       c.Content,
 			ProjectName:   projectName,
 		}
@@ -331,15 +318,11 @@ func (s *HomeConfigService) loadFeaturedTestimonials(tsc *TestimonialShowcaseCon
 	}
 	items := make([]FeaturedTestimonial, len(testimonials))
 	for i, t := range testimonials {
-		var avatarVariants map[string]dto.ImageVariantInfo
-		if t.AvatarURL != "" {
-			avatarVariants = ResolveImageVariants(t.AvatarURL, UploadContextTestimonial)
-		}
 		items[i] = FeaturedTestimonial{
 			ID:              t.ID,
 			Nickname:        t.Nickname,
 			AvatarURL:       t.AvatarURL,
-			AvatarVariants:  avatarVariants,
+			AvatarVariants:  ResolveImageVariants(t.AvatarURL, UploadContextTestimonial),
 			Rating:          t.Rating,
 			Content:         t.Content,
 		}

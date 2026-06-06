@@ -154,7 +154,7 @@ const onSelect = () => {
 // Trigger initial fetch if both selected from query params
 const route = useRoute();
 onMounted(() => {
-  $fetch('/api/v1/projects?per_page=100').then(v => { projectListRaw.value = v }).catch(() => {})
+  $fetch<any>('/api/v1/projects?per_page=100').then(v => { projectListRaw.value = v }).catch(() => {})
   const queryA = route.query.a as string | undefined;
   const queryB = route.query.b as string | undefined;
   if (queryA && queryB && queryA !== queryB) {

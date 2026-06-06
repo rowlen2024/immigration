@@ -3,8 +3,6 @@ package model
 import (
 	"time"
 
-	"mygo-immigration/backend/internal/dto"
-
 	"gorm.io/gorm"
 )
 
@@ -34,7 +32,7 @@ type Project struct {
 	SortOrder          int            `gorm:"not null;default:0" json:"sort_order"`
 
 	// 变体信息（不存数据库，仅 API 输出）
-	CoverImageVariants map[string]dto.ImageVariantInfo `gorm:"-" json:"cover_image_variants,omitempty"`
+	CoverImageVariants map[string]ImageVariantInfo `gorm:"-" json:"cover_image_variants,omitempty"`
 	Status             int8           `gorm:"not null;default:1" json:"status"`
 	DeletedAt          gorm.DeletedAt `gorm:"index" json:"-"`
 	CreatedAt          time.Time      `json:"created_at"`

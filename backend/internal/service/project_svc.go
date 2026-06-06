@@ -41,9 +41,7 @@ func (s *ProjectService) GetBySlug(slug string) (*model.Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get project by slug: %w", err)
 	}
-	if project.CoverImage != "" {
-		project.CoverImageVariants = ResolveImageVariants(project.CoverImage, UploadContextProject)
-	}
+	project.CoverImageVariants = ResolveImageVariants(project.CoverImage, UploadContextProject)
 	return project, nil
 }
 
@@ -59,9 +57,7 @@ func (s *ProjectService) List(req dto.ProjectListRequest) ([]model.Project, int6
 		return nil, 0, fmt.Errorf("failed to list projects: %w", err)
 	}
 	for i := range projects {
-		if projects[i].CoverImage != "" {
-			projects[i].CoverImageVariants = ResolveImageVariants(projects[i].CoverImage, UploadContextProject)
-		}
+		projects[i].CoverImageVariants = ResolveImageVariants(projects[i].CoverImage, UploadContextProject)
 	}
 	return projects, total, nil
 }

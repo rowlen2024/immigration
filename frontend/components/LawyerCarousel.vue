@@ -41,13 +41,15 @@
 </template>
 
 <script setup lang="ts">
+import type { ImageVariantInfo } from '~/utils/image'
+
 export interface LawyerItem {
   id: number;
   name: string;
   title: string;
   tags: string[];
   photo_url?: string;
-  photo_variants?: Record<string, { url: string; width: number }>;
+  photo_variants?: Record<string, ImageVariantInfo>;
 }
 
 const props = defineProps<{

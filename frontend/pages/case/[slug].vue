@@ -130,7 +130,7 @@ async function fetchRelatedCases() {
 }
 
 onMounted(() => {
-  $fetch(`/api/v1/cases/${slug}`).then(v => { data.value = v }).catch(() => {})
+  $fetch<{ data: any }>(`/api/v1/cases/${slug}`).then(v => { data.value = v }).catch(() => {})
   if (item.value) fetchRelatedCases()
 })
 

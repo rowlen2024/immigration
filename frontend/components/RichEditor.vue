@@ -59,6 +59,7 @@
 
 <script setup lang="ts">
 import { EditorContent, useEditor } from '@tiptap/vue-3';
+import { type Editor } from '@tiptap/core';
 import { StarterKit } from '@tiptap/starter-kit';
 import { Table } from '@tiptap/extension-table';
 import { TableRow } from '@tiptap/extension-table-row';
@@ -111,7 +112,7 @@ watch(
   () => props.modelValue,
   (val) => {
     if (editor.value && editor.value.getHTML() !== val) {
-      editor.value.commands.setContent(val, false);
+      editor.value.commands.setContent(val, { emitUpdate: false });
     }
   }
 );
@@ -178,7 +179,7 @@ const insertTable = (rows: number, cols: number) => {
 
 const toggleSource = () => {
   if (sourceMode.value) {
-    editor.value?.commands.setContent(sourceHtml.value, false);
+    editor.value?.commands.setContent(sourceHtml.value, { emitUpdate: false });
     sourceMode.value = false;
   } else {
     sourceHtml.value = editor.value?.getHTML() ?? '';
@@ -186,7 +187,7 @@ const toggleSource = () => {
   }
 };
 
-type EditorInstance = ReturnType<typeof useEditor>;
+type EditorInstance = Editor | undefined;
 
 type ToolbarButton = {
   title: string;

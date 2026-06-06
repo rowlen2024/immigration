@@ -5,8 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"mygo-immigration/backend/internal/dto"
-
 	"gorm.io/gorm"
 )
 
@@ -22,7 +20,7 @@ type Lawyer struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 
 	// 变体信息（不存数据库，仅 API 输出）
-	PhotoVariants map[string]dto.ImageVariantInfo `gorm:"-" json:"photo_variants,omitempty"`
+	PhotoVariants map[string]ImageVariantInfo `gorm:"-" json:"photo_variants,omitempty"`
 }
 
 func (Lawyer) TableName() string { return "lawyers" }

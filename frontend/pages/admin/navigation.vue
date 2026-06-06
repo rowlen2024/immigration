@@ -174,7 +174,7 @@
           <el-tree-select
             v-model="form.parent_id"
             :data="parentOptions"
-            :props="{ children: 'children', label: 'label', value: 'id' }"
+            :props="{ children: 'children', label: 'label' }"
             placeholder="选择父级（留空为顶级）"
             clearable
             check-strictly
@@ -290,8 +290,8 @@ const linkTypeLabel = (t: string) => {
   return map[t] || t;
 };
 
-const linkTypeTag = (t: string) => {
-  const map: Record<string, string> = { project: 'success', page: 'warning', custom: 'info' };
+const linkTypeTag = (t: string): 'info' | 'primary' | 'success' | 'warning' | 'danger' => {
+  const map: Record<string, 'success' | 'warning' | 'info'> = { project: 'success', page: 'warning', custom: 'info' };
   return map[t] || 'info';
 };
 

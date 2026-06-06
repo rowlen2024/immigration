@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   const path = event.path
   if (!path.startsWith('/api/')) return
 
-  const backend = process.env.BACKEND_URL || 'http://localhost:8080'
+  const backend = (import.meta as any).env?.BACKEND_URL || 'http://localhost:8080'
   const start = Date.now()
 
   try {
@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
       baseURL: backend,
       method: event.method,
       query: getQuery(event),
-      headers: getHeaders(event),
+      headers: getHeaders(event) as any,
       body: event.method !== 'GET' && event.method !== 'HEAD'
         ? await readBody(event).catch(() => undefined)
         : undefined,

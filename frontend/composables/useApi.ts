@@ -16,7 +16,7 @@ export const useApi = () => {
         options.headers = {
           ...options.headers,
           Authorization: `Bearer ${currentToken}`,
-        };
+        } as any;
       }
     },
     onResponse({ response }) {

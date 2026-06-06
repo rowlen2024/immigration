@@ -26,7 +26,7 @@ export const useAuth = () => {
 
   const login = async (credentials: { username: string; password: string }) => {
     const api = useApi();
-    const response = await api<{ code: number; data: { access_token: string } }>(
+    const response = await api<{ access_token: string }>(
       '/auth/login',
       {
         method: 'POST',
@@ -58,7 +58,7 @@ export const useAuth = () => {
   const refresh = async () => {
     try {
       const api = useApi();
-      const response = await api<{ code: number; data: { access_token: string } }>(
+      const response = await api<{ access_token: string }>(
         '/auth/refresh',
         { method: 'POST' }
       );

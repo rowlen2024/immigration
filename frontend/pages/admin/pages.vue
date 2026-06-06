@@ -175,20 +175,21 @@ definePageMeta({ layout: 'admin', middleware: 'auth' });
 
 const notify = useNotify();
 
-interface Page {
-  id: string;
-  title: string;
-  slug: string;
-  content: string;
-  cover_image: string;
-  meta_title: string;
-  meta_description: string;
-  template: string;
-  page_type: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
+  interface Page {
+    id: string;
+    title: string;
+    slug: string;
+    content: string;
+    cover_image: string;
+    meta_title: string;
+    meta_description: string;
+    template: string;
+    page_type: string;
+    status: string;
+    created_at: string;
+    updated_at: string;
+    deleted_at?: string;
+  }
 
 const list = ref<Page[]>([]);
 const loading = ref(false);
@@ -214,8 +215,8 @@ const onSearch = () => {
   }, 300);
 };
 
-const defaultForm = (): Partial<Page> => ({
-  id: undefined,
+const defaultForm = () => ({
+  id: undefined as string | undefined,
   title: '',
   slug: '',
   content: '',
@@ -225,9 +226,9 @@ const defaultForm = (): Partial<Page> => ({
   template: 'default',
   page_type: 'default',
   status: 'draft',
-});
+} as Page);
 
-const form = reactive<Partial<Page>>(defaultForm());
+const form = reactive(defaultForm());
 
 const rules: FormRules = {
   title: [{ required: true, message: '请输入标题', trigger: 'blur' }],

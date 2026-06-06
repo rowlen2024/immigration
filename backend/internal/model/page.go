@@ -3,8 +3,6 @@ package model
 import (
 	"time"
 
-	"mygo-immigration/backend/internal/dto"
-
 	"gorm.io/gorm"
 )
 
@@ -17,7 +15,7 @@ type Page struct {
 	CoverImage      string         `gorm:"size:512;not null;default:''" json:"cover_image"`
 
 	// 变体信息（不存数据库，仅 API 输出）
-	CoverImageVariants map[string]dto.ImageVariantInfo `gorm:"-" json:"cover_image_variants,omitempty"`
+	CoverImageVariants map[string]ImageVariantInfo `gorm:"-" json:"cover_image_variants,omitempty"`
 	MetaTitle          string         `gorm:"size:128;not null;default:''" json:"meta_title"`
 	MetaDescription string         `gorm:"size:512;not null;default:''" json:"meta_description"`
 	Template        string         `gorm:"size:64;not null;default:'default'" json:"template"`

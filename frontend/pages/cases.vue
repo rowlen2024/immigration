@@ -44,13 +44,15 @@
 <script setup lang="ts">
 useSeo({ title: '成功案例' })
 
+import type { ImageVariantInfo } from '~/utils/image'
+
 interface ApiCaseItem {
   id: number
   slug: string
   name: string
   country_from: string
   photo_url: string
-  photo_variants?: Record<string, { url: string; width: number }>
+  photo_variants?: Record<string, ImageVariantInfo>
   content: string
   project?: { name: string }
 }
@@ -63,7 +65,7 @@ interface CaseItem {
   project: string
   summary: string
   image: string
-  imageVariants?: Record<string, { url: string; width: number }>
+  imageVariants?: Record<string, ImageVariantInfo>
 }
 
 function stripHtml(html: string): string {

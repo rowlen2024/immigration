@@ -235,6 +235,7 @@ useSeo({ title: '首页' });
 const { siteConfig } = useSiteConfig();
 
 import { getIconByName, getIconSvg } from '~/composables/lucideIcons'
+import type { ImageVariantInfo } from '~/utils/image'
 
 
 // Hero carousel
@@ -258,11 +259,21 @@ const onHeroTouchEnd = (e: TouchEvent) => {
   }
 };
 
+interface ApiHeroSlide {
+  title?: string;
+  desc?: string;
+  image?: string;
+  image_variants?: Record<string, ImageVariantInfo>;
+  link?: string;
+  gradient?: string;
+  project_slug?: string;
+}
+
 interface HeroSlide {
   title: string;
   subtitle: string;
   image: string;
-  image_variants?: Record<string, { url: string; width: number }>;
+  image_variants?: Record<string, ImageVariantInfo>;
   link?: string;
   gradient?: string;
   project_slug?: string;
@@ -327,11 +338,11 @@ if (homeConfig.value) {
   const config = homeConfig.value as unknown as Record<string, unknown>;
   const data = config.data as Record<string, unknown> | undefined;
   if (data && Array.isArray(data.hero_slides)) {
-    heroSlides.value = (data.hero_slides as Array<Record<string, string>>).map((s) => ({
+    heroSlides.value = (data.hero_slides as ApiHeroSlide[]).map((s) => ({
       title: s.title || '',
       subtitle: s.desc || '',
       image: s.image || '',
-      image_variants: (s as any).image_variants,
+      image_variants: s.image_variants,
       link: s.link || (s.project_slug ? `/projects/${s.project_slug}` : ''),
       gradient: s.gradient || '',
       project_slug: s.project_slug || '',
@@ -383,7 +394,7 @@ interface FeaturedCaseData {
   name: string;
   country_from: string;
   photo_url: string;
-  photo_variants?: Record<string, { url: string; width: number }>;
+  photo_variants?: Record<string, ImageVariantInfo>;
   content: string;
   project_name: string;
 }
@@ -433,7 +444,7 @@ const advantageSection = computed(() => {
     const config = homeConfig.value as unknown as Record<string, unknown>;
     const data = config.data as Record<string, unknown> | undefined;
     if (data && data.advantage_section) {
-      return data.advantage_section as { section_title?: string; section_subtitle?: string; image?: string };
+      return data.advantage_section as { section_title?: string; section_subtitle?: string; image?: string; image_variants?: Record<string, ImageVariantInfo> };
     }
   }
   return null;
@@ -508,7 +519,7 @@ interface ProjectCard {
   image: string;
   features: string[];
   link: string;
-  imageVariants?: Record<string, { url: string; width: number }>;
+  imageVariants?: Record<string, ImageVariantInfo>;
 }
 
 interface FeaturedProjectData {
@@ -516,7 +527,7 @@ interface FeaturedProjectData {
   slug: string;
   tagline: string;
   cover_image: string;
-  cover_image_variants?: Record<string, { url: string; width: number }>;
+  cover_image_variants?: Record<string, ImageVariantInfo>;
   overview_text: string;
 }
 
@@ -621,8 +632,8 @@ let revealObserver: IntersectionObserver | null = null;
 onMounted(() => {
   // Nuxt 3 refresh() 在 hydration 后不会触发真实网络请求，
   // 必须用 $fetch 直接拉取最新数据
-  $fetch('/api/v1/home-config').then(v => { homeConfig.value = v }).catch(() => {})
-  $fetch('/api/v1/lawyers').then(v => { lawyersData.value = v }).catch(() => {})
+  $fetch<any>('/api/v1/home-config').then(v => { homeConfig.value = v }).catch(() => {})
+  $fetch<any>('/api/v1/lawyers').then(v => { lawyersData.value = v }).catch(() => {})
 
   autoTimer = setInterval(() => {
     currentSlide.value = (currentSlide.value + 1) % heroSlides.value.length;

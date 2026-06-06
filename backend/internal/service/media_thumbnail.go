@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"mygo-immigration/backend/internal/dto"
+	"mygo-immigration/backend/internal/model"
 
 	"github.com/disintegration/imaging"
 	_ "golang.org/x/image/webp"
@@ -53,51 +53,51 @@ func GetContextSpecs(context string) ([]VariantSpec, bool) {
 // contextSpecs maps upload contexts to their variant specifications.
 // "general" is the default for backward compatibility.
 var contextSpecs = map[string][]VariantSpec{
-	"lawyer": {
+	UploadContextLawyer: {
 		{Name: "thumb", MaxW: 150, MaxH: 200, Mode: "fill"},
 		{Name: "sm", MaxW: 300, MaxH: 400, Mode: "fill"},
 		{Name: "md", MaxW: 600, MaxH: 800, Mode: "fill"},
 	},
-	"project": {
+	UploadContextProject: {
 		{Name: "thumb", MaxW: 200, MaxH: 113, Mode: "fill"},
 		{Name: "sm", MaxW: 400, MaxH: 225, Mode: "fill"},
 		{Name: "md", MaxW: 800, MaxH: 450, Mode: "fill"},
 		{Name: "lg", MaxW: 1920, MaxH: 800, Mode: "fill"},
 	},
-	"case": {
+	UploadContextCase: {
 		{Name: "thumb", MaxW: 200, MaxH: 113, Mode: "fill"},
 		{Name: "sm", MaxW: 400, MaxH: 225, Mode: "fill"},
 		{Name: "md", MaxW: 800, MaxH: 450, Mode: "fill"},
 	},
-	"testimonial": {
+	UploadContextTestimonial: {
 		{Name: "thumb", MaxW: 200, MaxH: 200, Mode: "fill"},
 		{Name: "sm", MaxW: 400, MaxH: 400, Mode: "fill"},
 		{Name: "md", MaxW: 800, MaxH: 800, Mode: "fill"},
 	},
-	"homepage-slide": {
+	UploadContextHomepageSlide: {
 		{Name: "thumb", MaxW: 240, MaxH: 100, Mode: "fill"},
 		{Name: "sm", MaxW: 480, MaxH: 200, Mode: "fill"},
 		{Name: "md", MaxW: 960, MaxH: 400, Mode: "fill"},
 		{Name: "lg", MaxW: 1920, MaxH: 800, Mode: "fill"},
 	},
-	"page-cover": {
+	UploadContextPageCover: {
 		{Name: "thumb", MaxW: 200, MaxH: 133, Mode: "fill"},
 		{Name: "sm", MaxW: 360, MaxH: 240, Mode: "fill"},
 		{Name: "md", MaxW: 720, MaxH: 480, Mode: "fill"},
 	},
-	"qr-code": {
+	UploadContextQRCode: {
 		{Name: "thumb", MaxW: 150, MaxH: 150, Mode: "fit"},
 		{Name: "sm", MaxW: 300, MaxH: 300, Mode: "fit"},
 		{Name: "md", MaxW: 500, MaxH: 500, Mode: "fit"},
 	},
-	"og-image": {
+	UploadContextOGImage: {
 		{Name: "sm", MaxW: 600, MaxH: 315, Mode: "fill"},
 		{Name: "md", MaxW: 1200, MaxH: 630, Mode: "fill"},
 	},
-	"favicon": {
+	UploadContextFavicon: {
 		{Name: "thumb", MaxW: 32, MaxH: 32, Mode: "fill"},
 	},
-	"general": {
+	UploadContextGeneral: {
 		{Name: "thumb", MaxW: 200, MaxH: 200, Mode: "thumb"},
 		{Name: "sm", MaxW: 400, MaxH: 300, Mode: "fit"},
 		{Name: "md", MaxW: 800, MaxH: 450, Mode: "fit"},
@@ -117,14 +117,14 @@ const compressThreshold = 5 * 1024 * 1024 // 5MB
 
 // GenerateVariants creates JPEG variants using the "general" context (backward compatible).
 func (s *MediaService) GenerateVariants(savePath, baseName string) (map[string]string, error) {
-	return GenerateVariantsForContext(savePath, baseName, "general")
+	return GenerateVariantsForContext(savePath, baseName, UploadContextGeneral)
 }
 
 // GenerateVariantsForContext creates JPEG variants according to the context's spec.
 func GenerateVariantsForContext(savePath, baseName, context string) (map[string]string, error) {
 	specs, ok := contextSpecs[context]
 	if !ok {
-		specs = contextSpecs["general"]
+		specs = contextSpecs[UploadContextGeneral]
 	}
 
 	img, err := imaging.Open(savePath, imaging.AutoOrientation(true))
@@ -209,7 +209,10 @@ func (s *MediaService) CompressIfLarge(savePath string, fileSize int64) (string,
 
 // ResolveImageVariants 根据原图 URL 和 context 计算出所有可用变体的 URL 和宽度。
 // 纯计算函数，不访问数据库，不检查文件是否存在。
-func ResolveImageVariants(baseURL string, context string) map[string]dto.ImageVariantInfo {
+func ResolveImageVariants(baseURL string, context string) map[string]model.ImageVariantInfo {
+	if baseURL == "" {
+		return nil
+	}
 	specs, ok := contextSpecs[context]
 	if !ok {
 		specs = contextSpecs[UploadContextGeneral]
@@ -219,9 +222,9 @@ func ResolveImageVariants(baseURL string, context string) map[string]dto.ImageVa
 	dir := path.Dir(baseURL)
 	name := path.Base(base)
 
-	result := make(map[string]dto.ImageVariantInfo, len(specs))
+	result := make(map[string]model.ImageVariantInfo, len(specs))
 	for _, spec := range specs {
-		result[spec.Name] = dto.ImageVariantInfo{
+		result[spec.Name] = model.ImageVariantInfo{
 			URL:   path.Join(dir, name+"_"+spec.Name+".jpg"),
 			Width: spec.MaxW,
 		}

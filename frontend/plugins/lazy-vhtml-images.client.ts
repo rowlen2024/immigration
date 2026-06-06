@@ -63,8 +63,7 @@ export default defineNuxtPlugin(() => {
   })
 
   // Cleanup (belt-and-suspenders)
-  const app = useNuxtApp()
-  app.hook('app:beforeUnmount', () => {
+  onUnmounted(() => {
     observer.disconnect()
   })
 })

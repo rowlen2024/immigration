@@ -21,7 +21,7 @@ export const useNotify = () => {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       zIndex: BOX_ZINDEX,
-    })
+    } as any)
 
   return { success, error, confirm }
 }
