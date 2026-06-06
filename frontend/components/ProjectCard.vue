@@ -3,7 +3,7 @@
     <div class="card-image" :class="`card-image--${variantIdx}`">
       <div class="card-image-glow"></div>
       <div class="card-image-overlay"></div>
-      <ResponsiveImage v-if="image" :src="image" :alt="title" variant="sm" loading="lazy" />
+      <ResponsiveImage v-if="image" :src="image" :alt="title" variant="sm" :variants="imageVariants" loading="lazy" />
     </div>
     <div class="card-body">
       <h3 class="card-title">{{ title }}</h3>
@@ -24,6 +24,7 @@
 
 <script setup lang="ts">
 import { getIconSvg } from '~/composables/lucideIcons'
+import type { ImageVariantInfo } from '~/utils/image'
 
 const props = defineProps<{
   slug: string
@@ -33,6 +34,7 @@ const props = defineProps<{
   features: string[]
   link: string
   imageVariant?: number
+  imageVariants?: Record<string, ImageVariantInfo> | null
 }>()
 
 const variantIdx = computed(() => (props.imageVariant ?? 0) % 3)

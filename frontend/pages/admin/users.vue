@@ -32,6 +32,12 @@
             </span>
           </template>
         </el-table-column>
+        <el-table-column prop="created_at" label="创建时间" width="160">
+          <template #default="{ row }">{{ formatDateTime(row.created_at) }}</template>
+        </el-table-column>
+        <el-table-column prop="updated_at" label="修改时间" width="160">
+          <template #default="{ row }">{{ formatDateTime(row.updated_at) }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <div class="table-actions" v-if="isAdmin">
@@ -100,6 +106,7 @@ import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { Refresh } from '@element-plus/icons-vue';
 import { getIconSvg } from '~/composables/lucideIcons';
 import { useNotify } from '~/composables/useNotify';
+import { formatDateTime } from '~/utils/date';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
 

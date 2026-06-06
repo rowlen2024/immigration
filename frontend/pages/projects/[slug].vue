@@ -10,6 +10,10 @@
         :src="project.cover_image"
         alt=""
         variant="lg"
+        :variants="project.cover_image_variants"
+        loading="eager"
+        fetchpriority="high"
+        sizes="100vw"
         class="detail-hero-bg"
       />
       <div class="detail-hero-overlay"></div>
@@ -87,6 +91,7 @@
               :country="c.country"
               :summary="c.content ? stripHtml(c.content) : ''"
               :image="c.photo"
+              :image-variants="c.photo_variants"
               :meta-text="`${c.country} | ${c.amount} | ${c.period}`"
             />
           </div>
@@ -101,7 +106,7 @@
           <h2 class="detail-section-title">最新资讯</h2>
           <div class="news-list">
             <NuxtLink v-for="n in project.news" :key="n.id" :to="`/pages/${n.slug}`" class="news-item">
-              <ResponsiveImage v-if="n.cover" :src="n.cover" :alt="n.title" variant="thumb" class="news-cover" />
+              <ResponsiveImage v-if="n.cover" :src="n.cover" :alt="n.title" variant="thumb" :variants="n.cover_variants" class="news-cover" loading="lazy" />
               <div class="news-body">
                 <h4 class="news-title">{{ n.title }}</h4>
                 <span v-if="n.date" class="news-date">{{ new Date(n.date).toLocaleDateString('zh-CN') }}</span>
@@ -215,9 +220,9 @@ interface ApiRequirement { label: string; is_required: boolean; }
 interface ApiCostItem { name: string; amount: string; note: string; }
 interface ApiTimelinePhase { phase_number: number; title: string; description: string; duration: string; }
 interface ApiFAQ { question: string; answer: string; }
-interface ApiCase { slug: string; name: string; country_from: string; investment_amount: string; processing_period: string; content: string; photo_url: string; }
-interface ApiTestimonial { id: number; avatar_url: string; nickname: string; rating: number; content: string; }
-interface ApiNewsPage { id: number; title: string; slug: string; cover_image: string; created_at: string; }
+interface ApiCase { slug: string; name: string; country_from: string; investment_amount: string; processing_period: string; content: string; photo_url: string; photo_variants?: Record<string, { url: string; width: number }>; }
+interface ApiTestimonial { id: number; avatar_url: string; avatar_variants?: Record<string, { url: string; width: number }>; nickname: string; rating: number; content: string; }
+interface ApiNewsPage { id: number; title: string; slug: string; cover_image: string; cover_image_variants?: Record<string, { url: string; width: number }>; created_at: string; }
 interface ApiCompareConfig { compare_with: string[]; compare_fields: string[]; }
 
 interface ApiAdvantage { icon: string; icon_type: string; title: string; description: string; }
@@ -227,6 +232,7 @@ interface ApiProject {
   tagline: string;
   country: string;
   cover_image: string;
+  cover_image_variants?: Record<string, { url: string; width: number }>;
   investment_amount: string;
   processing_period: string;
   target_crowd: string;
@@ -256,6 +262,7 @@ const project = computed(() => {
     summary: p?.tagline || '',
     description: p?.overview_text || '',
     cover_image: p?.cover_image || '',
+    cover_image_variants: (p as any)?.cover_image_variants,
     investment_amount: p?.investment_amount || '',
     processing_period: p?.processing_period || '',
     target_crowd: p?.target_crowd || '',
@@ -276,10 +283,12 @@ const project = computed(() => {
       period: c.processing_period,
       content: c.content,
       photo: c.photo_url,
+      photo_variants: c.photo_variants,
     })),
     testimonials: (p?.testimonials || []).map((t) => ({
       id: t.id,
       avatar_url: t.avatar_url,
+      avatar_variants: t.avatar_variants,
       nickname: t.nickname,
       rating: t.rating,
       content: t.content,
@@ -289,6 +298,7 @@ const project = computed(() => {
       title: n.title,
       slug: n.slug,
       cover: n.cover_image,
+      cover_variants: n.cover_image_variants,
       date: n.created_at,
     })),
     compare_config: p?.compare_config || null,

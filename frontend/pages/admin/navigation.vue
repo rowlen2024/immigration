@@ -34,6 +34,7 @@
         <span class="nav-th nav-th-link">链接</span>
         <span class="nav-th nav-th-type">类型</span>
         <span class="nav-th nav-th-pos">显示位置</span>
+        <span class="nav-th nav-th-time">创建时间</span>
         <span v-if="!isViewer" class="nav-th nav-th-actions">操作</span>
       </div>
       <el-tree
@@ -80,6 +81,7 @@
                 effect="plain"
               >底部</el-tag>
             </span>
+            <span class="row-time">{{ formatDateTime(data.created_at) }}</span>
             <span v-if="!isViewer" class="tree-node-actions">
               <el-tooltip content="添加子级" placement="top">
                 <button class="action-btn" @click.stop="openCreate(data.id)" v-html="getIconSvg('plus', 16)"></button>
@@ -211,6 +213,7 @@ import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { Refresh, Search } from '@element-plus/icons-vue';
 import { getIconSvg } from '~/composables/lucideIcons';
 import { useNotify } from '~/composables/useNotify';
+import { formatDateTime } from '~/utils/date';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
 
@@ -514,6 +517,7 @@ onMounted(() => {
 .nav-th-link { flex: 1; }
 .nav-th-type { width: 70px; text-align: center; }
 .nav-th-pos { width: 90px; text-align: center; }
+.nav-th-time { width: 130px; text-align: center; }
 .nav-th-actions { width: 110px; text-align: right; }
 
 .nav-tree {
@@ -570,6 +574,13 @@ onMounted(() => {
   width: 90px;
   display: flex;
   justify-content: center;
+}
+
+.row-time {
+  width: 130px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-align: center;
 }
 
 .tree-node-actions {

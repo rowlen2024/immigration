@@ -12,7 +12,7 @@
           :style="{ flex: `0 0 ${cardWidth}px`, width: `${cardWidth}px` }"
         >
           <div class="lawyer-photo">
-            <ResponsiveImage v-if="lawyer.photo_url" :src="lawyer.photo_url" :alt="lawyer.name" variant="sm" loading="lazy" />
+            <ResponsiveImage v-if="lawyer.photo_url" :src="lawyer.photo_url" :alt="lawyer.name" variant="sm" :variants="lawyer.photo_variants" loading="lazy" />
             <div v-else class="lawyer-photo-placeholder"></div>
           </div>
           <div class="lawyer-body">
@@ -47,6 +47,7 @@ export interface LawyerItem {
   title: string;
   tags: string[];
   photo_url?: string;
+  photo_variants?: Record<string, { url: string; width: number }>;
 }
 
 const props = defineProps<{

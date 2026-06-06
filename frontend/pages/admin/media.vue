@@ -60,6 +60,9 @@
             {{ formatSize(row.size_bytes) }}
           </template>
         </el-table-column>
+        <el-table-column prop="created_at" label="创建时间" width="160">
+          <template #default="{ row }">{{ formatDateTime(row.created_at) }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="90">
           <template #default="{ row }">
             <el-popconfirm
@@ -130,6 +133,7 @@ import { ElMessage } from 'element-plus';
 import { Refresh, Search } from '@element-plus/icons-vue';
 import { useNotify } from '~/composables/useNotify';
 import { getIconSvg } from '~/composables/lucideIcons';
+import { formatDateTime } from '~/utils/date';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
 

@@ -23,6 +23,33 @@ cd backend && go test ./internal/service -run TestAuth     # 单个测试
 cd frontend && npx nuxi typecheck                         # 前端类型检查
 ```
 
+## CodeGraph 代码知识图谱（常驻）
+
+项目已安装 [CodeGraph](https://github.com/colbymchenry/codegraph)（v0.9.9），提供语义级代码搜索和调用链追踪。MCP Server 已在 `.mcp.json` 配置，Claude Code 会话启动时自动加载。
+
+**索引状态**: 187 文件 · 2,709 节点 · 6,056 边（Go + Vue + TypeScript）
+
+**MCP 工具速查**（前缀 `mcp__codegraph__`）：
+
+| 工具 | 用途 | 典型场景 |
+|------|------|---------|
+| `codegraph_search` | 按名称搜索符号 | 快速定位函数/类型定义 |
+| `codegraph_context` | 一站式获取相关符号+关系+源码 | 理解某个任务的代码上下文 |
+| `codegraph_trace` | 追踪两个符号之间的调用路径 | 理解数据流/调用链 |
+| `codegraph_impact` | 分析修改某符号的影响范围 | 重构前评估影响面 |
+| `codegraph_callers` | 查找调用者 | 修改前确认所有引用点 |
+| `codegraph_callees` | 查找被调用者 | 理解函数内部依赖 |
+| `codegraph_explore` | 获取一组相关符号及关系图 | 快速了解一个模块 |
+| `codegraph_node` | 获取单个符号详情（可选源码） | 查看具体实现 |
+| `codegraph_files` | 获取索引中的文件结构 | 替代文件系统扫描 |
+| `codegraph_status` | 检查索引健康和统计 | 确认索引是否最新 |
+
+**使用原则**：
+- 重构公共接口时优先用 `codegraph_impact` + `codegraph_callers`，结果比 grep 更准确（可追踪 interface→impl 动态派发）
+- 理解陌生调用链时优先用 `codegraph_trace`，比手动 grep 效率高 10 倍+
+- 代码改动后索引不会自动更新，必要时跑 `codegraph sync` 增量同步
+- 如果工具返回结果不理想，回退到 Grep/Glob
+
 ## 架构
 
 ```

@@ -29,6 +29,9 @@ func (s *PageService) GetBySlug(slug string) (*model.Page, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get page by slug: %w", err)
 	}
+	if page.CoverImage != "" {
+		page.CoverImageVariants = ResolveImageVariants(page.CoverImage, UploadContextPageCover)
+	}
 	return page, nil
 }
 
@@ -55,6 +58,11 @@ func (s *PageService) List(req dto.PageListRequest) ([]model.Page, int64, error)
 	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list pages: %w", err)
+	}
+	for i := range pages {
+		if pages[i].CoverImage != "" {
+			pages[i].CoverImageVariants = ResolveImageVariants(pages[i].CoverImage, UploadContextPageCover)
+		}
 	}
 	return pages, total, nil
 }

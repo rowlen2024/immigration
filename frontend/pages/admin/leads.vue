@@ -38,8 +38,11 @@
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="170">
-          <template #default="{ row }">{{ row.created_at || '—' }}</template>
+        <el-table-column prop="created_at" label="创建时间" width="160">
+          <template #default="{ row }">{{ formatDateTime(row.created_at) }}</template>
+        </el-table-column>
+        <el-table-column prop="updated_at" label="修改时间" width="160">
+          <template #default="{ row }">{{ formatDateTime(row.updated_at) }}</template>
         </el-table-column>
         <el-table-column label="操作" width="90" fixed="right">
           <template #default="{ row }">
@@ -78,7 +81,7 @@
         </div>
         <div class="admin-detail-row">
           <span class="admin-detail-label">创建时间</span>
-          <span class="admin-detail-value">{{ currentLead.created_at }}</span>
+          <span class="admin-detail-value">{{ formatDateTime(currentLead.created_at) }}</span>
         </div>
 
         <el-divider />
@@ -110,6 +113,7 @@ import { ElMessage } from 'element-plus';
 import { Refresh } from '@element-plus/icons-vue';
 import { useNotify } from '~/composables/useNotify';
 import { getIconSvg } from '~/composables/lucideIcons';
+import { formatDateTime } from '~/utils/date';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
 

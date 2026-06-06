@@ -12,6 +12,8 @@
 /frontend/.output
 /frontend/dist
 /docs/superpowers
+/.codegraph
+/.mcp.json
 
 # Production environment
 .env.production

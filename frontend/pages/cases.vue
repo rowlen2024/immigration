@@ -20,6 +20,7 @@
           :project="item.project || undefined"
           :summary="item.summary"
           :image="item.image"
+          :image-variants="item.imageVariants"
           :show-result="true"
           result-text="成功获批"
         />
@@ -49,6 +50,7 @@ interface ApiCaseItem {
   name: string
   country_from: string
   photo_url: string
+  photo_variants?: Record<string, { url: string; width: number }>
   content: string
   project?: { name: string }
 }
@@ -61,6 +63,7 @@ interface CaseItem {
   project: string
   summary: string
   image: string
+  imageVariants?: Record<string, { url: string; width: number }>
 }
 
 function stripHtml(html: string): string {
@@ -86,6 +89,7 @@ function mapCase(api: ApiCaseItem): CaseItem {
     project: api.project?.name ?? '',
     summary: stripHtml(api.content),
     image: api.photo_url,
+    imageVariants: api.photo_variants,
   }
 }
 

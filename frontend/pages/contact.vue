@@ -136,19 +136,19 @@
               <li v-if="siteConfig?.contact_wechat" class="info-item">
                 <span class="info-label">微信</span>
                 <span class="info-value">
-                  <img :src="siteConfig.contact_wechat" alt="微信" class="contact-qr-img" />
+                  <img :src="siteConfig.contact_wechat" alt="微信" class="contact-qr-img" loading="lazy" />
                 </span>
               </li>
               <li v-if="siteConfig?.contact_wechat_mp" class="info-item">
                 <span class="info-label">微信公众号</span>
                 <span class="info-value">
-                  <img :src="siteConfig.contact_wechat_mp" alt="微信公众号" class="contact-qr-img" />
+                  <img :src="siteConfig.contact_wechat_mp" alt="微信公众号" class="contact-qr-img" loading="lazy" />
                 </span>
               </li>
               <li v-if="siteConfig?.contact_wechat_video" class="info-item">
                 <span class="info-label">企业视频号</span>
                 <span class="info-value">
-                  <img :src="siteConfig.contact_wechat_video" alt="企业视频号" class="contact-qr-img" />
+                  <img :src="siteConfig.contact_wechat_video" alt="企业视频号" class="contact-qr-img" loading="lazy" />
                 </span>
               </li>
             </ul>

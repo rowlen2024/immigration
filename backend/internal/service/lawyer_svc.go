@@ -26,6 +26,11 @@ func (s *LawyerService) List(req dto.LawyerListRequest) ([]model.Lawyer, int64, 
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list lawyers: %w", err)
 	}
+	for i := range items {
+		if items[i].PhotoURL != "" {
+			items[i].PhotoVariants = ResolveImageVariants(items[i].PhotoURL, UploadContextLawyer)
+		}
+	}
 	return items, total, nil
 }
 

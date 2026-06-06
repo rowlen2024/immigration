@@ -26,6 +26,11 @@ func (s *TestimonialService) List(req dto.TestimonialListRequest) ([]model.Testi
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list testimonials: %w", err)
 	}
+	for i := range items {
+		if items[i].AvatarURL != "" {
+			items[i].AvatarVariants = ResolveImageVariants(items[i].AvatarURL, UploadContextTestimonial)
+		}
+	}
 	return items, total, nil
 }
 

@@ -52,6 +52,12 @@
             </span>
           </template>
         </el-table-column>
+        <el-table-column prop="created_at" label="创建时间" width="160">
+          <template #default="{ row }">{{ formatDateTime(row.created_at) }}</template>
+        </el-table-column>
+        <el-table-column prop="updated_at" label="修改时间" width="160">
+          <template #default="{ row }">{{ formatDateTime(row.updated_at) }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="230" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
@@ -161,6 +167,7 @@ import { Search, Refresh } from '@element-plus/icons-vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { useNotify } from '~/composables/useNotify';
 import { getIconSvg } from '~/composables/lucideIcons';
+import { formatDateTime } from '~/utils/date';
 import { pinyin } from 'pinyin-pro';
 import ImageInput from '~/components/admin/ImageInput.vue';
 
@@ -179,6 +186,8 @@ interface Page {
   template: string;
   page_type: string;
   status: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const list = ref<Page[]>([]);

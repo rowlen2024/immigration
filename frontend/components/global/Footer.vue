@@ -32,15 +32,15 @@
 
         <div v-if="hasQRCodes" class="footer-qr-row">
           <div v-if="siteConfig?.contact_wechat" class="footer-qr-item">
-            <img :src="siteConfig.contact_wechat" alt="微信咨询" class="footer-qr-img" />
+            <img :src="siteConfig.contact_wechat" alt="微信咨询" class="footer-qr-img" loading="lazy" />
             <span class="footer-qr-label">微信咨询</span>
           </div>
           <div v-if="siteConfig?.contact_wechat_mp" class="footer-qr-item">
-            <img :src="siteConfig.contact_wechat_mp" alt="公众号" class="footer-qr-img" />
+            <img :src="siteConfig.contact_wechat_mp" alt="公众号" class="footer-qr-img" loading="lazy" />
             <span class="footer-qr-label">公众号</span>
           </div>
           <div v-if="siteConfig?.contact_wechat_video" class="footer-qr-item">
-            <img :src="siteConfig.contact_wechat_video" alt="视频号" class="footer-qr-img" />
+            <img :src="siteConfig.contact_wechat_video" alt="视频号" class="footer-qr-img" loading="lazy" />
             <span class="footer-qr-label">视频号</span>
           </div>
         </div>
@@ -64,7 +64,7 @@
 
     <div class="footer-bottom">
       <div class="footer-container">
-        <p class="copyright">{{ copyrightText }}    &nbsp; &nbsp;&nbsp;&nbsp; <a href="https://beian.miit.gov.cn/">粤ICP备2023029687号</a></p>
+        <p class="copyright">{{ copyrightText }}    &nbsp; &nbsp;&nbsp;&nbsp; <a href="https://beian.miit.gov.cn/" v-if="siteConfig?.icp_number">{{ siteConfig?.icp_number }}</a></p>
         <div class="footer-legal">
 <!--          <span>免责声明</span>-->
 <!--          <span>服务条款</span>-->

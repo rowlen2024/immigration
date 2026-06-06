@@ -10,10 +10,14 @@
           :class="{ active: currentSlide === index }"
         >
           <ResponsiveImage
-            v-if="slide.image"
+            v-if="slide.image && (index === currentSlide || visitedSlides.has(index))"
             :src="slide.image"
             alt=""
             variant="lg"
+            :variants="slide.image_variants"
+            :loading="index === 0 ? 'eager' : 'lazy'"
+            :fetchpriority="index === 0 ? 'high' : 'auto'"
+            sizes="100vw"
             class="hero-slide-bg"
           />
           <div class="hero-slide-gradient"></div>
@@ -100,6 +104,7 @@
             :features="project.features"
             :link="project.link"
             :image-variant="idx"
+            :image-variants="project.imageVariants"
           />
         </div>
         <div v-if="!pending.projects && projectCards.length > 0" class="section-more">
@@ -138,6 +143,7 @@
             :project="item.project_name"
             :summary="stripHtml(item.content)"
             :image="item.photo_url"
+            :image-variants="item.photo_variants"
           />
         </div>
 
@@ -200,7 +206,7 @@
         </div>
 
         <div v-if="advantageSection?.image" class="advantage-banner">
-          <ResponsiveImage :src="advantageSection.image" alt="优势区域图" variant="lg" loading="lazy" />
+          <ResponsiveImage :src="advantageSection.image" alt="优势区域图" variant="lg" :variants="advantageSection.image_variants" loading="lazy" />
         </div>
       </div>
     </section>
@@ -233,6 +239,7 @@ import { getIconByName, getIconSvg } from '~/composables/lucideIcons'
 
 // Hero carousel
 const currentSlide = ref(0);
+const visitedSlides = reactive(new Set<number>([0])); // 首屏已在 DOM，标记已访问
 let autoTimer: ReturnType<typeof setInterval> | null = null;
 let heroTouchStartX = 0;
 
@@ -255,6 +262,7 @@ interface HeroSlide {
   title: string;
   subtitle: string;
   image: string;
+  image_variants?: Record<string, { url: string; width: number }>;
   link?: string;
   gradient?: string;
   project_slug?: string;
@@ -323,6 +331,7 @@ if (homeConfig.value) {
       title: s.title || '',
       subtitle: s.desc || '',
       image: s.image || '',
+      image_variants: (s as any).image_variants,
       link: s.link || (s.project_slug ? `/projects/${s.project_slug}` : ''),
       gradient: s.gradient || '',
       project_slug: s.project_slug || '',
@@ -374,6 +383,7 @@ interface FeaturedCaseData {
   name: string;
   country_from: string;
   photo_url: string;
+  photo_variants?: Record<string, { url: string; width: number }>;
   content: string;
   project_name: string;
 }
@@ -498,6 +508,7 @@ interface ProjectCard {
   image: string;
   features: string[];
   link: string;
+  imageVariants?: Record<string, { url: string; width: number }>;
 }
 
 interface FeaturedProjectData {
@@ -505,6 +516,7 @@ interface FeaturedProjectData {
   slug: string;
   tagline: string;
   cover_image: string;
+  cover_image_variants?: Record<string, { url: string; width: number }>;
   overview_text: string;
 }
 
@@ -520,6 +532,7 @@ const projectCards = computed<ProjectCard[]>(() => {
       title: p.name,
       description: p.tagline || p.overview_text || '',
       image: p.cover_image || '',
+      imageVariants: p.cover_image_variants,
       features: [],
       link: `/projects/${p.slug}`,
     }));
@@ -591,6 +604,10 @@ const goToSlide = (index: number) => {
   currentSlide.value = index;
   resetAutoPlay();
 };
+
+watch(currentSlide, (val) => {
+  visitedSlides.add(val);
+});
 
 const resetAutoPlay = () => {
   if (autoTimer) clearInterval(autoTimer);

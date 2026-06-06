@@ -34,7 +34,7 @@
       <span class="cs-label">微信</span>
       <div class="cs-tooltip">
         <div class="tt-name">微信扫码咨询</div>
-        <img :src="siteConfig.contact_wechat" alt="微信二维码" class="tt-qr-img" />
+        <img :src="siteConfig.contact_wechat" alt="微信二维码" class="tt-qr-img" loading="lazy" />
       </div>
     </div>
 
@@ -47,7 +47,7 @@
       <div class="cs-tooltip">
         <div class="tt-name">关注微信公众号</div>
         <div class="tt-desc">获取最新移民资讯</div>
-        <img :src="siteConfig.contact_wechat_mp" alt="微信公众号二维码" class="tt-qr-img" />
+        <img :src="siteConfig.contact_wechat_mp" alt="微信公众号二维码" class="tt-qr-img" loading="lazy" />
       </div>
     </div>
 
@@ -60,7 +60,7 @@
       <div class="cs-tooltip">
         <div class="tt-name">关注企业视频号</div>
         <div class="tt-desc">了解更多移民动态</div>
-        <img :src="siteConfig.contact_wechat_video" alt="企业视频号二维码" class="tt-qr-img" />
+        <img :src="siteConfig.contact_wechat_video" alt="企业视频号二维码" class="tt-qr-img" loading="lazy" />
       </div>
     </div>
 
@@ -73,7 +73,7 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
             <div class="mobile-qr-title">{{ mobileQrTitle }}</div>
-            <img v-if="mobileQrSrc" :src="mobileQrSrc" :alt="mobileQrTitle" class="mobile-qr-img" />
+            <img v-if="mobileQrSrc" :src="mobileQrSrc" :alt="mobileQrTitle" class="mobile-qr-img" loading="lazy" />
             <div v-if="mobileQrDesc" class="mobile-qr-desc">{{ mobileQrDesc }}</div>
           </div>
         </div>

@@ -3,6 +3,8 @@ package model
 import (
 	"time"
 
+	"mygo-immigration/backend/internal/dto"
+
 	"gorm.io/gorm"
 )
 
@@ -17,6 +19,9 @@ type Testimonial struct {
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
+
+	// 变体信息（不存数据库，仅 API 输出）
+	AvatarVariants map[string]dto.ImageVariantInfo `gorm:"-" json:"avatar_variants,omitempty"`
 }
 
 func (Testimonial) TableName() string { return "testimonials" }

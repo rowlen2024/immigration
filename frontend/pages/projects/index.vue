@@ -23,6 +23,7 @@
           :features="project.features"
           :link="project.link"
           :image-variant="idx"
+          :image-variants="project.imageVariants"
         />
       </div>
 
@@ -50,6 +51,7 @@ interface ApiProject {
   tagline: string
   overview_text: string
   cover_image: string
+  cover_image_variants?: Record<string, { url: string; width: number }>
   investment_amount: string
   processing_period: string
   target_crowd: string
@@ -60,6 +62,7 @@ interface ProjectItem {
   title: string
   description: string
   image: string
+  imageVariants?: Record<string, { url: string; width: number }>
   features: string[]
   link: string
 }
@@ -83,6 +86,7 @@ function mapProject(api: ApiProject): ProjectItem {
     title: api.name,
     description: api.tagline || api.overview_text || '',
     image: api.cover_image || '',
+    imageVariants: api.cover_image_variants,
     features,
     link: `/projects/${api.slug}`,
   }

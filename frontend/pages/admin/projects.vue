@@ -53,6 +53,12 @@
             </span>
           </template>
         </el-table-column>
+        <el-table-column prop="created_at" label="创建时间" width="160">
+          <template #default="{ row }">{{ formatDateTime(row.created_at) }}</template>
+        </el-table-column>
+        <el-table-column prop="updated_at" label="修改时间" width="160">
+          <template #default="{ row }">{{ formatDateTime(row.updated_at) }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
@@ -625,6 +631,7 @@ import IconPicker from '~/components/admin/IconPicker.vue';
 import RichEditor from '~/components/RichEditor.vue';
 import { getIconByName, getIconSvg } from '~/composables/lucideIcons';
 import { pinyin } from 'pinyin-pro';
+import { formatDateTime } from '~/utils/date';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
 
@@ -654,6 +661,8 @@ interface Project {
   cover_image: string;
   sort_order: number;
   status: number;
+  created_at: string;
+  updated_at: string;
 }
 
 interface CaseItem {

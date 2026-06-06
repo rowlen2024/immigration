@@ -25,7 +25,7 @@
           <!-- 用户信息 -->
           <div class="tm-footer">
             <div class="tm-avatar">
-              <ResponsiveImage v-if="item.avatar_url" :src="item.avatar_url" :alt="item.nickname" variant="thumb" />
+              <ResponsiveImage v-if="item.avatar_url" :src="item.avatar_url" :alt="item.nickname" variant="thumb" :variants="item.avatar_variants" loading="lazy" />
               <svg v-else width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 22c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
             </div>
             <div class="tm-meta">
@@ -61,6 +61,7 @@ export interface TestimonialItem {
   content: string;
   rating: number;
   avatar_url?: string;
+  avatar_variants?: Record<string, { url: string; width: number }>;
 }
 
 const props = defineProps<{

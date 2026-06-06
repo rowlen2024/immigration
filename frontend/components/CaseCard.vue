@@ -7,6 +7,7 @@
         :src="image"
         :alt="name"
         variant="sm"
+        :variants="imageVariants"
         loading="lazy"
       />
     </div>
@@ -29,6 +30,8 @@
 </template>
 
 <script setup lang="ts">
+import type { ImageVariantInfo } from '~/utils/image'
+
 defineProps<{
   slug: string;
   name: string;
@@ -39,6 +42,7 @@ defineProps<{
   showResult?: boolean;
   resultText?: string;
   metaText?: string;
+  imageVariants?: Record<string, ImageVariantInfo> | null;
 }>();
 </script>
 

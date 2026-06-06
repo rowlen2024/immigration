@@ -29,6 +29,9 @@ func (s *CaseService) GetBySlug(slug string) (*model.Case, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get case by slug: %w", err)
 	}
+	if c.PhotoURL != "" {
+		c.PhotoVariants = ResolveImageVariants(c.PhotoURL, UploadContextCase)
+	}
 	return c, nil
 }
 
@@ -42,6 +45,11 @@ func (s *CaseService) List(req dto.CaseListRequest) ([]model.Case, int64, error)
 	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list cases: %w", err)
+	}
+	for i := range cases {
+		if cases[i].PhotoURL != "" {
+			cases[i].PhotoVariants = ResolveImageVariants(cases[i].PhotoURL, UploadContextCase)
+		}
 	}
 	return cases, total, nil
 }

@@ -5,11 +5,28 @@ import (
 	"image"
 	"image/jpeg"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
+	"mygo-immigration/backend/internal/dto"
+
 	"github.com/disintegration/imaging"
 	_ "golang.org/x/image/webp"
+)
+
+// 上传 context 常量 — 业务模块与变体规格的绑定关系
+const (
+	UploadContextLawyer        = "lawyer"
+	UploadContextProject       = "project"
+	UploadContextCase          = "case"
+	UploadContextTestimonial   = "testimonial"
+	UploadContextHomepageSlide = "homepage-slide"
+	UploadContextPageCover     = "page-cover"
+	UploadContextQRCode        = "qr-code"
+	UploadContextOGImage       = "og-image"
+	UploadContextFavicon       = "favicon"
+	UploadContextGeneral       = "general"
 )
 
 // VariantSpec describes a single image variant to generate.
@@ -188,4 +205,26 @@ func (s *MediaService) CompressIfLarge(savePath string, fileSize int64) (string,
 	}
 
 	return newPath, info.Size(), nil
+}
+
+// ResolveImageVariants 根据原图 URL 和 context 计算出所有可用变体的 URL 和宽度。
+// 纯计算函数，不访问数据库，不检查文件是否存在。
+func ResolveImageVariants(baseURL string, context string) map[string]dto.ImageVariantInfo {
+	specs, ok := contextSpecs[context]
+	if !ok {
+		specs = contextSpecs[UploadContextGeneral]
+	}
+
+	base := strings.TrimSuffix(baseURL, path.Ext(baseURL))
+	dir := path.Dir(baseURL)
+	name := path.Base(base)
+
+	result := make(map[string]dto.ImageVariantInfo, len(specs))
+	for _, spec := range specs {
+		result[spec.Name] = dto.ImageVariantInfo{
+			URL:   path.Join(dir, name+"_"+spec.Name+".jpg"),
+			Width: spec.MaxW,
+		}
+	}
+	return result
 }

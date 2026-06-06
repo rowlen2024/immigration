@@ -42,6 +42,12 @@
         <el-table-column prop="sort_order" label="排序" width="70">
           <template #default="{ row }">{{ row.sort_order ?? '—' }}</template>
         </el-table-column>
+        <el-table-column prop="created_at" label="创建时间" width="160">
+          <template #default="{ row }">{{ formatDateTime(row.created_at) }}</template>
+        </el-table-column>
+        <el-table-column prop="updated_at" label="修改时间" width="160">
+          <template #default="{ row }">{{ formatDateTime(row.updated_at) }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
@@ -111,6 +117,7 @@ import { Search, Refresh } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { getIconSvg } from '~/composables/lucideIcons';
 import { useNotify } from '~/composables/useNotify';
+import { formatDateTime } from '~/utils/date';
 import ImageInput from '~/components/admin/ImageInput.vue';
 
 interface Lawyer {
