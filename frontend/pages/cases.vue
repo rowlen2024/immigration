@@ -68,10 +68,7 @@ interface CaseItem {
   imageVariants?: Record<string, ImageVariantInfo>
 }
 
-function stripHtml(html: string): string {
-  if (!html) return ''
-  return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').slice(0, 80)
-}
+import { stripHtml } from '~/utils/html'
 
 const PER_PAGE = 12
 const page = ref(1)

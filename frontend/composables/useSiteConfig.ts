@@ -28,7 +28,7 @@ interface SiteConfig {
   footer_tagline: string;
 }
 
-export const useSiteConfig = () => {
+export const useMygoSiteConfig = () => {
   const { data } = useFetch('/api/v1/site-config', {
     key: 'site-config',
     transform: (response: any) => response?.data ?? response,

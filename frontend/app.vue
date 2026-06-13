@@ -5,142 +5,60 @@
 </template>
 
 <script setup lang="ts">
-const { siteConfig, refreshSiteConfig } = useSiteConfig();
-const route = useRoute();
+import { buildOrganizationJsonLd, buildWebSiteJsonLd, toJsonLdConfig, toJsonLdScripts } from '~/utils/jsonld'
 
-const isPublicPage = computed(() => !route.path.startsWith('/admin'));
+const { siteConfig, refreshSiteConfig } = useMygoSiteConfig()
+const route = useRoute()
 
-// Head scripts (GA, Baidu, custom_head_code) & favicon
+const isPublicPage = computed(() => !route.path.startsWith('/admin'))
+
 useHead(() => {
-  const links: any[] = [];
-  const scripts: any[] = [];
+  const sc = siteConfig.value
+  const links: Record<string, unknown>[] = []
+  const scripts: Record<string, unknown>[] = []
 
-  if (siteConfig.value?.site_favicon) {
-    links.push({ rel: 'icon', type: 'image/x-icon', href: siteConfig.value.site_favicon });
+  // ── Favicon ──
+  if (sc?.site_favicon) {
+    links.push({ rel: 'icon', type: 'image/x-icon', href: sc.site_favicon })
   }
 
-  if (siteConfig.value?.ga_tracking_id) {
+  // ── Google Analytics ──
+  if (sc?.ga_tracking_id) {
+    scripts.push(
+      { async: true, src: `https://www.googletagmanager.com/gtag/js?id=${sc.ga_tracking_id}` },
+      { innerHTML: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${sc.ga_tracking_id}');` },
+    )
+  }
+
+  // ── 百度统计 ──
+  if (sc?.baidu_tongji_id) {
     scripts.push({
-      async: true,
-      src: `https://www.googletagmanager.com/gtag/js?id=${siteConfig.value.ga_tracking_id}`,
-    });
-    scripts.push({
-      innerHTML: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${siteConfig.value.ga_tracking_id}');`,
-    });
+      innerHTML: `var _hmt=_hmt||[];(function(){var hm=document.createElement("script");hm.src="https://hm.baidu.com/hm.js?${sc.baidu_tongji_id}";var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(hm,s);})();`,
+    })
   }
 
-  if (siteConfig.value?.baidu_tongji_id) {
-    scripts.push({
-      innerHTML: `var _hmt=_hmt||[];(function(){var hm=document.createElement("script");hm.src="https://hm.baidu.com/hm.js?${siteConfig.value.baidu_tongji_id}";var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(hm,s);})();`,
-    });
+  // ── 自定义 head 代码 ──
+  if (sc?.custom_head_code) {
+    scripts.push({ innerHTML: sc.custom_head_code })
   }
 
-  if (siteConfig.value?.custom_head_code) {
-    scripts.push({
-      innerHTML: siteConfig.value.custom_head_code,
-    });
+  // ── 自定义 body 尾代码 ──
+  if (sc?.custom_body_code) {
+    scripts.push({ innerHTML: sc.custom_body_code, tagPosition: 'bodyClose' })
   }
 
-  return { link: links, script: scripts };
-});
-
-// Body-close scripts (custom_body_code)
-useHead(() => {
-  if (!siteConfig.value?.custom_body_code) return {};
-
-  return {
-    script: [
-      {
-        innerHTML: siteConfig.value.custom_body_code,
-        tagPosition: 'bodyClose',
-      },
-    ],
-  };
-});
-
-// Organization schema (public pages only)
-useHead(() => {
-  if (!isPublicPage.value) return {};
-  const org = siteConfig.value;
-  if (!org?.organization_name) return {};
-
-  const jsonLd: Record<string, unknown> = {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    name: org.organization_name,
-    url: org.organization_url || '',
-  };
-
-  if (org.organization_description) {
-    jsonLd.description = org.organization_description;
-  }
-  if (org.organization_logo) {
-    jsonLd.logo = org.organization_logo;
-  }
-  if (org.same_as && org.same_as.length > 0) {
-    jsonLd.sameAs = org.same_as.filter((s: string) => s.trim() !== '');
-  }
-  if (org.contact_phone || org.contact_email) {
-    jsonLd.contactPoint = {
-      '@type': 'ContactPoint',
-      telephone: org.contact_phone || '',
-      email: org.contact_email || '',
-      contactType: 'customer service',
-    };
-  }
-  if (org.contact_address) {
-    jsonLd.address = {
-      '@type': 'PostalAddress',
-      streetAddress: org.contact_address,
-    };
+  // ── JSON-LD: Organization + WebSite（仅公开页） ──
+  if (isPublicPage.value) {
+    const config = toJsonLdConfig(sc)
+    scripts.push(...toJsonLdScripts(
+      buildOrganizationJsonLd(config),
+      buildWebSiteJsonLd(config),
+    ))
   }
 
-  return {
-    script: [
-      {
-        type: 'application/ld+json',
-        innerHTML: JSON.stringify(jsonLd),
-      },
-    ],
-  };
-});
+  return { link: links, script: scripts }
+})
 
-// WebSite schema with SearchAction (public pages only)
-useHead(() => {
-  if (!isPublicPage.value) return {};
-  const config = siteConfig.value;
-  if (!config?.site_name) return {};
-
-  const siteUrl = config.canonical_base || config.organization_url || '';
-  const webSite: Record<string, unknown> = {
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    name: config.site_name,
-    url: siteUrl,
-  };
-
-  if (siteUrl) {
-    webSite.potentialAction = {
-      '@type': 'SearchAction',
-      target: {
-        '@type': 'EntryPoint',
-        urlTemplate: `${siteUrl}/search?q={search_term_string}`,
-      },
-      'query-input': 'required name=search_term_string',
-    };
-  }
-
-  return {
-    script: [
-      {
-        type: 'application/ld+json',
-        innerHTML: JSON.stringify(webSite),
-      },
-    ],
-  };
-});
-
-// 客户端强制刷新站点配置
 onMounted(() => {
   refreshSiteConfig()
 })

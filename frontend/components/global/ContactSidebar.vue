@@ -105,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-const { siteConfig } = useSiteConfig();
+const { siteConfig } = useMygoSiteConfig();
 
 const showScrollTop = ref(false);
 const copied = ref<string | null>(null);

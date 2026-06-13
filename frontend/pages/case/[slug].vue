@@ -95,17 +95,20 @@ const { data, pending, error, refresh } = await useFetch<{ data: any }>(`/api/v1
 
 const item = computed(() => data.value?.data ?? null);
 
+import { stripHtml } from '~/utils/html'
+import { buildArticleJsonLd, toJsonLdConfig, toJsonLdScripts } from '~/utils/jsonld'
+
 useSeo({
   title: item.value?.name ?? '案例详情',
   description: (() => {
     const c = item.value;
     if (!c) return '';
-    const text = c.content ? c.content.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').slice(0, 160) : '';
+    const text = c.content ? stripHtml(c.content, 160) : '';
     return text || `${c.name} — ${c.country_from}${c.project?.name ? ' · ' + c.project.name : ''}`;
   })(),
 });
 
-const { siteConfig: csConfig } = useSiteConfig();
+const { siteConfig: csConfig } = useMygoSiteConfig();
 
 // Article structured data for rich results
 useHead(() => {
@@ -113,30 +116,17 @@ useHead(() => {
   if (!c?.name) return {};
   const base = csConfig.value?.canonical_base || '';
   const pageUrl = base ? base + route.path : undefined;
-  const articleBody = c.content ? c.content.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').slice(0, 300) : '';
-
-  const article: any = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: c.name,
-    description: articleBody,
-    author: {
-      '@type': 'Organization',
-      name: '北极星移民',
-    },
-    publisher: {
-      '@type': 'Organization',
-      name: '北极星移民',
-    },
-  };
-  if (pageUrl) article.url = pageUrl;
-  if (c.photo_url) article.image = c.photo_url;
-  if (c.created_at) article.datePublished = c.created_at;
 
   return {
-    script: [
-      { type: 'application/ld+json', innerHTML: JSON.stringify(article) },
-    ],
+    script: toJsonLdScripts(
+      buildArticleJsonLd({
+        headline: c.name,
+        description: c.content ? stripHtml(c.content, 300) : `${c.name} — ${c.country_from}${c.project?.name ? ' · ' + c.project.name : ''}`,
+        url: pageUrl,
+        image: c.photo_url,
+        datePublished: c.created_at,
+      }, toJsonLdConfig(csConfig.value)),
+    ),
   };
 });
 

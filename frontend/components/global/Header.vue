@@ -187,7 +187,7 @@
 
 <script setup lang="ts">
 const route = useRoute();
-const { siteConfig } = useSiteConfig();
+const { siteConfig } = useMygoSiteConfig();
 const { navItems, refreshNavigation } = useNavigation();
 
 const mobileMenuOpen = ref(false);

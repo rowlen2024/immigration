@@ -232,35 +232,7 @@
 
 useSeo({ title: '首页' });
 
-const { siteConfig } = useSiteConfig();
-
-// Organization structured data for Google Knowledge Graph / Baidu AI
-useHead(() => {
-  const sc = siteConfig.value;
-  if (!sc) return {};
-  const org: Record<string, unknown> = {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    name: sc.organization_name || '北极星移民',
-    url: sc.organization_url || 'https://www.northstarvisa.com',
-  };
-  if (sc.organization_logo) org.logo = sc.organization_logo;
-  if (sc.organization_description) org.description = sc.organization_description;
-  if (sc.same_as?.length) org.sameAs = sc.same_as;
-  if (sc.contact_phone) {
-    org.contactPoint = {
-      '@type': 'ContactPoint',
-      telephone: sc.contact_phone,
-      contactType: 'customer service',
-      availableLanguage: ['Chinese', 'English'],
-    };
-  }
-  return {
-    script: [
-      { type: 'application/ld+json', innerHTML: JSON.stringify(org) },
-    ],
-  };
-});
+const { siteConfig } = useMygoSiteConfig();
 
 import { getIconByName, getIconSvg } from '~/composables/lucideIcons'
 import type { ImageVariantInfo } from '~/utils/image'
@@ -411,10 +383,7 @@ const caseShowcaseConfig = computed(() => {
 const caseTitle = computed(() => caseShowcaseConfig.value?.section_title || '成功案例');
 const caseSubtitle = computed(() => caseShowcaseConfig.value?.section_subtitle || '');
 
-function stripHtml(html: string): string {
-  if (!html) return '';
-  return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').slice(0, 80);
-}
+import { stripHtml } from '~/utils/html'
 
 interface FeaturedCaseData {
   id: number;

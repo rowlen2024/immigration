@@ -172,41 +172,7 @@
 <script setup lang="ts">
 useSeo({ title: '联系我们', description: '联系北极星移民，获取专业投资移民咨询。电话、微信、邮箱、地址等联系方式一应俱全。' });
 
-const { siteConfig } = useSiteConfig();
-
-// Organization + ContactPoint structured data
-useHead(() => {
-  const sc = siteConfig.value;
-  if (!sc) return {};
-  const org: Record<string, unknown> = {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    name: sc.organization_name || '北极星移民',
-    url: sc.organization_url || 'https://www.northstarvisa.com',
-  };
-  if (sc.organization_logo) org.logo = sc.organization_logo;
-  if (sc.organization_description) org.description = sc.organization_description;
-  if (sc.contact_phone) {
-    org.contactPoint = {
-      '@type': 'ContactPoint',
-      telephone: sc.contact_phone,
-      contactType: 'customer service',
-      availableLanguage: ['Chinese', 'English'],
-    };
-  }
-  if (sc.contact_address) {
-    org.address = {
-      '@type': 'PostalAddress',
-      streetAddress: sc.contact_address,
-      addressCountry: 'CN',
-    };
-  }
-  return {
-    script: [
-      { type: 'application/ld+json', innerHTML: JSON.stringify(org) },
-    ],
-  };
-});
+const { siteConfig } = useMygoSiteConfig();
 
 interface ProjectOption {
   slug: string;

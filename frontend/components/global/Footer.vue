@@ -75,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-const { siteConfig } = useSiteConfig();
+const { siteConfig } = useMygoSiteConfig();
 const { navItems: footerNav, refreshNavigation: refreshFooterNav } = useNavigation('footer');
 
 const footerGridStyle = computed(() => {

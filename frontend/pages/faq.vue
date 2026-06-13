@@ -123,29 +123,14 @@ const changePage = (p: number) => {
   window.scrollTo({ top: 0, behavior: prefersReduced ? 'instant' : 'smooth' });
 };
 
+import { buildFAQPageJsonLd, toJsonLdScripts } from '~/utils/jsonld'
+
 // FAQPage structured data
 useHead(() => {
-  if (items.value.length === 0) return {};
   return {
-    script: [
-      {
-        type: 'application/ld+json',
-        innerHTML: JSON.stringify({
-          '@context': 'https://schema.org',
-          '@type': 'FAQPage',
-          mainEntity: items.value.map((faq) => ({
-            '@type': 'Question',
-            name: faq.question,
-            acceptedAnswer: {
-              '@type': 'Answer',
-              text: faq.answer,
-            },
-          })),
-        }),
-      },
-    ],
-  };
-});
+    script: toJsonLdScripts(buildFAQPageJsonLd(items.value)),
+  }
+})
 
 // 客户端刷新确保数据最新
 onMounted(() => {

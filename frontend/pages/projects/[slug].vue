@@ -208,11 +208,8 @@
 <script setup lang="ts">
 import { getIconByName, getIconSvg } from '~/composables/lucideIcons';
 import type { ImageVariantInfo } from '~/utils/image'
-
-function stripHtml(html: string): string {
-  if (!html) return '';
-  return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').slice(0, 80);
-}
+import { stripHtml } from '~/utils/html'
+import { buildServiceJsonLd, buildFAQPageJsonLd, toJsonLdConfig, toJsonLdScripts } from '~/utils/jsonld'
 
 const route = useRoute();
 const slug = route.params.slug as string;
@@ -408,7 +405,7 @@ useSeo({
 });
 
 // Structured data for search engines (Baidu AI, Google Knowledge Graph)
-const { siteConfig } = useSiteConfig()
+const { siteConfig } = useMygoSiteConfig()
 
 useHead(() => {
   const p = project.value
@@ -417,63 +414,26 @@ useHead(() => {
   const base = siteConfig.value?.canonical_base || ''
   const pageUrl = base ? base + route.path : undefined
 
-  // AggregateRating from testimonials
   const rated = (p.testimonials || []).filter((t: any) => t.rating > 0)
   const avgRating = rated.length > 0
     ? Number((rated.reduce((s: number, t: any) => s + t.rating, 0) / rated.length).toFixed(1))
     : null
 
-  const scripts: any[] = []
-
-  // Service schema (移民服务)
-  const service: any = {
-    '@context': 'https://schema.org',
-    '@type': 'Service',
-    name: p.title,
-    description: stripHtml(p.description || p.summary).slice(0, 300),
-    category: '移民服务',
-    provider: {
-      '@type': 'Organization',
-      name: '北极星移民',
-    },
+  return {
+    script: toJsonLdScripts(
+      buildServiceJsonLd({
+        name: p.title,
+        description: p.description || p.summary || '',
+        category: '移民服务',
+        url: pageUrl,
+        image: p.cover_image,
+        investmentAmount: p.investment_amount,
+        avgRating,
+        reviewCount: rated.length,
+      }, toJsonLdConfig(siteConfig.value)),
+      buildFAQPageJsonLd(p.faqs || []),
+    ),
   }
-  if (p.cover_image) service.image = p.cover_image
-  if (pageUrl) service.url = pageUrl
-  if (p.investment_amount) {
-    service.offers = {
-      '@type': 'Offer',
-      description: `投资金额: ${p.investment_amount}`,
-      availability: 'https://schema.org/InStock',
-    }
-  }
-  if (avgRating) {
-    service.aggregateRating = {
-      '@type': 'AggregateRating',
-      ratingValue: avgRating,
-      reviewCount: rated.length,
-      bestRating: '5',
-      worstRating: '1',
-    }
-  }
-  scripts.push({ type: 'application/ld+json', innerHTML: JSON.stringify(service) })
-
-  // FAQPage schema (project-level FAQs)
-  if (p.faqs?.length > 0) {
-    scripts.push({
-      type: 'application/ld+json',
-      innerHTML: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: p.faqs.map((f: any) => ({
-          '@type': 'Question',
-          name: f.question,
-          acceptedAnswer: { '@type': 'Answer', text: stripHtml(f.answer) },
-        })),
-      }),
-    })
-  }
-
-  return { script: scripts }
 })
 
 const heroFallbackStyle = computed(() => {
