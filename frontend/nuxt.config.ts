@@ -2,7 +2,17 @@
 export default defineNuxtConfig({
   css: ['~/assets/css/variables.css', '~/assets/css/global.css', '~/assets/css/admin.css'],
 
-  modules: ['@pinia/nuxt', '@element-plus/nuxt'],
+  modules: ['@pinia/nuxt', '@element-plus/nuxt', '@nuxtjs/sitemap'],
+
+  site: {
+    url: 'https://www.northstarvisa.com',
+    name: '北极星移民',
+  },
+
+  sitemap: {
+    autoLastmod: true,
+    exclude: ['/admin/**', '/preview/**'],
+  },
 
   experimental: {
     appManifest: false,

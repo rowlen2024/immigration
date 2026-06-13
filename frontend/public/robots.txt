@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Sitemap: https://www.northstarvisa.com/sitemap.xml
+
+User-agent: GPTBot
+Allow: /

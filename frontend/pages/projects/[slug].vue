@@ -425,25 +425,29 @@ useHead(() => {
 
   const scripts: any[] = []
 
-  // Product schema
-  const product: any = {
+  // Service schema (移民服务)
+  const service: any = {
     '@context': 'https://schema.org',
-    '@type': 'Product',
+    '@type': 'Service',
     name: p.title,
     description: stripHtml(p.description || p.summary).slice(0, 300),
     category: '移民服务',
+    provider: {
+      '@type': 'Organization',
+      name: '北极星移民',
+    },
   }
-  if (p.cover_image) product.image = p.cover_image
-  if (pageUrl) product.url = pageUrl
+  if (p.cover_image) service.image = p.cover_image
+  if (pageUrl) service.url = pageUrl
   if (p.investment_amount) {
-    product.offers = {
+    service.offers = {
       '@type': 'Offer',
       description: `投资金额: ${p.investment_amount}`,
       availability: 'https://schema.org/InStock',
     }
   }
   if (avgRating) {
-    product.aggregateRating = {
+    service.aggregateRating = {
       '@type': 'AggregateRating',
       ratingValue: avgRating,
       reviewCount: rated.length,
@@ -451,7 +455,7 @@ useHead(() => {
       worstRating: '1',
     }
   }
-  scripts.push({ type: 'application/ld+json', innerHTML: JSON.stringify(product) })
+  scripts.push({ type: 'application/ld+json', innerHTML: JSON.stringify(service) })
 
   // FAQPage schema (project-level FAQs)
   if (p.faqs?.length > 0) {

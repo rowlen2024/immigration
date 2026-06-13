@@ -88,17 +88,29 @@ export const useSeo = (options: SeoOptions) => {
     const crumbs = computed(() => getBreadcrumb(route.path, options.breadcrumbLabel));
     if (crumbs.value.length > 0) {
       const base = siteConfig.value?.canonical_base || '';
+      // Fix breadcrumb labels that are raw path segments (no Chinese characters)
+      // This happens when navigation API data hasn't loaded yet in SSR context
+      const hasCJK = (s: string) => /[一-鿿]/.test(s);
+      const breadcrumbItems = crumbs.value.map((item, index) => {
+        const isLast = index === crumbs.value.length - 1;
+        let name = item.label;
+        // If label looks like a raw slug/path segment, try to use breadcrumbLabel for last item
+        if (!hasCJK(name) && isLast && options.breadcrumbLabel) {
+          name = options.breadcrumbLabel;
+        }
+        return {
+          '@type': 'ListItem',
+          position: index + 1,
+          name,
+          item: item.link ? base + item.link : undefined,
+        };
+      });
       scripts.push({
         type: 'application/ld+json',
         innerHTML: JSON.stringify({
           '@context': 'https://schema.org',
           '@type': 'BreadcrumbList',
-          itemListElement: crumbs.value.map((item, index) => ({
-            '@type': 'ListItem',
-            position: index + 1,
-            name: item.label,
-            item: item.link ? base + item.link : undefined,
-          })),
+          itemListElement: breadcrumbItems,
         }),
       });
     }

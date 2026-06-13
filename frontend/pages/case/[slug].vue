@@ -97,6 +97,46 @@ const item = computed(() => data.value?.data ?? null);
 
 useSeo({
   title: item.value?.name ?? '案例详情',
+  description: (() => {
+    const c = item.value;
+    if (!c) return '';
+    const text = c.content ? c.content.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').slice(0, 160) : '';
+    return text || `${c.name} — ${c.country_from}${c.project?.name ? ' · ' + c.project.name : ''}`;
+  })(),
+});
+
+// Article structured data for rich results
+useHead(() => {
+  const c = item.value;
+  if (!c?.name) return {};
+  const { siteConfig } = useSiteConfig();
+  const base = siteConfig.value?.canonical_base || '';
+  const pageUrl = base ? base + route.path : undefined;
+  const articleBody = c.content ? c.content.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').slice(0, 300) : '';
+
+  const article: any = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: c.name,
+    description: articleBody,
+    author: {
+      '@type': 'Organization',
+      name: '北极星移民',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: '北极星移民',
+    },
+  };
+  if (pageUrl) article.url = pageUrl;
+  if (c.photo_url) article.image = c.photo_url;
+  if (c.created_at) article.datePublished = c.created_at;
+
+  return {
+    script: [
+      { type: 'application/ld+json', innerHTML: JSON.stringify(article) },
+    ],
+  };
 });
 
 // 相关案例：同项目或同国家，排除当前，最多 4 条

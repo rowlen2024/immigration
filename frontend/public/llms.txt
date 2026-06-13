@@ -1,0 +1,27 @@
+# 北极星移民 (North Star Visa)
+> 专业投资移民服务机构 — 美国EB-5、香港投资移民、巴拿马购房移民、欧洲黄金签证、加勒比护照项目。13年+行业经验，2万+成功案例，成功率96.67%。
+
+## 核心页面
+
+- [首页](https://www.northstarvisa.com/): 北极星移民官网首页，展示热门移民项目、成功案例、专业律师团队、客户评价
+- [移民项目](https://www.northstarvisa.com/projects): 全部投资移民项目列表，可按国家/类型筛选
+- [项目详情](https://www.northstarvisa.com/projects/eb5): 各项目详情页（申请条件、费用、流程、项目优势、FAQ）
+- [项目对比](https://www.northstarvisa.com/compare): 多项目并排对比功能
+- [成功案例](https://www.northstarvisa.com/cases): 客户成功案例展示
+- [常见问题](https://www.northstarvisa.com/faq): 移民相关常见问题解答
+- [关于我们](https://www.northstarvisa.com/about): 公司介绍、团队背景、发展历程
+- [联系我们](https://www.northstarvisa.com/contact): 联系方式、咨询表单
+
+## 主要移民项目
+
+- [美国EB-5投资移民](https://www.northstarvisa.com/projects/eb5): 投资80万美元，全家获美国绿卡
+- [香港资本投资者入境计划](https://www.northstarvisa.com/projects/cies): 投资3000万港元，获香港居留权
+- [巴拿马购房移民](https://www.northstarvisa.com/projects/panama): 30万美元购房，快速获永久居留权
+
+## 关于公司
+
+- 公司全称: 深圳福瑞特出入境信息咨询有限公司
+- 品牌名称: 北极星移民
+- 成立时间: 2013年
+- 总部: 深圳
+- 服务范围: 海外身份规划、全球资产配置、投资移民、购房移民、创业移民、捐款入籍
