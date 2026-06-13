@@ -407,6 +407,71 @@ useSeo({
   breadcrumbLabel: project.value.title,
 });
 
+// Structured data for search engines (Baidu AI, Google Knowledge Graph)
+const { siteConfig } = useSiteConfig()
+
+useHead(() => {
+  const p = project.value
+  if (!p?.title) return {}
+
+  const base = siteConfig.value?.canonical_base || ''
+  const pageUrl = base ? base + route.path : undefined
+
+  // AggregateRating from testimonials
+  const rated = (p.testimonials || []).filter((t: any) => t.rating > 0)
+  const avgRating = rated.length > 0
+    ? Number((rated.reduce((s: number, t: any) => s + t.rating, 0) / rated.length).toFixed(1))
+    : null
+
+  const scripts: any[] = []
+
+  // Product schema
+  const product: any = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: p.title,
+    description: stripHtml(p.description || p.summary).slice(0, 300),
+    category: '移民服务',
+  }
+  if (p.cover_image) product.image = p.cover_image
+  if (pageUrl) product.url = pageUrl
+  if (p.investment_amount) {
+    product.offers = {
+      '@type': 'Offer',
+      description: `投资金额: ${p.investment_amount}`,
+      availability: 'https://schema.org/InStock',
+    }
+  }
+  if (avgRating) {
+    product.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: avgRating,
+      reviewCount: rated.length,
+      bestRating: '5',
+      worstRating: '1',
+    }
+  }
+  scripts.push({ type: 'application/ld+json', innerHTML: JSON.stringify(product) })
+
+  // FAQPage schema (project-level FAQs)
+  if (p.faqs?.length > 0) {
+    scripts.push({
+      type: 'application/ld+json',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: p.faqs.map((f: any) => ({
+          '@type': 'Question',
+          name: f.question,
+          acceptedAnswer: { '@type': 'Answer', text: stripHtml(f.answer) },
+        })),
+      }),
+    })
+  }
+
+  return { script: scripts }
+})
+
 const heroFallbackStyle = computed(() => {
   return project.value.cover_image
     ? {}

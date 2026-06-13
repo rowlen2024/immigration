@@ -387,6 +387,18 @@ useSeo({
   title: '关于我们',
   description: '北极星移民成立于2013年，专注海外身份规划与全球资产配置。13年+行业经验，2万+成功案例，成功率96.67%。',
   breadcrumbLabel: '关于我们',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    name: '关于北极星移民',
+    description: '北极星移民（深圳福瑞特出入境信息咨询有限公司）成立于2013年，总部位于深圳，专注海外身份规划与全球资产配置等高端移民服务。覆盖美国EB-5/EB-1A、香港投资移民、巴拿马购房移民、欧洲黄金签证及加勒比护照项目，成功率96.67%。',
+    about: {
+      '@type': 'Organization',
+      name: '北极星移民',
+      foundingDate: '2013',
+      description: '专业投资移民服务机构，13年+行业深耕，2万+成功案例',
+    },
+  },
 })
 
 onMounted(() => {

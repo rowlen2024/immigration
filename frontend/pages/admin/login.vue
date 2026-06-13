@@ -42,7 +42,7 @@
             size="large"
             class="login-btn"
             :loading="loading"
-            @click="handleLogin"
+            native-type="submit"
           >
             登 录
           </el-button>
