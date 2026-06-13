@@ -18,10 +18,6 @@ export default defineNuxtConfig({
       '/uploads': 'http://localhost:8080',
     },
     routeRules: {
-      // Proxy API/uploads to Go backend — required for SSR data fetching (site-config etc.)
-      '/api/**': { proxy: 'http://backend:8080' },
-      '/uploads/**': { proxy: 'http://backend:8080' },
-
       // ISR — SSR on first request / after 5min TTL, cached static HTML otherwise
       '/': { swr: 300 },
       '/projects': { swr: 300 },

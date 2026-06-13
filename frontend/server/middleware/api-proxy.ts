@@ -3,11 +3,15 @@
  * Nuxt 服务端渲染时 useFetch('/api/...') 是进程内请求，
  * 不经过 nginx/Vite 反向代理，需要此中间件转发到 Go 后端。
  */
+
+// server tsconfig doesn't include @types/node — declare process manually
+declare const process: { env: Record<string, string | undefined> }
+
 export default defineEventHandler(async (event) => {
   const path = event.path
   if (!path.startsWith('/api/')) return
 
-  const backend = (import.meta as any).env?.BACKEND_URL || 'http://localhost:8080'
+  const backend = process.env.BACKEND_URL || 'http://localhost:8080'
   const start = Date.now()
 
   try {
