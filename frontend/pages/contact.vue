@@ -172,6 +172,8 @@
 <script setup lang="ts">
 useSeo({ title: '联系我们', description: '联系北极星移民，获取专业投资移民咨询。电话、微信、邮箱、地址等联系方式一应俱全。' });
 
+const { siteConfig } = useSiteConfig();
+
 // Organization + ContactPoint structured data
 useHead(() => {
   const sc = siteConfig.value;
@@ -205,8 +207,6 @@ useHead(() => {
     ],
   };
 });
-
-const { siteConfig } = useSiteConfig();
 
 interface ProjectOption {
   slug: string;

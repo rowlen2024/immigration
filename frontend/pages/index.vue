@@ -232,6 +232,8 @@
 
 useSeo({ title: '首页' });
 
+const { siteConfig } = useSiteConfig();
+
 // Organization structured data for Google Knowledge Graph / Baidu AI
 useHead(() => {
   const sc = siteConfig.value;
@@ -259,8 +261,6 @@ useHead(() => {
     ],
   };
 });
-
-const { siteConfig } = useSiteConfig();
 
 import { getIconByName, getIconSvg } from '~/composables/lucideIcons'
 import type { ImageVariantInfo } from '~/utils/image'

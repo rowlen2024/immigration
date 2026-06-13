@@ -105,12 +105,13 @@ useSeo({
   })(),
 });
 
+const { siteConfig: csConfig } = useSiteConfig();
+
 // Article structured data for rich results
 useHead(() => {
   const c = item.value;
   if (!c?.name) return {};
-  const { siteConfig } = useSiteConfig();
-  const base = siteConfig.value?.canonical_base || '';
+  const base = csConfig.value?.canonical_base || '';
   const pageUrl = base ? base + route.path : undefined;
   const articleBody = c.content ? c.content.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').slice(0, 300) : '';
 
