@@ -12,7 +12,16 @@
           :style="{ flex: `0 0 ${cardWidth}px`, width: `${cardWidth}px` }"
         >
           <div class="lawyer-photo">
-            <ResponsiveImage v-if="lawyer.photo_url" :src="lawyer.photo_url" :alt="lawyer.name" variant="sm" :variants="lawyer.photo_variants" loading="lazy" />
+            <ResponsiveImage
+              v-if="lawyer.photo_url"
+              class="lawyer-photo-img"
+              :src="lawyer.photo_url"
+              :alt="lawyer.name"
+              variant="sm"
+              :variants="lawyer.photo_variants"
+              loading="lazy"
+              sizes="(max-width: 640px) 120px, 180px"
+            />
             <div v-else class="lawyer-photo-placeholder"></div>
           </div>
           <div class="lawyer-body">
@@ -79,14 +88,12 @@ function onTouchEnd(e: TouchEvent) {
 
 const cardsPerView = computed(() => {
   if (viewportWidth.value < 640) return 1;
-  if (viewportWidth.value < 1024) return 2;
-  return 3;
+  return 2;
 });
 
 const gap = computed(() => {
   if (viewportWidth.value < 640) return 16;
-  if (viewportWidth.value < 1024) return 24;
-  return 28;
+  return 24;
 });
 
 const cardWidth = computed(() => {
@@ -161,8 +168,8 @@ defineExpose({ goToPage });
 
 .carousel-viewport {
   overflow: hidden;
-  margin: 0 -12px;
-  padding: 12px;
+  margin: 0 -16px;
+  padding: 16px;
 }
 
 .carousel-track {
@@ -174,19 +181,19 @@ defineExpose({ goToPage });
 
 .lawyer-card {
   display: flex;
-  gap: 0;
+  align-items: flex-start;
   background: var(--bg-white);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 10px 28px rgba(15, 30, 61, 0.06);
   transition: box-shadow 0.4s var(--ease-out),
               transform 0.4s var(--ease-spring),
               border-color 0.3s var(--ease-out);
 }
 
 .lawyer-card:hover {
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 16px 36px rgba(15, 30, 61, 0.1);
   transform: translateY(-2px);
   border-color: rgba(200, 150, 62, 0.25);
 }
@@ -194,28 +201,33 @@ defineExpose({ goToPage });
 /* ── Photo ── */
 
 .lawyer-photo {
-  flex: 0 0 40%;
+  flex: 0 0 178px;
+  width: 178px;
+  aspect-ratio: 3 / 4;
+  margin: 22px 0 22px 22px;
+  border-radius: 10px;
   overflow: hidden;
   position: relative;
   background: linear-gradient(135deg, #0F1E3D, #1A3A5C);
+  box-shadow: 0 10px 24px rgba(15, 30, 61, 0.12);
 }
 
-.lawyer-photo img {
+.lawyer-photo-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center 16%;
   display: block;
   transition: transform 0.6s var(--ease-out);
 }
 
-.lawyer-card:hover .lawyer-photo img {
+.lawyer-card:hover .lawyer-photo-img {
   transform: scale(1.04);
 }
 
 .lawyer-photo-placeholder {
   width: 100%;
   height: 100%;
-  min-height: 150px;
   background: linear-gradient(135deg, #15294D, #1E3A6E);
 }
 
@@ -224,14 +236,15 @@ defineExpose({ goToPage });
 .lawyer-body {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   flex: 1;
-  padding: 20px 20px 20px 18px;
+  min-width: 0;
+  padding: 24px 26px 26px 24px;
 }
 
 .lawyer-name {
   font-family: var(--font-serif);
-  font-size: 19px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--color-text);
   margin: 0;
@@ -244,76 +257,75 @@ defineExpose({ goToPage });
 }
 
 .lawyer-title {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-accent);
-  font-weight: 500;
+  font-weight: 600;
   margin: 0;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  line-height: 1.45;
   transition: color 0.3s var(--ease-out);
 }
 
 .lawyer-divider {
-  width: 40px;
-  height: 2px;
-  background: var(--gradient-gold);
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(200, 150, 62, 0.45), rgba(200, 150, 62, 0.08), transparent);
   border-radius: 1px;
-  margin: 6px 0 2px;
+  margin: 6px 0 4px;
   transition: width 0.4s var(--ease-spring);
 }
 
 .lawyer-card:hover .lawyer-divider {
-  width: 60px;
+  width: 100%;
 }
 
 .lawyer-tags {
   list-style: none;
-  margin: 0;
+  margin: 4px 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 0;
 }
 
 .lawyer-tags li {
-  font-size: 12.5px;
+  width: 100%;
+  min-height: 34px;
+  padding: 8px 0 8px 20px;
+  border-top: 1px solid rgba(15, 30, 61, 0.08);
+  font-size: 13px;
   color: var(--color-text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  line-height: 1.5;
-  transition: color 0.3s var(--ease-out);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  position: relative;
+  transition: color 0.3s var(--ease-out),
+              border-color 0.3s var(--ease-out);
+}
+
+.lawyer-tags li:first-child {
+  border-top: none;
+}
+
+.lawyer-tags li::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  position: absolute;
+  left: 3px;
+  top: 17px;
 }
 
 .lawyer-card:hover .lawyer-tags li {
   color: var(--color-text);
+  border-color: rgba(200, 150, 62, 0.16);
 }
 
 .lawyer-card:hover .lawyer-tags li:nth-child(1) { transition-delay: 0s; }
 .lawyer-card:hover .lawyer-tags li:nth-child(2) { transition-delay: 0.05s; }
 .lawyer-card:hover .lawyer-tags li:nth-child(3) { transition-delay: 0.10s; }
 .lawyer-card:hover .lawyer-tags li:nth-child(4) { transition-delay: 0.15s; }
-
-.lawyer-tags li::before {
-  content: '';
-  display: inline-block;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  flex-shrink: 0;
-  transition: transform 0.3s var(--ease-spring),
-              box-shadow 0.3s var(--ease-out);
-}
-
-.lawyer-card:hover .lawyer-tags li::before {
-  transform: scale(1.8);
-  box-shadow: 0 0 5px rgba(200, 150, 62, 0.45);
-}
-
-.lawyer-card:hover .lawyer-tags li:nth-child(1)::before { transition-delay: 0s; }
-.lawyer-card:hover .lawyer-tags li:nth-child(2)::before { transition-delay: 0.05s; }
-.lawyer-card:hover .lawyer-tags li:nth-child(3)::before { transition-delay: 0.10s; }
-.lawyer-card:hover .lawyer-tags li:nth-child(4)::before { transition-delay: 0.15s; }
 
 /* ── Dots ── */
 
@@ -365,13 +377,63 @@ defineExpose({ goToPage });
     padding: 8px;
   }
 
+  .lawyer-card {
+    display: grid;
+    grid-template-columns: 132px minmax(0, 1fr);
+    grid-template-areas:
+      "photo name"
+      "photo title"
+      "divider divider"
+      "tags tags";
+    column-gap: 16px;
+    align-items: center;
+    padding: 18px;
+  }
+
   .lawyer-photo {
-    flex: 0 0 36%;
-    min-height: 140px;
+    grid-area: photo;
+    flex-basis: auto;
+    width: 132px;
+    aspect-ratio: 3 / 4;
+    margin: 0;
+    border-radius: 8px;
   }
 
   .lawyer-body {
-    padding: 16px 16px 16px 14px;
+    display: contents;
+  }
+
+  .lawyer-name {
+    grid-area: name;
+    align-self: end;
+    font-size: 20px;
+  }
+
+  .lawyer-title {
+    grid-area: title;
+    align-self: start;
+    font-size: 13.5px;
+  }
+
+  .lawyer-divider {
+    grid-area: divider;
+    margin-top: 16px;
+  }
+
+  .lawyer-tags {
+    grid-area: tags;
+    margin-top: 6px;
+  }
+
+  .lawyer-tags li {
+    min-height: 34px;
+    padding: 8px 0 8px 19px;
+    font-size: 13px;
+  }
+
+  .lawyer-tags li::before {
+    left: 2px;
+    top: 16px;
   }
 
   .carousel-dot {
