@@ -57,7 +57,7 @@ func (r *CaseRepo) FindAll(filter CaseFilter) ([]model.Case, int64, error) {
 		return nil, 0, err
 	}
 
-	q = q.Order("sort_order asc")
+	q = q.Order("sort_order asc, id asc")
 	if filter.Page > 0 && filter.PerPage > 0 {
 		offset := (filter.Page - 1) * filter.PerPage
 		q = q.Offset(offset).Limit(filter.PerPage)
@@ -86,10 +86,10 @@ func (r *CaseRepo) DeleteByProjectID(projectID uint64) error {
 	return r.db.Unscoped().Where("project_id = ?", projectID).Delete(&model.Case{}).Error
 }
 
-
 func (r *CaseRepo) Count() (int64, error) {
 	return CountByModel[model.Case](r.db)
 }
+
 // FindAllPhotoURLs returns non-empty photo_url values referencing /uploads/ (unscoped).
 func (r *CaseRepo) FindAllPhotoURLs() ([]string, error) {
 	return PluckUploadsByColumn[model.Case](r.db, "photo_url")

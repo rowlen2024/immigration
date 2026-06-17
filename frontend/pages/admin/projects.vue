@@ -630,8 +630,8 @@ import ImageInput from '~/components/admin/ImageInput.vue';
 import IconPicker from '~/components/admin/IconPicker.vue';
 import RichEditor from '~/components/RichEditor.vue';
 import { getIconByName, getIconSvg } from '~/composables/lucideIcons';
-import { pinyin } from 'pinyin-pro';
 import { formatDateTime } from '~/utils/date';
+import { generateSlugFromText } from '~/utils/slug';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
 
@@ -945,13 +945,12 @@ const generateSlug = () => {
     ElMessage.warning('请先输入项目名称');
     return;
   }
-  const arr = pinyin(form.name, { toneType: 'none', type: 'array' });
-  const nonEmpty = arr.filter((s: string) => s.trim() !== '');
-  if (nonEmpty.length === 0) {
-    ElMessage.warning('未识别到可生成拼音的文字');
+  const slug = generateSlugFromText(form.name);
+  if (!slug) {
+    ElMessage.warning('未识别到可生成 slug 的有效内容');
     return;
   }
-  form.slug = nonEmpty.join('-').toLowerCase();
+  form.slug = slug;
 };
 
 const openSubDialog = (type: SubType, row?: any) => {

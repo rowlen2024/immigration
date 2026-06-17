@@ -49,7 +49,7 @@ func (r *FAQRepo) FindAll(params FAQQueryParams) ([]FAQWithProject, int64, error
 		return nil, 0, err
 	}
 
-	q = q.Order("faqs.sort_order asc")
+	q = q.Order("faqs.sort_order asc, faqs.id asc")
 	if params.Page > 0 && params.PerPage > 0 {
 		offset := (params.Page - 1) * params.PerPage
 		q = q.Offset(offset).Limit(params.PerPage)
@@ -83,7 +83,7 @@ func (r *FAQRepo) FindDistinctProjects() ([]model.Project, error) {
 		Distinct("projects.*").
 		Joins("INNER JOIN faqs ON faqs.project_id = projects.id").
 		Where("projects.deleted_at IS NULL").
-		Order("projects.sort_order asc").
+		Order("projects.sort_order asc, projects.id asc").
 		Find(&projects).Error
 	if err != nil {
 		return nil, err
@@ -95,7 +95,7 @@ func (r *FAQRepo) Search(keyword string) ([]model.FAQ, error) {
 	var faqs []model.FAQ
 	err := r.db.
 		Where("question LIKE ? OR answer LIKE ?", "%"+keyword+"%", "%"+keyword+"%").
-		Order("sort_order asc").
+		Order("sort_order asc, id asc").
 		Find(&faqs).Error
 	if err != nil {
 		return nil, err

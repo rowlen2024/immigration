@@ -16,13 +16,13 @@ type preloadScope int
 
 const (
 	preloadCompare preloadScope = iota + 1 // compare page: 7 common associations
-	preloadDetail                         // detail page: all 10 associations
+	preloadDetail                          // detail page: all 10 associations
 )
 
 // withAssociations applies ordered, sorted Preloads appropriate to the scope.
 // Centralizing Preloads here ensures new associations are added once, not per query method.
 func (r *ProjectRepo) withAssociations(db *gorm.DB, scope preloadScope) *gorm.DB {
-	sorted := func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc") }
+	sorted := func(db *gorm.DB) *gorm.DB { return db.Order("sort_order asc, id asc") }
 
 	db = db.
 		Preload("Requirements", sorted).
@@ -78,7 +78,7 @@ func (r *ProjectRepo) FindAll(filter ProjectFilter) ([]model.Project, int64, err
 		return nil, 0, err
 	}
 
-	q = q.Order("sort_order asc")
+	q = q.Order("sort_order asc, id asc")
 	if filter.Page > 0 && filter.PerPage > 0 {
 		offset := (filter.Page - 1) * filter.PerPage
 		q = q.Offset(offset).Limit(filter.PerPage)
@@ -103,7 +103,7 @@ func (r *ProjectRepo) FindBySlugs(slugs []string) ([]model.Project, error) {
 // FindBySlugsLight returns projects by slugs without heavy preloads.
 func (r *ProjectRepo) FindBySlugsLight(slugs []string) ([]model.Project, error) {
 	var projects []model.Project
-	err := r.db.Where("slug IN ?", slugs).Order("sort_order asc").Find(&projects).Error
+	err := r.db.Where("slug IN ?", slugs).Order("sort_order asc, id asc").Find(&projects).Error
 	if err != nil {
 		return nil, err
 	}

@@ -47,7 +47,7 @@ func (r *TestimonialRepo) FindAll(filter TestimonialFilter) ([]model.Testimonial
 		return nil, 0, err
 	}
 
-	q = q.Order("sort_order asc")
+	q = q.Order("sort_order asc, id asc")
 	if filter.Page > 0 && filter.PerPage > 0 {
 		offset := (filter.Page - 1) * filter.PerPage
 		q = q.Offset(offset).Limit(filter.PerPage)
@@ -75,7 +75,6 @@ func (r *TestimonialRepo) Delete(id uint64) error {
 func (r *TestimonialRepo) DeleteByProjectID(projectID uint64) error {
 	return r.db.Unscoped().Where("project_id = ?", projectID).Delete(&model.Testimonial{}).Error
 }
-
 
 // FindAllAvatarURLs returns non-empty avatar_url values referencing /uploads/ (unscoped).
 func (r *TestimonialRepo) FindAllAvatarURLs() ([]string, error) {

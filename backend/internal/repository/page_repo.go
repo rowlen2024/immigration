@@ -48,7 +48,7 @@ func (r *PageRepo) FindAll(filter PageFilter) ([]model.Page, int64, error) {
 		return nil, 0, err
 	}
 
-	q = q.Order("sort_order asc")
+	q = q.Order("sort_order asc, id asc")
 	if filter.Page > 0 && filter.PerPage > 0 {
 		offset := (filter.Page - 1) * filter.PerPage
 		q = q.Offset(offset).Limit(filter.PerPage)
@@ -101,7 +101,7 @@ func (r *PageRepo) Search(keyword string) ([]model.Page, error) {
 	var pages []model.Page
 	err := r.db.
 		Where("title LIKE ? OR content LIKE ?", "%"+keyword+"%", "%"+keyword+"%").
-		Order("sort_order asc").
+		Order("sort_order asc, id asc").
 		Find(&pages).Error
 	if err != nil {
 		return nil, err

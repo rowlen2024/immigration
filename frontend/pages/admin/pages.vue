@@ -168,7 +168,7 @@ import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { useNotify } from '~/composables/useNotify';
 import { getIconSvg } from '~/composables/lucideIcons';
 import { formatDateTime } from '~/utils/date';
-import { pinyin } from 'pinyin-pro';
+import { generateSlugFromText } from '~/utils/slug';
 import ImageInput from '~/components/admin/ImageInput.vue';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
@@ -328,13 +328,12 @@ const generateSlug = () => {
     ElMessage.warning('请先输入标题');
     return;
   }
-  const arr = pinyin(form.title, { toneType: 'none', type: 'array' });
-  const nonEmpty = arr.filter((s: string) => s.trim() !== '');
-  if (nonEmpty.length === 0) {
-    ElMessage.warning('未识别到可生成拼音的文字');
+  const slug = generateSlugFromText(form.title);
+  if (!slug) {
+    ElMessage.warning('未识别到可生成 slug 的有效内容');
     return;
   }
-  form.slug = nonEmpty.join('-').toLowerCase();
+  form.slug = slug;
 };
 
 onMounted(() => {

@@ -12,7 +12,7 @@ type MediaRepo struct {
 
 func (r *MediaRepo) FindAll(search string) ([]model.Media, error) {
 	var media []model.Media
-	q := r.db.Order("created_at desc")
+	q := r.db.Order("created_at desc, id desc")
 	if search != "" {
 		like := "%" + search + "%"
 		q = q.Where("filename LIKE ? OR original_name LIKE ?", like, like)
