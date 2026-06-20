@@ -116,17 +116,24 @@ func (h *Handler) UploadMedia(c *gin.Context) {
 }
 
 func (h *Handler) ListMedia(c *gin.Context) {
-	page, perPage := parsePagination(c)
-	search := c.Query("search")
+	var req dto.MediaListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid query params"))
+		return
+	}
 
-	mediaList, total, err := h.svc.Media.List(page, perPage, search)
+	mediaList, total, err := h.svc.Media.List(req)
 	if err != nil {
 		logging.Logger.Error("failed in ListMedia", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessPaginated(mediaList, page, perPage, total))
+	if req.Page > 0 && req.PerPage > 0 {
+		c.JSON(http.StatusOK, dto.SuccessPaginated(mediaList, req.Page, req.PerPage, total))
+	} else {
+		c.JSON(http.StatusOK, dto.Success(mediaList))
+	}
 }
 
 func (h *Handler) DeleteMedia(c *gin.Context) {

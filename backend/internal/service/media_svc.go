@@ -9,45 +9,33 @@ import (
 	"regexp"
 	"strings"
 
+	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
 )
 
 // MediaService handles business logic for media file metadata.
 type MediaService struct {
-	repo             repository.MediaRepository
-	projectRepo      repository.ProjectRepository
-	caseRepo         repository.CaseRepository
-	pageRepo         repository.PageRepository
-	lawyerRepo       repository.LawyerRepository
-	testimonialRepo  repository.TestimonialRepository
-	homeConfigRepo   repository.HomeConfigRepository
+	repo            repository.MediaRepository
+	projectRepo     repository.ProjectRepository
+	caseRepo        repository.CaseRepository
+	pageRepo        repository.PageRepository
+	lawyerRepo      repository.LawyerRepository
+	testimonialRepo repository.TestimonialRepository
+	homeConfigRepo  repository.HomeConfigRepository
 }
 
 // List returns paginated media entries.
-func (s *MediaService) List(page, perPage int, search string) ([]model.Media, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if perPage < 1 || perPage > 100 {
-		perPage = 10
-	}
-
-	media, err := s.repo.FindAll(search)
+func (s *MediaService) List(req dto.MediaListRequest) ([]model.Media, int64, error) {
+	media, total, err := s.repo.FindAll(repository.MediaFilter{
+		Search:  req.Search,
+		Page:    req.Page,
+		PerPage: req.PerPage,
+	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list media: %w", err)
 	}
-
-	total := int64(len(media))
-	start := (page - 1) * perPage
-	if start >= len(media) {
-		return []model.Media{}, total, nil
-	}
-	end := start + perPage
-	if end > len(media) {
-		end = len(media)
-	}
-	return media[start:end], total, nil
+	return media, total, nil
 }
 
 // Upload saves media metadata (placeholder - file upload handled at handler level).
@@ -112,7 +100,7 @@ var uploadURLRegex = regexp.MustCompile(`(?:https?://[^/"'\s,}]+)?(/uploads/[^"'
 
 // FindUnused returns non-deleted media records whose URL is not referenced anywhere.
 func (s *MediaService) FindUnused() ([]model.Media, error) {
-	mediaList, err := s.repo.FindAll("")
+	mediaList, _, err := s.repo.FindAll(repository.MediaFilter{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list media: %w", err)
 	}

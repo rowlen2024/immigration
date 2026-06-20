@@ -237,8 +237,14 @@ type HomeConfigRepository interface {
 }
 
 // MediaRepository defines the interface for media data access.
+type MediaFilter struct {
+	Search  string
+	Page    int
+	PerPage int
+}
+
 type MediaRepository interface {
-	FindAll(search string) ([]model.Media, error)
+	FindAll(filter MediaFilter) ([]model.Media, int64, error)
 	FindByID(id uint64) (*model.Media, error)
 	Create(media *model.Media) error
 	Delete(id uint64) error

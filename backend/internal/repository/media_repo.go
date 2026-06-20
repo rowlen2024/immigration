@@ -10,18 +10,30 @@ type MediaRepo struct {
 	db *gorm.DB
 }
 
-func (r *MediaRepo) FindAll(search string) ([]model.Media, error) {
+func (r *MediaRepo) FindAll(filter MediaFilter) ([]model.Media, int64, error) {
 	var media []model.Media
-	q := r.db.Order("created_at desc, id desc")
-	if search != "" {
-		like := "%" + search + "%"
+	var total int64
+
+	q := r.db.Model(&model.Media{})
+	if filter.Search != "" {
+		like := "%" + filter.Search + "%"
 		q = q.Where("filename LIKE ? OR original_name LIKE ?", like, like)
 	}
-	err := q.Find(&media).Error
-	if err != nil {
-		return nil, err
+
+	if err := q.Session(&gorm.Session{}).Count(&total).Error; err != nil {
+		return nil, 0, err
 	}
-	return media, nil
+
+	q = q.Order("created_at desc, id desc")
+	if filter.Page > 0 && filter.PerPage > 0 {
+		offset := (filter.Page - 1) * filter.PerPage
+		q = q.Offset(offset).Limit(filter.PerPage)
+	}
+
+	if err := q.Find(&media).Error; err != nil {
+		return nil, 0, err
+	}
+	return media, total, nil
 }
 
 func (r *MediaRepo) FindByID(id uint64) (*model.Media, error) {
