@@ -30,15 +30,16 @@ interface SiteConfig {
 
 export const useMygoSiteConfig = () => {
   const { data } = useFetch('/api/v1/site-config', {
-    key: 'site-config',
+    key: 'public:site-config',
     transform: (response: any) => response?.data ?? response,
   })
 
   const siteConfig = computed<SiteConfig | null>(() => (data.value as SiteConfig) ?? null)
+  usePublicDataFreshness(['public:site-config'])
 
   // 客户端强制刷新（绕过 Nuxt payload 缓存）
   const refreshSiteConfig = () => {
-    $fetch('/api/v1/site-config').then(v => { data.value = (v as any)?.data ?? v }).catch(() => {})
+    refreshNuxtData('public:site-config')
   }
 
   return { siteConfig, refreshSiteConfig, data }

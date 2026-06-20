@@ -11,13 +11,23 @@ import (
 
 // PageService handles business logic for content pages.
 type PageService struct {
-	repo    repository.PageRepository
-	navRepo repository.NavigationRepository
+	repo        repository.PageRepository
+	navRepo     repository.NavigationRepository
+	versionRepo *repository.PublicVersionRepo
 }
 
 // NewPageService creates a new PageService with the given dependencies.
 func NewPageService(repo repository.PageRepository, navRepo repository.NavigationRepository) *PageService {
 	return &PageService{repo: repo, navRepo: navRepo}
+}
+
+func (s *PageService) RegisterPublicVersions(reg *PublicVersionRegistry) {
+	reg.Register("public:pages:list", func(string) (repository.PublicVersion, error) {
+		return tableVersion(s.versionRepo, "pages", "deleted_at IS NULL AND status = ?", "published")
+	})
+	reg.Register("public:page:", func(key string) (repository.PublicVersion, error) {
+		return tableVersion(s.versionRepo, "pages", "deleted_at IS NULL AND status = ? AND slug = ?", "published", publicSlug(key, "public:page:"))
+	})
 }
 
 // GetBySlug returns a published page by its slug.

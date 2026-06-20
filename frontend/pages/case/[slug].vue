@@ -89,9 +89,14 @@
 import { getIconSvg } from '~/composables/lucideIcons'
 
 const route = useRoute();
-const slug = route.params.slug as string;
+const slug = computed(() => route.params.slug as string);
+const caseDataKey = computed(() => `public:case:${slug.value}`);
 
-const { data, pending, error, refresh } = await useFetch<{ data: any }>(`/api/v1/cases/${slug}`);
+const { data, pending, error, refresh } = await useFetch<{ data: any }>(
+  () => `/api/v1/cases/${slug.value}`,
+  { key: caseDataKey },
+);
+usePublicDataFreshness(() => [caseDataKey.value]);
 
 const item = computed(() => data.value?.data ?? null);
 
@@ -156,12 +161,11 @@ async function fetchRelatedCases() {
     }
 
     // 前端过滤掉当前案例
-    relatedCases.value = cases.filter((c: any) => c.slug !== slug)
+    relatedCases.value = cases.filter((c: any) => c.slug !== slug.value)
   } catch { relatedCases.value = [] }
 }
 
 onMounted(() => {
-  $fetch<{ data: any }>(`/api/v1/cases/${slug}`).then(v => { data.value = v }).catch(() => {})
   if (item.value) fetchRelatedCases()
 })
 

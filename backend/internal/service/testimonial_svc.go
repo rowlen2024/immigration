@@ -13,6 +13,13 @@ import (
 type TestimonialService struct {
 	repo          repository.TestimonialRepository
 	homeConfigSvc *HomeConfigService
+	versionRepo   *repository.PublicVersionRepo
+}
+
+func (s *TestimonialService) RegisterPublicVersions(reg *PublicVersionRegistry) {
+	reg.Register("public:testimonials:list", func(string) (repository.PublicVersion, error) {
+		return tableVersion(s.versionRepo, "testimonials", "deleted_at IS NULL")
+	})
 }
 
 func (s *TestimonialService) List(req dto.TestimonialListRequest) ([]model.Testimonial, int64, error) {
@@ -94,4 +101,3 @@ func (s *TestimonialService) Update(id uint64, req dto.UpdateTestimonialRequest)
 	}
 	return existing, nil
 }
-

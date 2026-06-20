@@ -212,7 +212,8 @@ import { stripHtml } from '~/utils/html'
 import { buildServiceJsonLd, buildFAQPageJsonLd, toJsonLdConfig, toJsonLdScripts } from '~/utils/jsonld'
 
 const route = useRoute();
-const slug = route.params.slug as string;
+const slug = computed(() => route.params.slug as string);
+const projectDataKey = computed(() => `public:project:${slug.value}`);
 
 interface ApiRequirement { label: string; is_required: boolean; }
 interface ApiCostItem { name: string; amount: string; note: string; }
@@ -251,12 +252,16 @@ interface ApiProject {
   advantages: ApiAdvantage[];
 }
 
-const { data, pending, error, refresh } = await useFetch<{ data: ApiProject }>(`/api/v1/projects/${slug}`);
+const { data, pending, error, refresh } = await useFetch<{ data: ApiProject }>(
+  () => `/api/v1/projects/${slug.value}`,
+  { key: projectDataKey },
+);
+usePublicDataFreshness(() => [projectDataKey.value]);
 
 const project = computed(() => {
   const p = data.value?.data;
   return {
-    title: p?.name || slug,
+    title: p?.name || slug.value,
     summary: p?.tagline || '',
     description: p?.overview_text || '',
     cover_image: p?.cover_image || '',
@@ -342,9 +347,16 @@ const {
   data: compareRaw,
   pending: comparePending,
   error: compareErrorRaw,
+  refresh: refreshCompare,
 } = useFetch<{ data: CompareTableData }>('/api/v1/projects/compare', {
   query: compareQuery,
+  immediate: false,
+  watch: false,
 });
+
+watch(compareSlugs, (slugs) => {
+  if (slugs) refreshCompare();
+}, { immediate: true });
 
 const compareData = computed<CompareTableData | null>(() => {
   const raw = compareRaw.value as any;
@@ -500,8 +512,6 @@ function scrollToSection(id: string) {
 let observer: IntersectionObserver | null = null;
 
 onMounted(() => {
-  $fetch<{ data: ApiProject }>(`/api/v1/projects/${slug}`).then(v => { data.value = v }).catch(() => {})
-
   const headerH = (document.querySelector('.site-header') as HTMLElement)?.offsetHeight || 64;
   observer = new IntersectionObserver(
     (entries) => {

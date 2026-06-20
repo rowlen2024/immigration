@@ -60,7 +60,19 @@
 <script setup lang="ts">
 import { EditorContent, useEditor } from '@tiptap/vue-3';
 import { type Editor } from '@tiptap/core';
-import { StarterKit } from '@tiptap/starter-kit';
+import { Blockquote } from '@tiptap/extension-blockquote';
+import { Bold } from '@tiptap/extension-bold';
+import { BulletList } from '@tiptap/extension-bullet-list';
+import { Code } from '@tiptap/extension-code';
+import { Document } from '@tiptap/extension-document';
+import { HardBreak } from '@tiptap/extension-hard-break';
+import { Heading } from '@tiptap/extension-heading';
+import { Italic } from '@tiptap/extension-italic';
+import { Link } from '@tiptap/extension-link';
+import { ListItem } from '@tiptap/extension-list-item';
+import { OrderedList } from '@tiptap/extension-ordered-list';
+import { Paragraph } from '@tiptap/extension-paragraph';
+import { Text } from '@tiptap/extension-text';
 import { Table } from '@tiptap/extension-table';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TableCell } from '@tiptap/extension-table-cell';
@@ -73,6 +85,7 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { Youtube } from '@tiptap/extension-youtube';
 import { Underline } from '@tiptap/extension-underline';
 import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight';
+import { UndoRedo } from '@tiptap/extensions';
 import { common, createLowlight } from 'lowlight';
 
 const lowlight = createLowlight(common);
@@ -89,7 +102,20 @@ const tablePicker = reactive({ visible: false, x: 0, y: 0, rows: 3, cols: 3 });
 const editor = useEditor({
   content: props.modelValue,
   extensions: [
-    StarterKit.configure({ codeBlock: false }),
+    Document,
+    Paragraph,
+    Text,
+    Bold,
+    Italic,
+    Link,
+    Heading,
+    Blockquote,
+    BulletList,
+    OrderedList,
+    ListItem,
+    Code,
+    HardBreak,
+    UndoRedo,
     Underline,
     Table.configure({ resizable: true }),
     TableRow,

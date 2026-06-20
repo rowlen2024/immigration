@@ -15,6 +15,96 @@ type HomeConfigService struct {
 	projectRepo     repository.ProjectRepository
 	caseRepo        repository.CaseRepository
 	testimonialRepo repository.TestimonialRepository
+	versionRepo     *repository.PublicVersionRepo
+}
+
+func (s *HomeConfigService) RegisterPublicVersions(reg *PublicVersionRegistry) {
+	reg.Register("public:site-config", func(string) (repository.PublicVersion, error) {
+		return tableVersion(s.versionRepo, "home_configs", "config_key = ?", "site")
+	})
+	reg.Register("public:home", s.publicHomeVersion)
+}
+
+func (s *HomeConfigService) publicHomeVersion(string) (repository.PublicVersion, error) {
+	versions := make([]repository.PublicVersion, 0, 4)
+	homeCfgVersion, err := tableVersion(
+		s.versionRepo,
+		"home_configs",
+		"config_key IN ?",
+		[]string{"hero_slides", "advantage_items", "advantage_section", "project_showcase", "case_showcase", "testimonial_showcase", "hero_trust"},
+	)
+	if err != nil {
+		return repository.PublicVersion{}, err
+	}
+	versions = append(versions, homeCfgVersion)
+
+	if slugs := s.featuredProjectSlugs(); len(slugs) > 0 {
+		v, err := s.versionRepo.VersionFromQuery(
+			"SELECT MAX(updated_at) AS updated_at, COUNT(*) AS count FROM projects WHERE deleted_at IS NULL AND slug IN ?",
+			slugs,
+		)
+		if err != nil {
+			return repository.PublicVersion{}, err
+		}
+		versions = append(versions, v)
+	}
+	if ids := s.featuredCaseIDs(); len(ids) > 0 {
+		v, err := s.versionRepo.VersionFromQuery(
+			"SELECT MAX(updated_at) AS updated_at, COUNT(*) AS count FROM cases WHERE deleted_at IS NULL AND id IN ?",
+			ids,
+		)
+		if err != nil {
+			return repository.PublicVersion{}, err
+		}
+		versions = append(versions, v)
+	}
+	if ids := s.featuredTestimonialIDs(); len(ids) > 0 {
+		v, err := s.versionRepo.VersionFromQuery(
+			"SELECT MAX(updated_at) AS updated_at, COUNT(*) AS count FROM testimonials WHERE deleted_at IS NULL AND id IN ?",
+			ids,
+		)
+		if err != nil {
+			return repository.PublicVersion{}, err
+		}
+		versions = append(versions, v)
+	}
+	return repository.MergePublicVersions(versions...), nil
+}
+
+func (s *HomeConfigService) featuredProjectSlugs() []string {
+	cfg, err := s.repo.FindByKey("project_showcase")
+	if err != nil {
+		return nil
+	}
+	var data ProjectShowcaseConfig
+	if json.Unmarshal(cfg.ConfigValue, &data) != nil {
+		return nil
+	}
+	return data.FeaturedSlugs
+}
+
+func (s *HomeConfigService) featuredCaseIDs() []uint64 {
+	cfg, err := s.repo.FindByKey("case_showcase")
+	if err != nil {
+		return nil
+	}
+	var data CaseShowcaseConfig
+	if json.Unmarshal(cfg.ConfigValue, &data) != nil {
+		return nil
+	}
+	return data.FeaturedCaseIDs
+}
+
+func (s *HomeConfigService) featuredTestimonialIDs() []uint64 {
+	cfg, err := s.repo.FindByKey("testimonial_showcase")
+	if err != nil {
+		return nil
+	}
+	var data TestimonialShowcaseConfig
+	if json.Unmarshal(cfg.ConfigValue, &data) != nil {
+		return nil
+	}
+	return data.FeaturedTestimonialIDs
 }
 
 // HeroSlide represents a slide in the hero section of the homepage.
@@ -89,9 +179,9 @@ type FeaturedTestimonial struct {
 
 // ProjectShowcaseConfig holds the project showcase section settings.
 type ProjectShowcaseConfig struct {
-	SectionTitle    string            `json:"section_title"`
-	SectionSubtitle string            `json:"section_subtitle"`
-	FeaturedSlugs   []string          `json:"featured_slugs"`
+	SectionTitle     string            `json:"section_title"`
+	SectionSubtitle  string            `json:"section_subtitle"`
+	FeaturedSlugs    []string          `json:"featured_slugs"`
 	FeaturedProjects []FeaturedProject `json:"featured_projects"`
 }
 
@@ -105,21 +195,21 @@ type CaseShowcaseConfig struct {
 
 // TestimonialShowcaseConfig holds the testimonial showcase section settings.
 type TestimonialShowcaseConfig struct {
-	SectionTitle           string               `json:"section_title"`
-	SectionSubtitle        string               `json:"section_subtitle"`
-	FeaturedTestimonialIDs []uint64             `json:"featured_testimonial_ids"`
+	SectionTitle           string                `json:"section_title"`
+	SectionSubtitle        string                `json:"section_subtitle"`
+	FeaturedTestimonialIDs []uint64              `json:"featured_testimonial_ids"`
 	FeaturedTestimonials   []FeaturedTestimonial `json:"featured_testimonials"`
 }
 
 // HomeConfigData holds the parsed homepage configuration data.
 type HomeConfigData struct {
-	HeroSlides         []HeroSlide                `json:"hero_slides"`
-	AdvantageItems     []AdvantageItem            `json:"advantage_items"`
-	AdvantageSection   *AdvantageSectionConfig    `json:"advantage_section"`
-	ProjectShowcase    *ProjectShowcaseConfig     `json:"project_showcase"`
-	CaseShowcase       *CaseShowcaseConfig        `json:"case_showcase"`
+	HeroSlides          []HeroSlide                `json:"hero_slides"`
+	AdvantageItems      []AdvantageItem            `json:"advantage_items"`
+	AdvantageSection    *AdvantageSectionConfig    `json:"advantage_section"`
+	ProjectShowcase     *ProjectShowcaseConfig     `json:"project_showcase"`
+	CaseShowcase        *CaseShowcaseConfig        `json:"case_showcase"`
 	TestimonialShowcase *TestimonialShowcaseConfig `json:"testimonial_showcase"`
-	TrustItems         []TrustItem                `json:"hero_trust"`
+	TrustItems          []TrustItem                `json:"hero_trust"`
 }
 
 // Get returns the homepage configuration with parsed sections and embedded featured items.
@@ -319,12 +409,12 @@ func (s *HomeConfigService) loadFeaturedTestimonials(tsc *TestimonialShowcaseCon
 	items := make([]FeaturedTestimonial, len(testimonials))
 	for i, t := range testimonials {
 		items[i] = FeaturedTestimonial{
-			ID:              t.ID,
-			Nickname:        t.Nickname,
-			AvatarURL:       t.AvatarURL,
-			AvatarVariants:  ResolveImageVariants(t.AvatarURL, UploadContextTestimonial),
-			Rating:          t.Rating,
-			Content:         t.Content,
+			ID:             t.ID,
+			Nickname:       t.Nickname,
+			AvatarURL:      t.AvatarURL,
+			AvatarVariants: ResolveImageVariants(t.AvatarURL, UploadContextTestimonial),
+			Rating:         t.Rating,
+			Content:        t.Content,
 		}
 	}
 	sortByOrder(items, func(item FeaturedTestimonial) int {

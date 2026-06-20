@@ -46,6 +46,7 @@ const slug = computed(() => {
   if (Array.isArray(s)) return s.join('/');
   return s || '';
 });
+const pageDataKey = computed(() => `public:page:${slug.value}`);
 
 interface CmsPage {
   title: string;
@@ -60,12 +61,14 @@ interface CmsPage {
 const { data, pending, error: fetchError, refresh } = await useFetch(
   () => `/api/v1/pages/${slug.value}`,
   {
+    key: pageDataKey,
     transform: (response) => {
       const envelope = response as { code: number; data: CmsPage };
       return envelope?.data ?? null;
     },
   }
 );
+usePublicDataFreshness(() => [pageDataKey.value]);
 
 const page = computed(() => data.value || null);
 
@@ -85,9 +88,6 @@ useSeo({
   breadcrumbLabel: page.value?.title,
 });
 
-onMounted(() => {
-  $fetch(`/api/v1/pages/${slug.value}`).then(v => { data.value = (v as any)?.data ?? v }).catch(() => {})
-})
 </script>
 
 <style scoped>

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"reflect"
 	"strconv"
 	"time"
 
@@ -30,28 +31,29 @@ type Service struct {
 	CompareConfig *CompareConfigService
 	Advantage     *ProjectAdvantageService
 	Testimonial   *TestimonialService
+	PublicVersion *PublicVersionService
 }
 
 func New(repo *repository.Repository, cfg *config.Config) *Service {
 	svc := &Service{
-		repo:          repo,
-		Project: NewProjectService(repo.Project, repo.Nav),
-		Auth:    NewAuthService(repo.User, cfg),
-		User:          NewUserService(repo.User),
-		FAQ:     NewFAQService(repo.FAQ),
-		Page:    NewPageService(repo.Page, repo.Nav),
-		Case:    NewCaseService(repo.Case, nil),
-		Lead:    NewLeadService(repo.Lead),
-		Lawyer:        NewLawyerService(repo.Lawyer),
-		HomeConfig:    &HomeConfigService{repo: repo.HomeConfig, projectRepo: repo.Project, caseRepo: repo.Case, testimonialRepo: repo.Testimonial},
+		repo:       repo,
+		Project:    NewProjectService(repo.Project, repo.Nav),
+		Auth:       NewAuthService(repo.User, cfg),
+		User:       NewUserService(repo.User),
+		FAQ:        NewFAQService(repo.FAQ),
+		Page:       NewPageService(repo.Page, repo.Nav),
+		Case:       NewCaseService(repo.Case, nil),
+		Lead:       NewLeadService(repo.Lead),
+		Lawyer:     NewLawyerService(repo.Lawyer),
+		HomeConfig: &HomeConfigService{repo: repo.HomeConfig, projectRepo: repo.Project, caseRepo: repo.Case, testimonialRepo: repo.Testimonial},
 		Media: &MediaService{
-			repo:             repo.Media,
-			projectRepo:      repo.Project,
-			caseRepo:         repo.Case,
-			pageRepo:         repo.Page,
-			lawyerRepo:       repo.Lawyer,
-			testimonialRepo:  repo.Testimonial,
-			homeConfigRepo:   repo.HomeConfig,
+			repo:            repo.Media,
+			projectRepo:     repo.Project,
+			caseRepo:        repo.Case,
+			pageRepo:        repo.Page,
+			lawyerRepo:      repo.Lawyer,
+			testimonialRepo: repo.Testimonial,
+			homeConfigRepo:  repo.HomeConfig,
 		},
 		Nav:           &NavService{repo: repo.Nav, projectRepo: repo.Project, pageRepo: repo.Page},
 		Search:        &SearchService{faqRepo: repo.FAQ, pageRepo: repo.Page},
@@ -61,6 +63,7 @@ func New(repo *repository.Repository, cfg *config.Config) *Service {
 		CompareConfig: &CompareConfigService{repo: repo.CompareConfig},
 		Advantage:     &ProjectAdvantageService{repo: repo.ProjectAdvantage},
 		Testimonial:   &TestimonialService{repo: repo.Testimonial},
+		PublicVersion: NewPublicVersionService(),
 	}
 
 	// Wire home_config cleanup into entity services
@@ -81,8 +84,31 @@ func New(repo *repository.Repository, cfg *config.Config) *Service {
 	svc.Project.caseRepo = repo.Case
 	svc.Project.testimonialRepo = repo.Testimonial
 	svc.Project.faqRepo = repo.FAQ
+	svc.Project.versionRepo = repo.PublicVersion
+	svc.Page.versionRepo = repo.PublicVersion
+	svc.Case.versionRepo = repo.PublicVersion
+	svc.FAQ.versionRepo = repo.PublicVersion
+	svc.HomeConfig.versionRepo = repo.PublicVersion
+	svc.Nav.versionRepo = repo.PublicVersion
+	svc.Lawyer.versionRepo = repo.PublicVersion
+	svc.Testimonial.versionRepo = repo.PublicVersion
+
+	registerPublicVersionRegistrars(svc)
 
 	return svc
+}
+
+func registerPublicVersionRegistrars(svc *Service) {
+	v := reflect.ValueOf(svc).Elem()
+	t := v.Type()
+	for i := 0; i < v.NumField(); i++ {
+		if t.Field(i).PkgPath != "" || t.Field(i).Name == "PublicVersion" {
+			continue
+		}
+		if registrar, ok := v.Field(i).Interface().(PublicVersionRegistrar); ok {
+			registrar.RegisterPublicVersions(svc.PublicVersion.registry)
+		}
+	}
 }
 
 // Stats returns dashboard statistics with month-over-month trends.

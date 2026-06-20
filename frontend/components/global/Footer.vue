@@ -76,7 +76,7 @@
 
 <script setup lang="ts">
 const { siteConfig } = useMygoSiteConfig();
-const { navItems: footerNav, refreshNavigation: refreshFooterNav } = useNavigation('footer');
+const { navItems: footerNav } = useNavigation('footer');
 
 const footerGridStyle = computed(() => {
   const count = footerNav.value.length || 2;
@@ -106,10 +106,6 @@ const copyrightText = computed(() => {
     .replace('{year}', String(new Date().getFullYear()))
     .replace('{site_name}', siteConfig.value?.site_name || '北极星移民');
 });
-
-onMounted(() => {
-  refreshFooterNav()
-})
 
 </script>
 

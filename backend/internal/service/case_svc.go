@@ -15,10 +15,20 @@ import (
 type CaseService struct {
 	repo          repository.CaseRepository
 	homeConfigSvc *HomeConfigService
+	versionRepo   *repository.PublicVersionRepo
 }
 
 func NewCaseService(repo repository.CaseRepository, homeConfigSvc *HomeConfigService) *CaseService {
 	return &CaseService{repo: repo, homeConfigSvc: homeConfigSvc}
+}
+
+func (s *CaseService) RegisterPublicVersions(reg *PublicVersionRegistry) {
+	reg.Register("public:cases:list", func(string) (repository.PublicVersion, error) {
+		return tableVersion(s.versionRepo, "cases", "deleted_at IS NULL")
+	})
+	reg.Register("public:case:", func(key string) (repository.PublicVersion, error) {
+		return tableVersion(s.versionRepo, "cases", "deleted_at IS NULL AND slug = ?", publicSlug(key, "public:case:"))
+	})
 }
 
 func (s *CaseService) GetBySlug(slug string) (*model.Case, error) {
@@ -105,4 +115,3 @@ func (s *CaseService) Delete(id uint64) error {
 	}
 	return nil
 }
-

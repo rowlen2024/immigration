@@ -107,8 +107,10 @@ interface DetailedComparison {
 }
 
 const { data, pending, error, refresh } = await useFetch<DetailedComparison>(
-  () => `/api/v1/projects/compare?slugs=${slugA.value},${slugB.value}`
+  () => `/api/v1/projects/compare?slugs=${slugA.value},${slugB.value}`,
+  { key: computed(() => `public:compare:${slugA.value}:${slugB.value}`) },
 );
+usePublicDataFreshness(() => [`public:compare:${slugA.value}:${slugB.value}`]);
 
 const comparison = computed(() => {
   if (data.value) return data.value;

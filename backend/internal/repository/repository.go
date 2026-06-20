@@ -23,6 +23,7 @@ type Repository struct {
 	ProjectAdvantage *ProjectAdvantageRepo
 	Milestone        *MilestoneRepo
 	Testimonial      *TestimonialRepo
+	PublicVersion    *PublicVersionRepo
 }
 
 func New(db *gorm.DB) *Repository {
@@ -46,6 +47,7 @@ func New(db *gorm.DB) *Repository {
 		ProjectAdvantage: &ProjectAdvantageRepo{db: db},
 		Milestone:        &MilestoneRepo{db: db},
 		Testimonial:      &TestimonialRepo{db: db},
+		PublicVersion:    &PublicVersionRepo{db: db},
 	}
 }
 

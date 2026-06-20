@@ -126,6 +126,7 @@ const showProjectPicker = ref(false);
 const projectSearch = ref('');
 const projectPickerRef = ref<HTMLElement | null>(null);
 const visibleProjectLimit = 5;
+const faqListKey = computed(() => `public:faqs:list:${activeFilter.value}:${page.value}`)
 
 interface FaqItem {
   id: number;
@@ -173,6 +174,7 @@ onBeforeUnmount(() => {
 
 // 获取筛选按钮所用的项目列表
 const { data: projectsRaw, refresh: refreshProjects } = await useFetch('/api/v1/faqs/projects', {
+  key: 'public:faqs:projects',
   onResponseError() { /* keep filters empty if API fails */ },
 })
 
@@ -224,11 +226,16 @@ const { data: faqRaw, pending, error: fetchError, refresh } = await useFetch(
     return `/api/v1/faqs?${params.toString()}`
   },
   {
+    key: faqListKey,
     onResponseError() {
       // error handled via computed
     },
   }
 )
+usePublicDataFreshness(() => [
+  { versionKey: 'public:faqs:list', dataKey: faqListKey.value },
+  'public:faqs:projects',
+])
 
 const items = computed<FaqItem[]>(() => {
   const raw = faqRaw.value as any
@@ -265,11 +272,6 @@ useHead(() => {
   }
 })
 
-// 客户端刷新确保数据最新
-onMounted(() => {
-  $fetch('/api/v1/faqs?page=1&per_page=10').then(v => { faqRaw.value = v }).catch(() => {})
-  $fetch('/api/v1/faqs/projects').then(v => { projectsRaw.value = v }).catch(() => {})
-})
 </script>
 
 <style scoped>

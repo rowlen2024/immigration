@@ -12,12 +12,25 @@ import (
 
 // FAQService handles business logic for FAQ entries.
 type FAQService struct {
-	repo repository.FAQRepository
+	repo        repository.FAQRepository
+	versionRepo *repository.PublicVersionRepo
 }
 
 // NewFAQService creates a new FAQService.
 func NewFAQService(repo repository.FAQRepository) *FAQService {
 	return &FAQService{repo: repo}
+}
+
+func (s *FAQService) RegisterPublicVersions(reg *PublicVersionRegistry) {
+	resolver := func(string) (repository.PublicVersion, error) {
+		return s.versionRepo.VersionFromQuery(`
+SELECT MAX(updated_at) AS updated_at, COUNT(*) AS count FROM (
+  SELECT faqs.updated_at AS updated_at FROM faqs
+  UNION ALL SELECT projects.updated_at FROM projects INNER JOIN faqs ON faqs.project_id = projects.id WHERE projects.deleted_at IS NULL
+) AS versions`)
+	}
+	reg.Register("public:faqs:list", resolver)
+	reg.Register("public:faqs:projects", resolver)
 }
 
 // List returns FAQs with optional filtering and pagination.

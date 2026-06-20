@@ -1,4 +1,5 @@
 <template>
+  <NuxtLoadingIndicator color="#C8963E" error-color="#dc2626" :height="3" />
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
@@ -7,15 +8,15 @@
 <script setup lang="ts">
 import { buildOrganizationJsonLd, buildWebSiteJsonLd, toJsonLdConfig, toJsonLdScripts } from '~/utils/jsonld'
 
-const { siteConfig, refreshSiteConfig } = useMygoSiteConfig()
+const { siteConfig } = useMygoSiteConfig()
 const route = useRoute()
 
 const isPublicPage = computed(() => !route.path.startsWith('/admin'))
 
 useHead(() => {
   const sc = siteConfig.value
-  const links: Record<string, unknown>[] = []
-  const scripts: Record<string, unknown>[] = []
+  const links: any[] = []
+  const scripts: any[] = []
 
   // ── Favicon ──
   if (sc?.site_favicon) {
@@ -59,7 +60,4 @@ useHead(() => {
   return { link: links, script: scripts }
 })
 
-onMounted(() => {
-  refreshSiteConfig()
-})
 </script>

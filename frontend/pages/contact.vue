@@ -179,7 +179,10 @@ interface ProjectOption {
   name: string;
 }
 
-const { data: projectListRaw } = await useFetch<{ data?: ProjectOption[] }>('/api/v1/projects')
+const { data: projectListRaw } = await useFetch<{ data?: ProjectOption[] }>('/api/v1/projects', {
+  key: 'public:projects:list:contact',
+})
+usePublicDataFreshness([{ versionKey: 'public:projects:list', dataKey: 'public:projects:list:contact' }])
 
 const projectOptions = computed<ProjectOption[]>(() => {
   const raw = projectListRaw.value as any
@@ -318,7 +321,6 @@ const resetForm = () => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
-  $fetch<any>('/api/v1/projects').then(v => { projectListRaw.value = v }).catch(() => {})
 })
 
 onUnmounted(() => {

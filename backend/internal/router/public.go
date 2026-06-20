@@ -11,6 +11,7 @@ import (
 
 func registerPublicRoutes(api *gin.RouterGroup, h *handler.Handler) {
 	api.GET("/health", h.Health)
+	api.GET("/public-versions", h.PublicVersions)
 
 	api.POST("/leads", middleware.RateLimit(10, time.Minute), h.CreateLead)
 

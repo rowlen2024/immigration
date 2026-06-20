@@ -92,11 +92,13 @@ interface ProjectOption {
 const { data: projectListRaw, pending: projectListPending, refresh: refreshProjectList } = await useFetch<{
   data?: Array<{ slug: string; name: string }>;
 }>('/api/v1/projects', {
+  key: 'public:projects:list:compare-options',
   query: { per_page: 100 },
   onResponseError() {
     // dropdown will be empty if API fails
   },
 });
+usePublicDataFreshness([{ versionKey: 'public:projects:list', dataKey: 'public:projects:list:compare-options' }])
 
 const projectOptions = computed<ProjectOption[]>(() => {
   const raw = projectListRaw.value as any;
@@ -154,7 +156,6 @@ const onSelect = () => {
 // Trigger initial fetch if both selected from query params
 const route = useRoute();
 onMounted(() => {
-  $fetch<any>('/api/v1/projects?per_page=100').then(v => { projectListRaw.value = v }).catch(() => {})
   const queryA = route.query.a as string | undefined;
   const queryB = route.query.b as string | undefined;
   if (queryA && queryB && queryA !== queryB) {

@@ -301,6 +301,7 @@ const heroSlides = ref<HeroSlide[]>(defaultSlides);
 
 // Fetch home config (now includes featured projects/cases/testimonials embedded)
 const { data: homeConfig, pending: pendingHome, error: homeConfigError, refresh: refreshHome } = await useFetch('/api/v1/home-config', {
+  key: 'public:home',
   onResponseError({ error: err }) {
     console.error('[首页] 获取首页配置失败:', err?.message ?? err)
   },
@@ -315,8 +316,10 @@ interface LawyerItem {
 }
 
 const { data: lawyersData, refresh: refreshLawyers } = await useFetch<{ data?: LawyerItem[] }>('/api/v1/lawyers', {
+  key: 'public:lawyers:list',
   onResponseError() {},
 });
+usePublicDataFreshness(['public:home', 'public:lawyers:list'])
 
 const lawyers = computed<LawyerItem[]>(() => {
   const raw = lawyersData.value as { data?: LawyerItem[] } | null;
@@ -334,8 +337,9 @@ const error = computed(() => ({
 }));
 
 // Override slides from API if available
-if (homeConfig.value) {
-  const config = homeConfig.value as unknown as Record<string, unknown>;
+function applyHomeConfigSlides(value: unknown) {
+  if (!value) return
+  const config = value as Record<string, unknown>;
   const data = config.data as Record<string, unknown> | undefined;
   if (data && Array.isArray(data.hero_slides)) {
     heroSlides.value = (data.hero_slides as ApiHeroSlide[]).map((s) => ({
@@ -349,6 +353,7 @@ if (homeConfig.value) {
     }));
   }
 }
+watch(homeConfig, applyHomeConfigSlides, { immediate: true })
 
 const showcaseConfig = computed(() => {
   if (homeConfig.value) {
@@ -627,11 +632,6 @@ const resetAutoPlay = () => {
 let revealObserver: IntersectionObserver | null = null;
 
 onMounted(() => {
-  // Nuxt 3 refresh() 在 hydration 后不会触发真实网络请求，
-  // 必须用 $fetch 直接拉取最新数据
-  $fetch<any>('/api/v1/home-config').then(v => { homeConfig.value = v }).catch(() => {})
-  $fetch<any>('/api/v1/lawyers').then(v => { lawyersData.value = v }).catch(() => {})
-
   autoTimer = setInterval(() => {
     currentSlide.value = (currentSlide.value + 1) % heroSlides.value.length;
   }, 5000);

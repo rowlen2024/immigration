@@ -97,6 +97,7 @@ function mapProject(api: ApiProject): ProjectItem {
 const { pending, error: fetchError } = await useFetch(
   () => `/api/v1/projects?page=1&per_page=${PER_PAGE}`,
   {
+    key: 'public:projects:list:page1',
     onResponse({ response }) {
       const body = response._data as any
       if (body?.data) {
@@ -106,6 +107,7 @@ const { pending, error: fetchError } = await useFetch(
     },
   },
 )
+usePublicDataFreshness([{ versionKey: 'public:projects:list', dataKey: 'public:projects:list:page1' }])
 
 const initialLoading = computed(() => pending.value && items.value.length === 0)
 const allLoaded = computed(() => items.value.length >= totalCount.value && totalCount.value > 0)
@@ -131,13 +133,6 @@ async function loadMore() {
 }
 
 onMounted(() => {
-  $fetch(`/api/v1/projects?page=1&per_page=${PER_PAGE}`)
-    .then((v: any) => {
-      items.value = (v.data as ApiProject[]).map(mapProject)
-      totalCount.value = v.pagination?.total ?? 0
-    })
-    .catch(() => {})
-
   observer = new IntersectionObserver(
     (entries) => {
       if (entries[0]?.isIntersecting) loadMore()

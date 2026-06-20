@@ -137,10 +137,11 @@ const buildBreadcrumb = (navItems: NavItem[], path: string, label?: string): Bre
 
 export const useNavigation = (position: NavPosition = 'header') => {
   const { data } = useFetch('/api/v1/navigation', {
-    key: `navigation-${position}`,
+    key: `public:navigation:${position}`,
     query: { position },
     transform: (response: any) => response?.data ?? response,
   })
+  usePublicDataFreshness([`public:navigation:${position}`])
 
   const fallback = position === 'footer' ? FALLBACK_FOOTER : FALLBACK_HEADER
 
@@ -159,7 +160,7 @@ export const useNavigation = (position: NavPosition = 'header') => {
 
   // 客户端强制刷新（绕过 Nuxt payload 缓存）
   const refreshNavigation = () => {
-    $fetch('/api/v1/navigation', { query: { position } }).then(v => { data.value = (v as any)?.data ?? v }).catch(() => {})
+    refreshNuxtData(`public:navigation:${position}`)
   }
 
   return { navItems, getBreadcrumb, refreshNavigation, data };

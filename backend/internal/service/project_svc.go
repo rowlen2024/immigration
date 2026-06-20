@@ -25,11 +25,57 @@ type ProjectService struct {
 	caseRepo          repository.CaseRepository
 	testimonialRepo   repository.TestimonialRepository
 	faqRepo           repository.FAQRepository
+	versionRepo       *repository.PublicVersionRepo
 }
 
 // NewProjectService creates a new ProjectService with the given dependencies.
 func NewProjectService(repo repository.ProjectRepository, navRepo repository.NavigationRepository) *ProjectService {
 	return &ProjectService{repo: repo, navRepo: navRepo}
+}
+
+func (s *ProjectService) RegisterPublicVersions(reg *PublicVersionRegistry) {
+	reg.Register("public:projects:list", func(string) (repository.PublicVersion, error) {
+		return tableVersion(s.versionRepo, "projects", "deleted_at IS NULL")
+	})
+	reg.Register("public:project:", s.publicProjectVersion)
+	reg.Register("public:compare:", s.publicCompareVersion)
+}
+
+func (s *ProjectService) publicCompareVersion(key string) (repository.PublicVersion, error) {
+	raw := publicSlug(key, "public:compare:")
+	parts := strings.Split(raw, ":")
+	versions := make([]repository.PublicVersion, 0, len(parts))
+	for _, slug := range parts {
+		if slug == "" {
+			continue
+		}
+		v, err := s.publicProjectVersion("public:project:" + slug)
+		if err != nil {
+			return repository.PublicVersion{}, err
+		}
+		versions = append(versions, v)
+	}
+	return repository.MergePublicVersions(versions...), nil
+}
+
+func (s *ProjectService) publicProjectVersion(key string) (repository.PublicVersion, error) {
+	slug := publicSlug(key, "public:project:")
+	query := `
+SELECT MAX(updated_at) AS updated_at, COUNT(*) AS count FROM (
+  SELECT projects.updated_at AS updated_at FROM projects WHERE projects.slug = ? AND projects.deleted_at IS NULL
+  UNION ALL SELECT requirements.updated_at FROM requirements JOIN projects ON projects.id = requirements.project_id WHERE projects.slug = ? AND projects.deleted_at IS NULL
+  UNION ALL SELECT cost_items.updated_at FROM cost_items JOIN projects ON projects.id = cost_items.project_id WHERE projects.slug = ? AND projects.deleted_at IS NULL
+  UNION ALL SELECT timeline_phases.updated_at FROM timeline_phases JOIN projects ON projects.id = timeline_phases.project_id WHERE projects.slug = ? AND projects.deleted_at IS NULL
+  UNION ALL SELECT milestones.updated_at FROM milestones JOIN projects ON projects.id = milestones.project_id WHERE projects.slug = ? AND projects.deleted_at IS NULL
+  UNION ALL SELECT project_advantages.updated_at FROM project_advantages JOIN projects ON projects.id = project_advantages.project_id WHERE projects.slug = ? AND projects.deleted_at IS NULL
+  UNION ALL SELECT compare_configs.updated_at FROM compare_configs JOIN projects ON projects.id = compare_configs.project_id WHERE projects.slug = ? AND projects.deleted_at IS NULL
+  UNION ALL SELECT cases.updated_at FROM cases JOIN projects ON projects.id = cases.project_id WHERE projects.slug = ? AND projects.deleted_at IS NULL
+  UNION ALL SELECT testimonials.updated_at FROM testimonials JOIN projects ON projects.id = testimonials.project_id WHERE projects.slug = ? AND projects.deleted_at IS NULL
+  UNION ALL SELECT faqs.updated_at FROM faqs JOIN projects ON projects.id = faqs.project_id WHERE projects.slug = ? AND projects.deleted_at IS NULL
+  UNION ALL SELECT project_news.created_at FROM project_news JOIN projects ON projects.id = project_news.project_id WHERE projects.slug = ? AND projects.deleted_at IS NULL
+  UNION ALL SELECT pages.updated_at FROM pages JOIN project_news ON project_news.page_id = pages.id JOIN projects ON projects.id = project_news.project_id WHERE projects.slug = ? AND projects.deleted_at IS NULL AND pages.deleted_at IS NULL
+) AS versions`
+	return s.versionRepo.VersionFromQuery(query, slug, slug, slug, slug, slug, slug, slug, slug, slug, slug, slug, slug)
 }
 
 // GetBySlug returns a project by its slug with all relations preloaded.

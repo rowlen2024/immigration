@@ -10,11 +10,18 @@ import (
 )
 
 type LawyerService struct {
-	repo repository.LawyerRepository
+	repo        repository.LawyerRepository
+	versionRepo *repository.PublicVersionRepo
 }
 
 func NewLawyerService(repo repository.LawyerRepository) *LawyerService {
 	return &LawyerService{repo: repo}
+}
+
+func (s *LawyerService) RegisterPublicVersions(reg *PublicVersionRegistry) {
+	reg.Register("public:lawyers:list", func(string) (repository.PublicVersion, error) {
+		return tableVersion(s.versionRepo, "lawyers", "deleted_at IS NULL")
+	})
 }
 
 func (s *LawyerService) List(req dto.LawyerListRequest) ([]model.Lawyer, int64, error) {

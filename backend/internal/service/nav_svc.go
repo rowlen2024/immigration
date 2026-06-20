@@ -14,6 +14,20 @@ type NavService struct {
 	repo        repository.NavigationRepository
 	projectRepo repository.ProjectRepository
 	pageRepo    repository.PageRepository
+	versionRepo *repository.PublicVersionRepo
+}
+
+func (s *NavService) RegisterPublicVersions(reg *PublicVersionRegistry) {
+	reg.Register("public:navigation:", func(key string) (repository.PublicVersion, error) {
+		position := publicSlug(key, "public:navigation:")
+		return tableVersion(
+			s.versionRepo,
+			"navigations",
+			"deleted_at IS NULL AND status = 1 AND display_position IN (?, ?)",
+			position,
+			"both",
+		)
+	})
 }
 
 func (s *NavService) GetTree(position string) ([]model.Navigation, error) {
@@ -213,10 +227,10 @@ func (s *NavService) fillLinks(items []model.Navigation) {
 
 // slugCache avoids repeated DB lookups during tree traversal.
 var (
-	projectSlugMu   sync.RWMutex
+	projectSlugMu    sync.RWMutex
 	projectSlugCache = map[uint64]string{}
-	pageSlugMu      sync.RWMutex
-	pageSlugCache   = map[uint64]string{}
+	pageSlugMu       sync.RWMutex
+	pageSlugCache    = map[uint64]string{}
 )
 
 func (s *NavService) lookupProjectSlug(id uint64) string {

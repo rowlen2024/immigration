@@ -193,3 +193,15 @@ img {
 .page-skeleton-wrapper {
   padding: 40px 0;
 }
+
+/* ===== Page transition ===== */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out);
+}
+
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
+}

@@ -76,6 +76,10 @@ export default defineNuxtConfig({
   },
 
   app: {
+    pageTransition: {
+      name: 'page',
+      mode: 'out-in',
+    },
     head: {
       title: '北极星移民 | 专业投资移民服务',
       meta: [

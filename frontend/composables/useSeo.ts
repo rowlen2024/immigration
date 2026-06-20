@@ -1,4 +1,5 @@
 import { buildBreadcrumbListJsonLd, toJsonLdScript } from '~/utils/jsonld'
+import type { Link, Meta, Script } from '@unhead/vue'
 
 interface SeoOptions {
   title?: string
@@ -25,9 +26,9 @@ export const useSeo = (options: SeoOptions) => {
   })
 
   const head = computed(() => {
-    const metas: Record<string, unknown>[] = []
-    const links: Record<string, unknown>[] = []
-    const scripts: Record<string, unknown>[] = []
+    const metas: Meta[] = []
+    const links: Link[] = []
+    const scripts: Script[] = []
 
     // ── Description / OG / Twitter ──
     const desc = options.description || siteConfig.value?.seo_description || ''

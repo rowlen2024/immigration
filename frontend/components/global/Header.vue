@@ -188,7 +188,7 @@
 <script setup lang="ts">
 const route = useRoute();
 const { siteConfig } = useMygoSiteConfig();
-const { navItems, refreshNavigation } = useNavigation();
+const { navItems } = useNavigation();
 
 const mobileMenuOpen = ref(false);
 const activeMega = ref<number | null>(null);
@@ -199,7 +199,6 @@ let megaCloseTimer: ReturnType<typeof setTimeout> | null = null;
 let navTouchStartX = 0;
 
 onMounted(() => {
-  refreshNavigation()
   if (import.meta.client) {
     window.addEventListener('scroll', onScroll, { passive: true });
     isScrolled.value = window.scrollY > 50;
