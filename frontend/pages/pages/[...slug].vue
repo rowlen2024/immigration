@@ -57,6 +57,7 @@ interface CmsPage {
   meta_description?: string;
 }
 
+usePublicDataFreshness(() => [pageDataKey.value]);
 
 const { data, pending, error: fetchError, refresh } = await useFetch(
   () => `/api/v1/pages/${slug.value}`,
@@ -68,7 +69,6 @@ const { data, pending, error: fetchError, refresh } = await useFetch(
     },
   }
 );
-usePublicDataFreshness(() => [pageDataKey.value]);
 
 const page = computed(() => data.value || null);
 

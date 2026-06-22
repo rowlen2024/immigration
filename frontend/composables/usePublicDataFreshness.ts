@@ -34,7 +34,16 @@ const resolveFreshnessEntries = (keys: PublicFreshnessKeys): FreshnessEntry[] =>
   return Array.from(new Map(entries.map((item) => [`${item.versionKey}:${item.dataKey}`, item])).values())
 }
 
+const hasNuxtPayloadData = (nuxtApp: ReturnType<typeof useNuxtApp>, dataKey: string) => {
+  const payloadData = nuxtApp.payload?.data as Record<string, unknown> | undefined
+  const staticData = nuxtApp.static?.data as Record<string, unknown> | undefined
+
+  return Object.prototype.hasOwnProperty.call(payloadData || {}, dataKey)
+    || Object.prototype.hasOwnProperty.call(staticData || {}, dataKey)
+}
+
 const scheduleFreshnessCheck = (
+  nuxtApp: ReturnType<typeof useNuxtApp>,
   entries: FreshnessEntry[],
   routeKey: string,
   force: boolean,
@@ -55,13 +64,14 @@ const scheduleFreshnessCheck = (
 
   flushTimer = setTimeout(() => {
     flushTimer = null
-    inflight = flushFreshnessQueue(force, versions, refreshing).finally(() => {
+    inflight = flushFreshnessQueue(nuxtApp, force, versions, refreshing).finally(() => {
       inflight = null
     })
   }, 0)
 }
 
 const flushFreshnessQueue = async (
+  nuxtApp: ReturnType<typeof useNuxtApp>,
   force: boolean,
   versions: Ref<Record<string, string>>,
   refreshing: Ref<Record<string, boolean>>,
@@ -83,7 +93,9 @@ const flushFreshnessQueue = async (
         const next = freshVersions[entry.versionKey]
         if (!next || refreshing.value[entry.dataKey]) return false
         const previous = versions.value[entry.versionKey]
-        return force || (previous !== undefined && previous !== next)
+        return force
+          || (previous !== undefined && previous !== next)
+          || (previous === undefined && hasNuxtPayloadData(nuxtApp, entry.dataKey))
       })
       .map((entry) => entry.dataKey)
 
@@ -105,6 +117,7 @@ const flushFreshnessQueue = async (
 }
 
 export const usePublicDataFreshness = (keys: PublicFreshnessKeys) => {
+  const nuxtApp = useNuxtApp()
   const route = useRoute()
   const versions = useState<Record<string, string>>('public-data-versions', () => ({}))
   const refreshing = useState<Record<string, boolean>>('public-data-refreshing', () => ({}))
@@ -135,7 +148,7 @@ export const usePublicDataFreshness = (keys: PublicFreshnessKeys) => {
   const check = () => {
     const entries = resolveFreshnessEntries(keys)
     if (entries.length === 0) return
-    scheduleFreshnessCheck(entries, route.fullPath, route.query.fresh === '1', versions, refreshing, checked)
+    scheduleFreshnessCheck(nuxtApp, entries, route.fullPath, route.query.fresh === '1', versions, refreshing, checked)
   }
 
   const handleFocus = () => check()

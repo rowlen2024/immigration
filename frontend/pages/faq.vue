@@ -128,6 +128,11 @@ const projectPickerRef = ref<HTMLElement | null>(null);
 const visibleProjectLimit = 5;
 const faqListKey = computed(() => `public:faqs:list:${activeFilter.value}:${page.value}`)
 
+usePublicDataFreshness(() => [
+  { versionKey: 'public:faqs:list', dataKey: faqListKey.value },
+  'public:faqs:projects',
+])
+
 interface FaqItem {
   id: number;
   question: string;
@@ -232,10 +237,6 @@ const { data: faqRaw, pending, error: fetchError, refresh } = await useFetch(
     },
   }
 )
-usePublicDataFreshness(() => [
-  { versionKey: 'public:faqs:list', dataKey: faqListKey.value },
-  'public:faqs:projects',
-])
 
 const items = computed<FaqItem[]>(() => {
   const raw = faqRaw.value as any

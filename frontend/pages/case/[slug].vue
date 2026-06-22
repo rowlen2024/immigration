@@ -92,11 +92,14 @@ const route = useRoute();
 const slug = computed(() => route.params.slug as string);
 const caseDataKey = computed(() => `public:case:${slug.value}`);
 
+usePublicDataFreshness(() => [caseDataKey.value]);
+
+onMounted(fetchRelatedCasesIfReady);
+
 const { data, pending, error, refresh } = await useFetch<{ data: any }>(
   () => `/api/v1/cases/${slug.value}`,
   { key: caseDataKey },
 );
-usePublicDataFreshness(() => [caseDataKey.value]);
 
 const item = computed(() => data.value?.data ?? null);
 
@@ -165,9 +168,9 @@ async function fetchRelatedCases() {
   } catch { relatedCases.value = [] }
 }
 
-onMounted(() => {
+function fetchRelatedCasesIfReady() {
   if (item.value) fetchRelatedCases()
-})
+}
 
 watch(item, (v) => { if (v) fetchRelatedCases() })
 </script>

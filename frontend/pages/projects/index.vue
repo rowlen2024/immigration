@@ -74,7 +74,6 @@ const page = ref(1)
 const items = ref<ProjectItem[]>([])
 const totalCount = ref(0)
 const loadingMore = ref(false)
-const loadError = ref<string | null>(null)
 const sentinel = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 
@@ -94,6 +93,22 @@ function mapProject(api: ApiProject): ProjectItem {
   }
 }
 
+usePublicDataFreshness([{ versionKey: 'public:projects:list', dataKey: 'public:projects:list:page1' }])
+
+onMounted(() => {
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting) loadMore()
+    },
+    { rootMargin: '200px' },
+  )
+  if (sentinel.value) observer.observe(sentinel.value)
+})
+
+onUnmounted(() => {
+  observer?.disconnect()
+})
+
 const { pending, error: fetchError } = await useFetch(
   () => `/api/v1/projects?page=1&per_page=${PER_PAGE}`,
   {
@@ -107,12 +122,11 @@ const { pending, error: fetchError } = await useFetch(
     },
   },
 )
-usePublicDataFreshness([{ versionKey: 'public:projects:list', dataKey: 'public:projects:list:page1' }])
 
 const initialLoading = computed(() => pending.value && items.value.length === 0)
 const allLoaded = computed(() => items.value.length >= totalCount.value && totalCount.value > 0)
+const loadError = computed(() => computedError.value)
 const computedError = computed(() => (fetchError.value ? '加载失败，请刷新重试' : null))
-watchEffect(() => { loadError.value = computedError.value })
 
 async function loadMore() {
   if (loadingMore.value || allLoaded.value) return
@@ -132,19 +146,6 @@ async function loadMore() {
   }
 }
 
-onMounted(() => {
-  observer = new IntersectionObserver(
-    (entries) => {
-      if (entries[0]?.isIntersecting) loadMore()
-    },
-    { rootMargin: '200px' },
-  )
-  if (sentinel.value) observer.observe(sentinel.value)
-})
-
-onUnmounted(() => {
-  observer?.disconnect()
-})
 </script>
 
 <style scoped>

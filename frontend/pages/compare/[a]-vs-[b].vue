@@ -90,6 +90,9 @@
 const route = useRoute();
 const slugA = computed(() => (route.params.a as string) || '');
 const slugB = computed(() => (route.params.b as string) || '');
+const compareDataKey = computed(() => `public:compare:${slugA.value}:${slugB.value}`);
+
+usePublicDataFreshness(() => [compareDataKey.value]);
 
 useSeo({ title: '项目对比详情', breadcrumbLabel: `${slugA.value} vs ${slugB.value}` });
 
@@ -108,9 +111,8 @@ interface DetailedComparison {
 
 const { data, pending, error, refresh } = await useFetch<DetailedComparison>(
   () => `/api/v1/projects/compare?slugs=${slugA.value},${slugB.value}`,
-  { key: computed(() => `public:compare:${slugA.value}:${slugB.value}`) },
+  { key: compareDataKey },
 );
-usePublicDataFreshness(() => [`public:compare:${slugA.value}:${slugB.value}`]);
 
 const comparison = computed(() => {
   if (data.value) return data.value;
@@ -181,9 +183,6 @@ const comparison = computed(() => {
   };
 });
 
-onMounted(() => {
-  $fetch<any>(`/api/v1/projects/compare?slugs=${slugA.value},${slugB.value}`).then(v => { data.value = v }).catch(() => {})
-})
 </script>
 
 <style scoped>

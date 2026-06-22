@@ -89,32 +89,10 @@ interface ProjectOption {
   title: string;
 }
 
-const { data: projectListRaw, pending: projectListPending, refresh: refreshProjectList } = await useFetch<{
-  data?: Array<{ slug: string; name: string }>;
-}>('/api/v1/projects', {
-  key: 'public:projects:list:compare-options',
-  query: { per_page: 100 },
-  onResponseError() {
-    // dropdown will be empty if API fails
-  },
-});
 usePublicDataFreshness([{ versionKey: 'public:projects:list', dataKey: 'public:projects:list:compare-options' }])
-
-const projectOptions = computed<ProjectOption[]>(() => {
-  const raw = projectListRaw.value as any;
-  const items = raw?.data as Array<{ slug: string; name: string }> | undefined;
-  if (items && items.length > 0) {
-    return items.map((p) => ({ slug: p.slug, title: p.name }));
-  }
-  return [];
-});
 
 const selectedA = ref('');
 const selectedB = ref('');
-
-const sameProjectWarning = computed(() =>
-  selectedA.value && selectedB.value && selectedA.value === selectedB.value
-);
 
 interface ComparisonData {
   projects: Array<{ title: string; slug: string }>;
@@ -136,6 +114,44 @@ const {
   immediate: false,
 });
 
+const route = useRoute();
+onMounted(() => {
+  const queryA = route.query.a as string | undefined;
+  const queryB = route.query.b as string | undefined;
+  if (queryA && queryB && queryA !== queryB) {
+    selectedA.value = queryA;
+    selectedB.value = queryB;
+    nextTick(() => {
+      if (selectedA.value && selectedB.value) {
+        refreshComparison();
+      }
+    });
+  }
+});
+
+const { data: projectListRaw, pending: projectListPending, refresh: refreshProjectList } = await useFetch<{
+  data?: Array<{ slug: string; name: string }>;
+}>('/api/v1/projects', {
+  key: 'public:projects:list:compare-options',
+  query: { per_page: 100 },
+  onResponseError() {
+    // dropdown will be empty if API fails
+  },
+});
+
+const projectOptions = computed<ProjectOption[]>(() => {
+  const raw = projectListRaw.value as any;
+  const items = raw?.data as Array<{ slug: string; name: string }> | undefined;
+  if (items && items.length > 0) {
+    return items.map((p) => ({ slug: p.slug, title: p.name }));
+  }
+  return [];
+});
+
+const sameProjectWarning = computed(() =>
+  selectedA.value && selectedB.value && selectedA.value === selectedB.value
+);
+
 const comparison = computed(() => {
   const raw = comparisonRaw.value as any;
   if (raw?.rows) return raw;
@@ -152,22 +168,6 @@ const onSelect = () => {
   }
 };
 
-
-// Trigger initial fetch if both selected from query params
-const route = useRoute();
-onMounted(() => {
-  const queryA = route.query.a as string | undefined;
-  const queryB = route.query.b as string | undefined;
-  if (queryA && queryB && queryA !== queryB) {
-    selectedA.value = queryA;
-    selectedB.value = queryB;
-    nextTick(() => {
-      if (selectedA.value && selectedB.value) {
-        refreshComparison();
-      }
-    });
-  }
-});
 </script>
 
 <style scoped>

@@ -252,11 +252,15 @@ interface ApiProject {
   advantages: ApiAdvantage[];
 }
 
+usePublicDataFreshness(() => [projectDataKey.value]);
+
+onMounted(setupSectionObserver);
+onUnmounted(cleanupSectionObserver);
+
 const { data, pending, error, refresh } = await useFetch<{ data: ApiProject }>(
   () => `/api/v1/projects/${slug.value}`,
   { key: projectDataKey },
 );
-usePublicDataFreshness(() => [projectDataKey.value]);
 
 const project = computed(() => {
   const p = data.value?.data;
@@ -511,7 +515,7 @@ function scrollToSection(id: string) {
 
 let observer: IntersectionObserver | null = null;
 
-onMounted(() => {
+function setupSectionObserver() {
   const headerH = (document.querySelector('.site-header') as HTMLElement)?.offsetHeight || 64;
   observer = new IntersectionObserver(
     (entries) => {
@@ -563,7 +567,7 @@ onMounted(() => {
     window.removeEventListener('scroll', syncTabTop);
     window.removeEventListener('resize', syncTabTop);
   };
-});
+}
 
 // 切换 tab 时滚动按钮到可见区
 watch(activeTab, (id) => {
@@ -575,7 +579,7 @@ watch(activeTab, (id) => {
   });
 });
 
-onUnmounted(() => {
+function cleanupSectionObserver() {
   observer?.disconnect();
   observer = null;
   const scrollEl = tabNavRef.value?.querySelector('.tab-nav-scroll');
@@ -585,7 +589,7 @@ onUnmounted(() => {
   if (tabNavRef.value && (tabNavRef.value as any)._topCleanup) {
     (tabNavRef.value as any)._topCleanup();
   }
-});
+}
 </script>
 
 <style scoped>

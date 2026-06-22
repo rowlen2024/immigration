@@ -96,7 +96,6 @@
           <ProjectCard
             v-for="(project, idx) in projectCards"
             :key="project.slug"
-            class="reveal"
             :slug="project.slug"
             :title="project.title"
             :description="project.description"
@@ -193,7 +192,7 @@
         </div>
 
         <div class="advantages-grid">
-          <div v-for="(adv, index) in advantages" :key="index" class="advantage-card reveal">
+          <div v-for="(adv, index) in advantages" :key="index" class="advantage-card">
             <div class="advantage-icon">
               <span v-if="getIconByName(adv.icon)" v-html="getIconSvg(adv.icon, 22, '#C8963E')" class="advantage-svg"></span>
               <span v-else class="advantage-svg-fallback">
@@ -299,6 +298,25 @@ const defaultSlides: HeroSlide[] = [
 
 const heroSlides = ref<HeroSlide[]>(defaultSlides);
 
+let trustObserver: IntersectionObserver | null = null;
+
+onMounted(() => {
+  autoTimer = setInterval(() => {
+    currentSlide.value = (currentSlide.value + 1) % heroSlides.value.length;
+  }, 5000);
+});
+
+onUnmounted(() => {
+  if (autoTimer) clearInterval(autoTimer);
+  if (trustObserver) trustObserver.disconnect();
+});
+
+watch(currentSlide, (val) => {
+  visitedSlides.add(val);
+});
+
+usePublicDataFreshness(['public:home', 'public:lawyers:list'])
+
 // Fetch home config (now includes featured projects/cases/testimonials embedded)
 const { data: homeConfig, pending: pendingHome, error: homeConfigError, refresh: refreshHome } = await useFetch('/api/v1/home-config', {
   key: 'public:home',
@@ -319,7 +337,6 @@ const { data: lawyersData, refresh: refreshLawyers } = await useFetch<{ data?: L
   key: 'public:lawyers:list',
   onResponseError() {},
 });
-usePublicDataFreshness(['public:home', 'public:lawyers:list'])
 
 const lawyers = computed<LawyerItem[]>(() => {
   const raw = lawyersData.value as { data?: LawyerItem[] } | null;
@@ -618,10 +635,6 @@ const goToSlide = (index: number) => {
   resetAutoPlay();
 };
 
-watch(currentSlide, (val) => {
-  visitedSlides.add(val);
-});
-
 const resetAutoPlay = () => {
   if (autoTimer) clearInterval(autoTimer);
   autoTimer = setInterval(() => {
@@ -629,31 +642,7 @@ const resetAutoPlay = () => {
   }, 5000);
 };
 
-let revealObserver: IntersectionObserver | null = null;
-
-onMounted(() => {
-  autoTimer = setInterval(() => {
-    currentSlide.value = (currentSlide.value + 1) % heroSlides.value.length;
-  }, 5000);
-
-  revealObserver = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          revealObserver?.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.15, rootMargin: '0px 0px -30px 0px' }
-  );
-
-  document.querySelectorAll('.reveal').forEach((el) => revealObserver!.observe(el));
-});
-
 // Trust bar count-up observer
-let trustObserver: IntersectionObserver | null = null;
-
 watch([trustBarRef, trustItems], ([el, items]) => {
   if (el && items.length > 0 && !trustAnimating) {
     trustObserver?.disconnect();
@@ -668,12 +657,6 @@ watch([trustBarRef, trustItems], ([el, items]) => {
     );
     trustObserver.observe(el as HTMLElement);
   }
-});
-
-onUnmounted(() => {
-  if (autoTimer) clearInterval(autoTimer);
-  if (revealObserver) revealObserver.disconnect();
-  if (trustObserver) trustObserver.disconnect();
 });
 </script>
 

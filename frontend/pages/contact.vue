@@ -179,10 +179,28 @@ interface ProjectOption {
   name: string;
 }
 
+usePublicDataFreshness([{ versionKey: 'public:projects:list', dataKey: 'public:projects:list:contact' }])
+
+const projectDropdownOpen = ref(false);
+const projectSelectRef = ref<HTMLElement | null>(null);
+
+function handleClickOutside(e: MouseEvent) {
+  if (projectSelectRef.value && !projectSelectRef.value.contains(e.target as Node)) {
+    projectDropdownOpen.value = false;
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+})
+
 const { data: projectListRaw } = await useFetch<{ data?: ProjectOption[] }>('/api/v1/projects', {
   key: 'public:projects:list:contact',
 })
-usePublicDataFreshness([{ versionKey: 'public:projects:list', dataKey: 'public:projects:list:contact' }])
 
 const projectOptions = computed<ProjectOption[]>(() => {
   const raw = projectListRaw.value as any
@@ -211,8 +229,6 @@ const submitSuccess = ref(false);
 const submitError = ref<string | null>(null);
 
 // Custom project select
-const projectDropdownOpen = ref(false);
-const projectSelectRef = ref<HTMLElement | null>(null);
 const selectedProjectName = computed(() => {
   if (!form.project) return '';
   if (form.project === 'other') return '其他/尚不确定';
@@ -223,12 +239,6 @@ const selectProject = (slug: string) => {
   form.project = slug;
   projectDropdownOpen.value = false;
 };
-const handleClickOutside = (e: MouseEvent) => {
-  if (projectSelectRef.value && !projectSelectRef.value.contains(e.target as Node)) {
-    projectDropdownOpen.value = false;
-  }
-};
-
 const validate = (): boolean => {
   const newErrors: Record<string, string> = {};
 
@@ -319,13 +329,6 @@ const resetForm = () => {
   Object.keys(errors).forEach((key) => delete errors[key]);
 };
 
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
-})
 </script>
 
 <style scoped>
