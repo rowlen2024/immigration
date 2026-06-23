@@ -47,7 +47,7 @@ func (r *TestimonialRepo) FindAll(filter TestimonialFilter) ([]model.Testimonial
 		return nil, 0, err
 	}
 
-	q = q.Order("sort_order asc, id desc")
+	q = q.Order("sort_order asc, id asc")
 	if filter.Page > 0 && filter.PerPage > 0 {
 		offset := (filter.Page - 1) * filter.PerPage
 		q = q.Offset(offset).Limit(filter.PerPage)
@@ -78,7 +78,7 @@ func (r *TestimonialRepo) FindOptions(filter TestimonialFilter) ([]TestimonialOp
 		return nil, 0, err
 	}
 
-	q = q.Select("id", "nickname").Order("sort_order asc, id desc")
+	q = q.Select("id", "nickname").Order("sort_order asc, id asc")
 	if filter.Page > 0 && filter.PerPage > 0 {
 		offset := (filter.Page - 1) * filter.PerPage
 		q = q.Offset(offset).Limit(filter.PerPage)

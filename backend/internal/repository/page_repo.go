@@ -132,7 +132,7 @@ func (r *PageRepo) Search(keyword string) ([]model.Page, error) {
 	var pages []model.Page
 	err := r.db.
 		Where("title LIKE ? OR content LIKE ?", "%"+keyword+"%", "%"+keyword+"%").
-		Order("sort_order asc, id asc").
+		Order("sort_order asc, id desc").
 		Find(&pages).Error
 	if err != nil {
 		return nil, err

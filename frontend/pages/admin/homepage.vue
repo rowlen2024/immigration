@@ -4,7 +4,11 @@
       <h2 class="admin-page-title">首页配置</h2>
     </div>
 
-    <el-tabs v-model="activeConfigTab" type="border-card" class="homepage-tabs" v-loading="loading">
+    <div class="homepage-tabs-loading">
+      <div v-if="loading" class="homepage-loading-mask">
+        <span class="homepage-loading-spinner"></span>
+      </div>
+      <el-tabs v-model="activeConfigTab" type="border-card" class="homepage-tabs">
       <el-tab-pane label="轮播管理" name="slides">
       <!-- Hero Slides Card -->
       <el-card class="config-card">
@@ -258,7 +262,8 @@
           </div>
         </el-card>
       </el-tab-pane>
-    </el-tabs>
+      </el-tabs>
+    </div>
 
     <!-- Slide Edit Drawer -->
     <el-drawer
@@ -846,6 +851,37 @@ onMounted(load);
 
 <style scoped>
 /* Homepage tabs wrapper */
+.homepage-tabs-loading {
+  position: relative;
+  border-radius: var(--radius-md);
+}
+
+.homepage-loading-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.homepage-loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--el-border-color-light);
+  border-top-color: var(--el-color-primary);
+  border-radius: 50%;
+  animation: homepage-loading-spin 0.8s linear infinite;
+}
+
+@keyframes homepage-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .homepage-tabs {
   background: var(--color-bg-surface);
   border-radius: var(--radius-md);
