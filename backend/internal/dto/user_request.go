@@ -10,8 +10,9 @@ type UserListRequest struct {
 
 // CreateUserRequest 用户创建请求
 type CreateUserRequest struct {
-	Username    string `json:"username" binding:"required"`
-	Password    string `json:"password" binding:"required"`
-	DisplayName string `json:"display_name"`
-	Role        string `json:"role"`
+	Username            string                      `json:"username" binding:"required"`
+	Password            string                      `json:"password" binding:"required"`
+	DisplayName         string                      `json:"display_name"`
+	Role                string                      `json:"role"`
+	PermissionOverrides []PermissionOverrideRequest `json:"permission_overrides"`
 }

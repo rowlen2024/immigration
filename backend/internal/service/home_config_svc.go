@@ -214,6 +214,15 @@ type HomeConfigData struct {
 
 // Get returns the homepage configuration with parsed sections and embedded featured items.
 func (s *HomeConfigService) Get() (*HomeConfigData, error) {
+	return s.get(true)
+}
+
+// GetAdmin returns the homepage configuration without embedded featured item details.
+func (s *HomeConfigService) GetAdmin() (*HomeConfigData, error) {
+	return s.get(false)
+}
+
+func (s *HomeConfigService) get(includeFeaturedItems bool) (*HomeConfigData, error) {
 	data := &HomeConfigData{}
 
 	if heroCfg, err := s.repo.FindByKey("hero_slides"); err == nil {
@@ -239,7 +248,9 @@ func (s *HomeConfigService) Get() (*HomeConfigData, error) {
 	if projCfg, err := s.repo.FindByKey("project_showcase"); err == nil {
 		var psc ProjectShowcaseConfig
 		if err := json.Unmarshal(projCfg.ConfigValue, &psc); err == nil {
-			s.loadFeaturedProjects(&psc)
+			if includeFeaturedItems {
+				s.loadFeaturedProjects(&psc)
+			}
 			data.ProjectShowcase = &psc
 		} else {
 			logging.Logger.Warn("home_config: failed to unmarshal project_showcase", "error", err)
@@ -250,7 +261,9 @@ func (s *HomeConfigService) Get() (*HomeConfigData, error) {
 	if caseCfg, err := s.repo.FindByKey("case_showcase"); err == nil {
 		var csc CaseShowcaseConfig
 		if err := json.Unmarshal(caseCfg.ConfigValue, &csc); err == nil {
-			s.loadFeaturedCases(&csc)
+			if includeFeaturedItems {
+				s.loadFeaturedCases(&csc)
+			}
 			data.CaseShowcase = &csc
 		} else {
 			logging.Logger.Warn("home_config: failed to unmarshal case_showcase", "error", err)
@@ -261,7 +274,9 @@ func (s *HomeConfigService) Get() (*HomeConfigData, error) {
 	if testimonialCfg, err := s.repo.FindByKey("testimonial_showcase"); err == nil {
 		var tsc TestimonialShowcaseConfig
 		if err := json.Unmarshal(testimonialCfg.ConfigValue, &tsc); err == nil {
-			s.loadFeaturedTestimonials(&tsc)
+			if includeFeaturedItems {
+				s.loadFeaturedTestimonials(&tsc)
+			}
 			data.TestimonialShowcase = &tsc
 		} else {
 			logging.Logger.Warn("home_config: failed to unmarshal testimonial_showcase", "error", err)

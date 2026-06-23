@@ -27,6 +27,34 @@ type UserRepository interface {
 	Delete(id uint64) error
 }
 
+// RoleFilter holds optional filters for role queries.
+type RoleFilter struct {
+	Status *int8
+}
+
+// PermissionOverrideInput represents one user-level permission override.
+type PermissionOverrideInput struct {
+	PermissionCode string
+	Effect         string
+}
+
+// RBACRepository defines the interface for role and permission data access.
+type RBACRepository interface {
+	FindPermissions() ([]model.Permission, error)
+	FindPermissionsByCodes(codes []string) ([]model.Permission, error)
+	FindRoles(filter RoleFilter) ([]model.Role, error)
+	FindRoleByID(id uint64) (*model.Role, error)
+	FindRoleByCode(code string) (*model.Role, error)
+	CreateRole(role *model.Role) error
+	UpdateRole(role *model.Role) error
+	DeleteRole(id uint64) error
+	FindRolePermissionCodes(roleID uint64) ([]string, error)
+	ReplaceRolePermissions(roleID uint64, permissionCodes []string) error
+	FindUserPermissionOverrides(userID uint64) ([]model.UserPermissionOverride, error)
+	ReplaceUserPermissionOverrides(userID uint64, overrides []PermissionOverrideInput) error
+	FindEffectivePermissionCodes(userID uint64) ([]string, error)
+}
+
 // ProjectFilter holds optional query conditions for project list queries.
 type ProjectFilter struct {
 	Name    string
@@ -35,11 +63,18 @@ type ProjectFilter struct {
 	PerPage int
 }
 
+type ProjectOptionRow struct {
+	ID   uint64
+	Slug string
+	Name string
+}
+
 // ProjectRepository defines the interface for project data access.
 type ProjectRepository interface {
 	FindByID(id uint64) (*model.Project, error)
 	FindBySlug(slug string) (*model.Project, error)
 	FindAll(filter ProjectFilter) ([]model.Project, int64, error)
+	FindOptions(filter ProjectFilter) ([]ProjectOptionRow, int64, error)
 	FindBySlugs(slugs []string) ([]model.Project, error)
 	FindBySlugsLight(slugs []string) ([]model.Project, error)
 	Create(project *model.Project) error
@@ -84,11 +119,18 @@ type PageFilter struct {
 	PerPage  int
 }
 
+type PageOptionRow struct {
+	ID    uint64
+	Slug  string
+	Title string
+}
+
 // PageRepository defines the interface for page data access.
 type PageRepository interface {
 	FindByID(id uint64) (*model.Page, error)
 	FindBySlug(slug string) (*model.Page, error)
 	FindAll(filter PageFilter) ([]model.Page, int64, error)
+	FindOptions(filter PageFilter) ([]PageOptionRow, int64, error)
 	FindBySlugPublished(slug string) (*model.Page, error)
 	Create(page *model.Page) error
 	Update(page *model.Page) error
@@ -142,11 +184,17 @@ type CaseFilter struct {
 	PerPage     int
 }
 
+type CaseOptionRow struct {
+	ID   uint64
+	Name string
+}
+
 // CaseRepository defines the interface for case data access.
 type CaseRepository interface {
 	FindByID(id uint64) (*model.Case, error)
 	FindByIDs(ids []uint64) ([]model.Case, error)
 	FindAll(filter CaseFilter) ([]model.Case, int64, error)
+	FindOptions(filter CaseFilter) ([]CaseOptionRow, int64, error)
 	FindBySlug(slug string) (*model.Case, error)
 	Create(c *model.Case) error
 	Update(c *model.Case) error
@@ -215,11 +263,17 @@ type TestimonialFilter struct {
 	PerPage   int
 }
 
+type TestimonialOptionRow struct {
+	ID       uint64
+	Nickname string
+}
+
 // TestimonialRepository defines the interface for testimonial data access.
 type TestimonialRepository interface {
 	FindByID(id uint64) (*model.Testimonial, error)
 	FindByIDs(ids []uint64) ([]model.Testimonial, error)
 	FindAll(filter TestimonialFilter) ([]model.Testimonial, int64, error)
+	FindOptions(filter TestimonialFilter) ([]TestimonialOptionRow, int64, error)
 	Create(t *model.Testimonial) error
 	Update(t *model.Testimonial) error
 	Delete(id uint64) error

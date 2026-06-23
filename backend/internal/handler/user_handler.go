@@ -43,7 +43,20 @@ func (h *Handler) AdminGetUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.Success(user))
+	if h.svc.RBAC == nil {
+		c.JSON(http.StatusOK, dto.Success(user))
+		return
+	}
+
+	overrides, err := h.svc.RBAC.UserOverrides(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		return
+	}
+	c.JSON(http.StatusOK, dto.Success(gin.H{
+		"user":                 user,
+		"permission_overrides": overrides,
+	}))
 }
 
 func (h *Handler) AdminCreateUser(c *gin.Context) {
@@ -53,7 +66,7 @@ func (h *Handler) AdminCreateUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.svc.User.Create(req.Username, req.Password, req.DisplayName, req.Role)
+	user, err := h.svc.User.Create(req.Username, req.Password, req.DisplayName, req.Role, req.PermissionOverrides)
 	if err != nil {
 		logging.Logger.Warn("business error in AdminCreateUser", "error", err)
 		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))

@@ -24,7 +24,7 @@ func (r *LawyerRepo) FindAll(filter LawyerFilter) ([]model.Lawyer, int64, error)
 		return nil, 0, err
 	}
 
-	q = q.Order("sort_order ASC, id ASC")
+	q = q.Order("sort_order ASC, id desc")
 	if filter.Page > 0 && filter.PerPage > 0 {
 		offset := (filter.Page - 1) * filter.PerPage
 		q = q.Offset(offset).Limit(filter.PerPage)

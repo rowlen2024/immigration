@@ -35,7 +35,7 @@ func (r *ProjectRepo) withAssociations(db *gorm.DB, scope preloadScope) *gorm.DB
 
 	if scope == preloadDetail {
 		db = db.
-			Preload("News").
+			Preload("News", sorted).
 			Preload("CompareConfig").
 			Preload("Testimonials", sorted)
 	}
@@ -78,7 +78,7 @@ func (r *ProjectRepo) FindAll(filter ProjectFilter) ([]model.Project, int64, err
 		return nil, 0, err
 	}
 
-	q = q.Order("sort_order asc, id asc")
+	q = q.Order("sort_order asc, id desc")
 	if filter.Page > 0 && filter.PerPage > 0 {
 		offset := (filter.Page - 1) * filter.PerPage
 		q = q.Offset(offset).Limit(filter.PerPage)
@@ -88,6 +88,34 @@ func (r *ProjectRepo) FindAll(filter ProjectFilter) ([]model.Project, int64, err
 		return nil, 0, err
 	}
 	return projects, total, nil
+}
+
+func (r *ProjectRepo) FindOptions(filter ProjectFilter) ([]ProjectOptionRow, int64, error) {
+	var options []ProjectOptionRow
+	var total int64
+
+	q := r.db.Model(&model.Project{})
+	if filter.Name != "" {
+		q = q.Where("name LIKE ?", "%"+filter.Name+"%")
+	}
+	if filter.Status != "" {
+		q = q.Where("status = ?", filter.Status)
+	}
+
+	if err := q.Session(&gorm.Session{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	q = q.Select("id", "slug", "name").Order("sort_order asc, id desc")
+	if filter.Page > 0 && filter.PerPage > 0 {
+		offset := (filter.Page - 1) * filter.PerPage
+		q = q.Offset(offset).Limit(filter.PerPage)
+	}
+
+	if err := q.Find(&options).Error; err != nil {
+		return nil, 0, err
+	}
+	return options, total, nil
 }
 
 func (r *ProjectRepo) FindBySlugs(slugs []string) ([]model.Project, error) {

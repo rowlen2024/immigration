@@ -75,8 +75,9 @@ type UpdateTestimonialRequest struct {
 
 // UpdateUserRequest 用户更新请求
 type UpdateUserRequest struct {
-	DisplayName string `json:"display_name"`
-	Role        string `json:"role"`
-	Status      *int8  `json:"status"`
-	Password    string `json:"password,omitempty"`
+	DisplayName         string                      `json:"display_name"`
+	Role                string                      `json:"role"`
+	Status              *int8                       `json:"status"`
+	Password            string                      `json:"password,omitempty"`
+	PermissionOverrides []PermissionOverrideRequest `json:"permission_overrides"`
 }

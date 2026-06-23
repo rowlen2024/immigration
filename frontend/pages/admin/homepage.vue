@@ -462,7 +462,7 @@ const load = async () => {
   loading.value = true;
   try {
     const api = useApi();
-    const [config, projects, casesData, testimonialsData] = await Promise.all([
+    const [config, projectsData, casesData, testimonialsData] = await Promise.all([
       api<{
         hero_slides: HeroSlide[];
         advantage_items: AdvantageItem[];
@@ -472,9 +472,9 @@ const load = async () => {
         testimonial_showcase: TestimonialShowcase | null;
         hero_trust: TrustItem[] | null;
       }>('/admin/home-config'),
-      api<ProjectOption[]>('/admin/projects'),
-      api<CaseOption[]>('/admin/cases'),
-      api<TestimonialOption[]>('/admin/testimonials'),
+      api<{ items: ProjectOption[] }>('/admin/projects/options?page=1&per_page=500'),
+      api<{ items: CaseOption[] }>('/admin/cases/options?page=1&per_page=500'),
+      api<{ items: TestimonialOption[] }>('/admin/testimonials/options?page=1&per_page=500'),
     ]);
 
     if (config) {
@@ -495,26 +495,26 @@ const load = async () => {
       trustItems.value = config.hero_trust || [];
     }
 
-    if (projects) {
+    if (projectsData?.items) {
       const seen = new Set<string>();
-      allProjects.value = (projects as ProjectOption[]).filter((p) => {
+      allProjects.value = projectsData.items.filter((p) => {
         if (seen.has(p.slug)) return false;
         seen.add(p.slug);
         return true;
       });
     }
 
-    if (casesData) {
+    if (casesData?.items) {
       const seen = new Set<number>();
-      allCases.value = (casesData as CaseOption[]).filter((c) => {
+      allCases.value = casesData.items.filter((c) => {
         if (seen.has(c.id)) return false;
         seen.add(c.id);
         return true;
       });
     }
 
-    if (testimonialsData) {
-      allTestimonials.value = testimonialsData as TestimonialOption[];
+    if (testimonialsData?.items) {
+      allTestimonials.value = testimonialsData.items;
     }
   } finally {
     loading.value = false;

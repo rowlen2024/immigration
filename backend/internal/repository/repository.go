@@ -8,6 +8,7 @@ type Repository struct {
 	db               *gorm.DB
 	Project          *ProjectRepo
 	User             *UserRepo
+	RBAC             *RBACRepo
 	FAQ              *FAQRepo
 	Case             *CaseRepo
 	Page             *PageRepo
@@ -32,6 +33,7 @@ func New(db *gorm.DB) *Repository {
 		db:               db,
 		Project:          &ProjectRepo{db: db},
 		User:             &UserRepo{db: db},
+		RBAC:             &RBACRepo{db: db},
 		FAQ:              &FAQRepo{db: db},
 		Case:             &CaseRepo{db: db},
 		Page:             &PageRepo{db: db},

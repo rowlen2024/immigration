@@ -220,9 +220,9 @@
           </el-form>
         </el-tab-pane>
 
-        <el-tab-pane label="申请条件" name="requirements">
+        <el-tab-pane v-if="canReadProjectChildren" label="申请条件" name="requirements">
           <div style="margin-bottom: 12px">
-            <el-button type="primary" size="small" @click="openSubDialog('requirement')">添加条件</el-button>
+            <el-button v-if="canWriteProjectChildren" type="primary" size="small" @click="openSubDialog('requirement')">添加条件</el-button>
           </div>
           <el-table :data="subData.requirements" border size="small">
             <el-table-column prop="label" label="条件描述" min-width="180">
@@ -253,9 +253,9 @@
           </el-table>
         </el-tab-pane>
 
-        <el-tab-pane label="费用明细" name="costItems">
+        <el-tab-pane v-if="canReadProjectChildren" label="费用明细" name="costItems">
           <div style="margin-bottom: 12px">
-            <el-button type="primary" size="small" @click="openSubDialog('costItem')">添加费用</el-button>
+            <el-button v-if="canWriteProjectChildren" type="primary" size="small" @click="openSubDialog('costItem')">添加费用</el-button>
           </div>
           <el-table :data="subData.costItems" border size="small">
             <el-table-column prop="name" label="费用名称" min-width="140">
@@ -285,9 +285,9 @@
           </el-table>
         </el-tab-pane>
 
-        <el-tab-pane label="申请流程" name="timelinePhases">
+        <el-tab-pane v-if="canReadProjectChildren" label="申请流程" name="timelinePhases">
           <div style="margin-bottom: 12px">
-            <el-button type="primary" size="small" @click="openSubDialog('timelinePhase')">添加步骤</el-button>
+            <el-button v-if="canWriteProjectChildren" type="primary" size="small" @click="openSubDialog('timelinePhase')">添加步骤</el-button>
           </div>
           <el-table :data="subData.timelinePhases" border size="small">
             <el-table-column prop="phase_number" label="步骤号" width="70">
@@ -320,9 +320,9 @@
           </el-table>
         </el-tab-pane>
 
-        <el-tab-pane label="项目优势" name="advantages">
+        <el-tab-pane v-if="canReadProjectChildren" label="项目优势" name="advantages">
           <div style="margin-bottom: 12px">
-            <el-button type="primary" size="small" @click="openSubDialog('advantage')">添加优势</el-button>
+            <el-button v-if="canWriteProjectChildren" type="primary" size="small" @click="openSubDialog('advantage')">添加优势</el-button>
           </div>
           <el-table :data="subData.advantages" border size="small">
             <el-table-column label="图标" width="70">
@@ -359,9 +359,9 @@
           </el-table>
         </el-tab-pane>
 
-        <el-tab-pane label="成功案例" name="cases">
+        <el-tab-pane v-if="canReadCases" label="成功案例" name="cases">
           <div style="margin-bottom: 12px">
-            <el-button type="primary" size="small" @click="openSubDialog('caseItem')">添加案例</el-button>
+            <el-button v-if="canWriteCases" type="primary" size="small" @click="openSubDialog('caseItem')">添加案例</el-button>
           </div>
           <el-table :data="subData.cases" border size="small" max-height="360">
             <el-table-column prop="name" label="名称" min-width="120">
@@ -394,9 +394,9 @@
           </el-table>
         </el-tab-pane>
 
-        <el-tab-pane label="客户评价" name="testimonials">
+        <el-tab-pane v-if="canReadTestimonials" label="客户评价" name="testimonials">
           <div style="margin-bottom: 12px">
-            <el-button type="primary" size="small" @click="openSubDialog('testimonial')">添加评价</el-button>
+            <el-button v-if="canWriteTestimonials" type="primary" size="small" @click="openSubDialog('testimonial')">添加评价</el-button>
           </div>
           <el-table :data="subData.testimonials" border size="small" max-height="360">
             <el-table-column label="头像" width="64">
@@ -434,9 +434,9 @@
           </el-table>
         </el-tab-pane>
 
-        <el-tab-pane label="资讯" name="news">
+        <el-tab-pane v-if="canReadPages" label="资讯" name="news">
           <div style="margin-bottom: 12px">
-            <el-button type="primary" size="small" @click="openNewsDialog">添加资讯</el-button>
+            <el-button v-if="canWritePages" type="primary" size="small" @click="openNewsDialog">添加资讯</el-button>
           </div>
           <el-table :data="subNews" border size="small" max-height="360">
             <el-table-column label="标题" min-width="180">
@@ -465,7 +465,7 @@
           </el-table>
         </el-tab-pane>
 
-        <el-tab-pane label="项目对比" name="compare">
+        <el-tab-pane v-if="canReadProjectChildren" label="项目对比" name="compare">
           <div style="margin-bottom: 12px">
             <el-button type="primary" size="small" :disabled="compareConfig.compare_with.length < 2" @click="saveCompareConfig">保存对比配置</el-button>
           </div>
@@ -636,6 +636,7 @@ import { generateSlugFromText } from '~/utils/slug';
 definePageMeta({ layout: 'admin', middleware: 'auth' });
 
 const notify = useNotify();
+const { hasPermission } = usePermissions();
 
 interface Project {
   id: string;
@@ -681,8 +682,8 @@ interface NewsItem {
   id: number;
   title: string;
   slug: string;
-  status: string;
-  created_at: string;
+  status?: string;
+  created_at?: string;
 }
 
 interface CompareField {
@@ -806,6 +807,15 @@ const newsSelected = ref<number[]>([]);
 const compareFields = ref<CompareField[]>([]);
 const compareConfig = reactive<CompareConfig>({ compare_with: [], compare_fields: [] });
 const projectOptions = ref<ProjectOption[]>([]);
+
+const canReadProjectChildren = computed(() => hasPermission('projects:read'));
+const canWriteProjectChildren = computed(() => hasPermission('projects:write'));
+const canReadCases = computed(() => hasPermission('cases:read'));
+const canWriteCases = computed(() => hasPermission('cases:write'));
+const canReadTestimonials = computed(() => hasPermission('testimonials:read'));
+const canWriteTestimonials = computed(() => hasPermission('testimonials:write'));
+const canReadPages = computed(() => hasPermission('pages:read'));
+const canWritePages = computed(() => hasPermission('pages:write'));
 
 const defaultSubForm = (type: SubType): Record<string, any> => {
   switch (type) {
@@ -954,6 +964,10 @@ const generateSlug = () => {
 };
 
 const openSubDialog = (type: SubType, row?: any) => {
+  if (!canWriteSubType(type)) {
+    ElMessage.warning('无权限操作');
+    return;
+  }
   subType.value = type;
   subEditingId.value = row?.id ?? null;
   if (row) {
@@ -967,6 +981,12 @@ const openSubDialog = (type: SubType, row?: any) => {
     subForm.is_required = subForm.is_required === true || subForm.is_required === 1;
   }
   subDialogVisible.value = true;
+};
+
+const canWriteSubType = (type: SubType) => {
+  if (type === 'caseItem') return canWriteCases.value;
+  if (type === 'testimonial') return canWriteTestimonials.value;
+  return canWriteProjectChildren.value;
 };
 
 const handleSubSave = async () => {
@@ -1030,10 +1050,14 @@ const loadNews = async () => {
 };
 
 const openNewsDialog = async () => {
+  if (!canWritePages.value) {
+    ElMessage.warning('无权限操作');
+    return;
+  }
   try {
     const api = useApi();
-    const data = await api<NewsItem[]>('/admin/pages?page_type=news&status=published');
-    newsOptions.value = data ?? [];
+    const data = await api<{ items: NewsItem[] }>('/admin/pages/options?page=1&per_page=500&page_type=news&status=published');
+    newsOptions.value = data.items ?? [];
   } catch { newsOptions.value = []; }
   newsSelected.value = [];
   newsDialogVisible.value = true;
@@ -1087,8 +1111,8 @@ const loadCompareConfig = async () => {
 const loadProjectOptions = async () => {
   try {
     const api = useApi();
-    const data = await api<ProjectOption[]>('/admin/projects');
-    projectOptions.value = data ?? [];
+    const data = await api<{ items: ProjectOption[] }>('/admin/projects/options?page=1&per_page=500');
+    projectOptions.value = data.items ?? [];
   } catch { projectOptions.value = []; }
 };
 

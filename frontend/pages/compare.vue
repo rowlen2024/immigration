@@ -89,7 +89,7 @@ interface ProjectOption {
   title: string;
 }
 
-usePublicDataFreshness([{ versionKey: 'public:projects:list', dataKey: 'public:projects:list:compare-options' }])
+usePublicDataFreshness([{ versionKey: 'public:projects:list', dataKey: 'public:projects:options:compare' }])
 
 const selectedA = ref('');
 const selectedB = ref('');
@@ -131,9 +131,9 @@ onMounted(() => {
 
 const { data: projectListRaw, pending: projectListPending, refresh: refreshProjectList } = await useFetch<{
   data?: Array<{ slug: string; name: string }>;
-}>('/api/v1/projects', {
-  key: 'public:projects:list:compare-options',
-  query: { per_page: 100 },
+}>('/api/v1/projects/options', {
+  key: 'public:projects:options:compare',
+  query: { page: 1, per_page: 500 },
   onResponseError() {
     // dropdown will be empty if API fails
   },

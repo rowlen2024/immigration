@@ -12,12 +12,13 @@ import (
 
 // mockCaseRepo implements repository.CaseRepository for testing.
 type mockCaseRepo struct {
-	findByIDFn    func(id uint64) (*model.Case, error)
-	findBySlugFn  func(slug string) (*model.Case, error)
-	findAllFn     func(filter repository.CaseFilter) ([]model.Case, int64, error)
-	createFn      func(c *model.Case) error
-	updateFn      func(c *model.Case) error
-	deleteFn      func(id uint64) error
+	findByIDFn          func(id uint64) (*model.Case, error)
+	findBySlugFn        func(slug string) (*model.Case, error)
+	findAllFn           func(filter repository.CaseFilter) ([]model.Case, int64, error)
+	findOptionsFn       func(filter repository.CaseFilter) ([]repository.CaseOptionRow, int64, error)
+	createFn            func(c *model.Case) error
+	updateFn            func(c *model.Case) error
+	deleteFn            func(id uint64) error
 	deleteByProjectIDFn func(projectID uint64) error
 }
 
@@ -38,6 +39,13 @@ func (m *mockCaseRepo) FindBySlug(slug string) (*model.Case, error) {
 func (m *mockCaseRepo) FindAll(filter repository.CaseFilter) ([]model.Case, int64, error) {
 	if m.findAllFn != nil {
 		return m.findAllFn(filter)
+	}
+	return nil, 0, nil
+}
+
+func (m *mockCaseRepo) FindOptions(filter repository.CaseFilter) ([]repository.CaseOptionRow, int64, error) {
+	if m.findOptionsFn != nil {
+		return m.findOptionsFn(filter)
 	}
 	return nil, 0, nil
 }
@@ -70,11 +78,42 @@ func (m *mockCaseRepo) DeleteByProjectID(projectID uint64) error {
 	return nil
 }
 
-func (m *mockCaseRepo) FindByIDs(ids []uint64) ([]model.Case, error) { return nil, nil }
-func (m *mockCaseRepo) FindAllPhotoURLs() ([]string, error)           { return nil, nil }
-func (m *mockCaseRepo) FindAllContents() ([]string, error)            { return nil, nil }
-func (m *mockCaseRepo) Count() (int64, error)                         { return 0, nil }
+func (m *mockCaseRepo) FindByIDs(ids []uint64) ([]model.Case, error)     { return nil, nil }
+func (m *mockCaseRepo) FindAllPhotoURLs() ([]string, error)              { return nil, nil }
+func (m *mockCaseRepo) FindAllContents() ([]string, error)               { return nil, nil }
+func (m *mockCaseRepo) Count() (int64, error)                            { return 0, nil }
 func (m *mockCaseRepo) CountByRange(start, end time.Time) (int64, error) { return 0, nil }
+
+func TestCaseService_Options(t *testing.T) {
+	projectID := uint64(9)
+	repo := &mockCaseRepo{
+		findOptionsFn: func(filter repository.CaseFilter) ([]repository.CaseOptionRow, int64, error) {
+			if filter.ProjectID == nil || *filter.ProjectID != projectID {
+				t.Fatalf("expected project_id %d, got %#v", projectID, filter.ProjectID)
+			}
+			if filter.Name != "case" {
+				t.Fatalf("expected name filter case, got %q", filter.Name)
+			}
+			if filter.Page != 2 || filter.PerPage != 20 {
+				t.Fatalf("expected pagination 2/20, got %d/%d", filter.Page, filter.PerPage)
+			}
+			return []repository.CaseOptionRow{{ID: 7, Name: "case one"}}, 1, nil
+		},
+	}
+	svc := NewCaseService(repo, nil)
+
+	items, total, err := svc.Options(dto.CaseOptionRequest{
+		OptionPaginationRequest: dto.OptionPaginationRequest{Page: 2, PerPage: 20},
+		ProjectID:               &projectID,
+		Name:                    "case",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if total != 1 || len(items) != 1 || items[0].ID != 7 {
+		t.Fatalf("unexpected options result: total=%d items=%v", total, items)
+	}
+}
 
 func TestCase_List(t *testing.T) {
 	sampleCases := []model.Case{

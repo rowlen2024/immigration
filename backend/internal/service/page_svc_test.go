@@ -13,9 +13,10 @@ import (
 
 // mockPageRepo implements repository.PageRepository for testing.
 type mockPageRepo struct {
-	findByIDFn           func(id uint64) (*model.Page, error)
+	findByIDFn            func(id uint64) (*model.Page, error)
 	findBySlugFn          func(slug string) (*model.Page, error)
 	findAllFn             func(filter repository.PageFilter) ([]model.Page, int64, error)
+	findOptionsFn         func(filter repository.PageFilter) ([]repository.PageOptionRow, int64, error)
 	findBySlugPublishedFn func(slug string) (*model.Page, error)
 	createFn              func(page *model.Page) error
 	updateFn              func(page *model.Page) error
@@ -40,6 +41,13 @@ func (m *mockPageRepo) FindBySlug(slug string) (*model.Page, error) {
 func (m *mockPageRepo) FindAll(filter repository.PageFilter) ([]model.Page, int64, error) {
 	if m.findAllFn != nil {
 		return m.findAllFn(filter)
+	}
+	return nil, 0, nil
+}
+
+func (m *mockPageRepo) FindOptions(filter repository.PageFilter) ([]repository.PageOptionRow, int64, error) {
+	if m.findOptionsFn != nil {
+		return m.findOptionsFn(filter)
 	}
 	return nil, 0, nil
 }
@@ -79,10 +87,38 @@ func (m *mockPageRepo) Search(keyword string) ([]model.Page, error) {
 	return nil, nil
 }
 
-func (m *mockPageRepo) FindAllCoverImages() ([]string, error) { return nil, nil }
-func (m *mockPageRepo) FindAllContents() ([]string, error)    { return nil, nil }
-func (m *mockPageRepo) Count() (int64, error)                 { return 0, nil }
+func (m *mockPageRepo) FindAllCoverImages() ([]string, error)            { return nil, nil }
+func (m *mockPageRepo) FindAllContents() ([]string, error)               { return nil, nil }
+func (m *mockPageRepo) Count() (int64, error)                            { return 0, nil }
 func (m *mockPageRepo) CountByRange(start, end time.Time) (int64, error) { return 0, nil }
+
+func TestPageService_OptionsClampsPerPage(t *testing.T) {
+	repo := &mockPageRepo{
+		findOptionsFn: func(filter repository.PageFilter) ([]repository.PageOptionRow, int64, error) {
+			if filter.PageType != "news" || filter.Status != "published" || filter.Title != "visa" {
+				t.Fatalf("unexpected filter: %#v", filter)
+			}
+			if filter.Page != 1 || filter.PerPage != 500 {
+				t.Fatalf("expected pagination 1/500, got %d/%d", filter.Page, filter.PerPage)
+			}
+			return []repository.PageOptionRow{{ID: 3, Slug: "visa-news", Title: "Visa News"}}, 1, nil
+		},
+	}
+	svc := NewPageService(repo, nil)
+
+	items, total, err := svc.Options(dto.PageOptionRequest{
+		OptionPaginationRequest: dto.OptionPaginationRequest{Page: 1, PerPage: 999},
+		PageType:                "news",
+		Status:                  "published",
+		Title:                   "visa",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if total != 1 || len(items) != 1 || items[0].Slug != "visa-news" {
+		t.Fatalf("unexpected options result: total=%d items=%v", total, items)
+	}
+}
 
 func TestPage_GetBySlug_Success(t *testing.T) {
 	expected := &model.Page{ID: 1, Title: "About Us", Slug: "about"}

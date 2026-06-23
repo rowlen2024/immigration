@@ -128,6 +128,7 @@ const mobileOpen = ref(false);
 interface NavItem {
   to: string;
   label: string;
+  permissions?: string[];
 }
 
 interface NavGroup {
@@ -135,9 +136,10 @@ interface NavGroup {
   icon: string;
   to?: string;
   children?: NavItem[];
+  permissions?: string[];
 }
 
-const navGroups: NavGroup[] = [
+const baseNavGroups: NavGroup[] = [
   { to: '/admin', label: '控制台', icon: getIconSvg('bar-chart', 20) },
   {
     label: '内容管理',
@@ -164,6 +166,54 @@ const navGroups: NavGroup[] = [
   },
 ];
 
+const routePermissions: Record<string, string[]> = {
+  '/admin': ['dashboard:read'],
+  '/admin/homepage': ['homepage:read'],
+  '/admin/navigation': ['navigation:read'],
+  '/admin/pages': ['pages:read'],
+  '/admin/media': ['media:read'],
+  '/admin/projects': ['projects:read'],
+  '/admin/faqs': ['faqs:read'],
+  '/admin/cases': ['cases:read'],
+  '/admin/lawyers': ['lawyers:read'],
+  '/admin/leads': ['leads:read'],
+  '/admin/users': ['users:read'],
+  '/admin/roles': ['roles:read'],
+  '/admin/settings': ['settings:read'],
+};
+
+const { loadPermissions, hasAnyPermission } = usePermissions();
+
+const withRoutePermissions = <T extends NavItem | NavGroup>(item: T): T => ({
+  ...item,
+  permissions: item.permissions ?? (item.to ? routePermissions[item.to] : undefined),
+});
+
+const navGroups = computed<NavGroup[]>(() => {
+  return baseNavGroups.reduce((groups: NavGroup[], baseGroup) => {
+    const group = withRoutePermissions(baseGroup);
+    if (group.children) {
+      const children = group.children.map(withRoutePermissions);
+      if (children.some((child) => child.to === '/admin/users') && !children.some((child) => child.to === '/admin/roles')) {
+        children.splice(children.findIndex((child) => child.to === '/admin/users') + 1, 0, {
+          to: '/admin/roles',
+          label: '角色权限',
+          permissions: routePermissions['/admin/roles'],
+        });
+      }
+      const visibleChildren = children.filter((child) => hasAnyPermission(child.permissions));
+      if (visibleChildren.length > 0) {
+        groups.push({ ...group, children: visibleChildren });
+      }
+      return groups;
+    }
+    if (hasAnyPermission(group.permissions)) {
+      groups.push(group);
+    }
+    return groups;
+  }, []);
+});
+
 const expandedGroups = ref(new Set<string>());
 
 const isActive = (to: string) => {
@@ -188,7 +238,7 @@ const toggleGroup = (label: string) => {
 watch(
   () => route.path,
   () => {
-    for (const group of navGroups) {
+    for (const group of navGroups.value) {
       if (group.children && isGroupActive(group)) {
         if (!expandedGroups.value.has(group.label)) {
           expandedGroups.value.add(group.label);
@@ -218,6 +268,10 @@ const handleLogout = () => {
 };
 
 const { user } = useAuth();
+
+onMounted(() => {
+  loadPermissions();
+});
 
 const userName = computed(() => (user.value as any)?.display_name || (user.value as any)?.username || '管理员');
 const userRoleLabel = computed(() => {

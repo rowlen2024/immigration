@@ -1,4 +1,4 @@
-﻿package service
+package service
 
 import (
 	"errors"
@@ -12,16 +12,17 @@ import (
 
 // mockProjectRepo implements repository.ProjectRepository for testing.
 type mockProjectRepo struct {
-	findByIDFn    func(id uint64) (*model.Project, error)
-	findBySlugFn  func(slug string) (*model.Project, error)
-	findAllFn     func(filter repository.ProjectFilter) ([]model.Project, int64, error)
-	findBySlugsFn func(slugs []string) ([]model.Project, error)
-	createFn      func(project *model.Project) error
-	updateFn      func(project *model.Project) error
-	deleteFn      func(id uint64) error
-	findNewsFn    func(projectID uint64) ([]model.Page, error)
-	addNewsFn     func(projectID uint64, pageIDs []uint64) error
-	removeNewsFn  func(projectID, pageID uint64) error
+	findByIDFn              func(id uint64) (*model.Project, error)
+	findBySlugFn            func(slug string) (*model.Project, error)
+	findAllFn               func(filter repository.ProjectFilter) ([]model.Project, int64, error)
+	findOptionsFn           func(filter repository.ProjectFilter) ([]repository.ProjectOptionRow, int64, error)
+	findBySlugsFn           func(slugs []string) ([]model.Project, error)
+	createFn                func(project *model.Project) error
+	updateFn                func(project *model.Project) error
+	deleteFn                func(id uint64) error
+	findNewsFn              func(projectID uint64) ([]model.Page, error)
+	addNewsFn               func(projectID uint64, pageIDs []uint64) error
+	removeNewsFn            func(projectID, pageID uint64) error
 	deleteNewsByProjectIDFn func(projectID uint64) error
 }
 
@@ -42,6 +43,13 @@ func (m *mockProjectRepo) FindBySlug(slug string) (*model.Project, error) {
 func (m *mockProjectRepo) FindAll(filter repository.ProjectFilter) ([]model.Project, int64, error) {
 	if m.findAllFn != nil {
 		return m.findAllFn(filter)
+	}
+	return nil, 0, nil
+}
+
+func (m *mockProjectRepo) FindOptions(filter repository.ProjectFilter) ([]repository.ProjectOptionRow, int64, error) {
+	if m.findOptionsFn != nil {
+		return m.findOptionsFn(filter)
 	}
 	return nil, 0, nil
 }
@@ -518,6 +526,32 @@ func TestProject_Compare_RepoError(t *testing.T) {
 }
 
 func (m *mockProjectRepo) FindBySlugsLight(slugs []string) ([]model.Project, error) { return nil, nil }
-func (m *mockProjectRepo) FindAllCoverImages() ([]string, error) { return nil, nil }
-func (m *mockProjectRepo) Count() (int64, error) { return 0, nil }
-func (m *mockProjectRepo) CountByRange(start, end time.Time) (int64, error) { return 0, nil }
+func (m *mockProjectRepo) FindAllCoverImages() ([]string, error)                    { return nil, nil }
+func (m *mockProjectRepo) Count() (int64, error)                                    { return 0, nil }
+func (m *mockProjectRepo) CountByRange(start, end time.Time) (int64, error)         { return 0, nil }
+
+func TestProjectService_Options_PublicDefaults(t *testing.T) {
+	repo := &mockProjectRepo{
+		findOptionsFn: func(filter repository.ProjectFilter) ([]repository.ProjectOptionRow, int64, error) {
+			if filter.Name != "EB" {
+				t.Fatalf("expected name filter EB, got %q", filter.Name)
+			}
+			if filter.Status != "1" {
+				t.Fatalf("expected public status filter 1, got %q", filter.Status)
+			}
+			if filter.Page != 1 || filter.PerPage != 500 {
+				t.Fatalf("expected default pagination 1/500, got %d/%d", filter.Page, filter.PerPage)
+			}
+			return []repository.ProjectOptionRow{{ID: 1, Slug: "eb5", Name: "EB-5"}}, 1, nil
+		},
+	}
+	svc := NewProjectService(repo, nil)
+
+	items, total, err := svc.Options(dto.ProjectOptionRequest{Name: "EB"}, true)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if total != 1 || len(items) != 1 || items[0].Slug != "eb5" {
+		t.Fatalf("unexpected options result: total=%d items=%v", total, items)
+	}
+}

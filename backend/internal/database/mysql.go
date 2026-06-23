@@ -40,6 +40,10 @@ func InitMySQL(cfg *config.Config) (*gorm.DB, error) {
 func AutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&model.User{},
+		&model.Role{},
+		&model.Permission{},
+		&model.RolePermission{},
+		&model.UserPermissionOverride{},
 		&model.Project{},
 		&model.Requirement{},
 		&model.CostItem{},

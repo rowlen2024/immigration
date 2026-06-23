@@ -43,6 +43,9 @@ export const useAuth = () => {
   };
 
   const logout = () => {
+    const { clearPermissions } = usePermissions();
+    clearPermissions();
+
     token.value = null;
     user.value = null;
 

@@ -16,6 +16,7 @@ func registerPublicRoutes(api *gin.RouterGroup, h *handler.Handler) {
 	api.POST("/leads", middleware.RateLimit(10, time.Minute), h.CreateLead)
 
 	api.GET("/projects", h.ListProjects)
+	api.GET("/projects/options", h.ListProjectOptions)
 	api.GET("/projects/compare", h.CompareProjects)
 	api.GET("/projects/:slug", h.GetProject)
 	api.GET("/faqs/projects", h.ListFAQProjects)

@@ -1,42 +1,90 @@
 package middleware
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-var rolePermissions = map[string][]string{
-	"admin":  {"admin:read", "admin:write", "projects:write", "content:write", "leads:read"},
-	"editor": {"admin:read", "content:write", "leads:read"},
-	"viewer": {"admin:read"},
+type PermissionResolver interface {
+	EffectivePermissions(userID uint64) ([]string, error)
 }
 
-func RBAC(requiredPermission string) gin.HandlerFunc {
+func LoadPermissions(resolver PermissionResolver) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		role, exists := c.Get("role")
+		userIDValue, exists := c.Get("user_id")
 		if !exists {
 			c.JSON(http.StatusForbidden, gin.H{"code": 403, "message": "forbidden"})
 			c.Abort()
 			return
 		}
 
-		roleStr := role.(string)
-		permissions, ok := rolePermissions[roleStr]
+		userID, ok := userIDValue.(uint64)
 		if !ok {
 			c.JSON(http.StatusForbidden, gin.H{"code": 403, "message": "forbidden"})
 			c.Abort()
 			return
 		}
 
-		for _, p := range permissions {
-			if p == requiredPermission {
-				c.Next()
-				return
-			}
+		permissions, err := resolver.EffectivePermissions(userID)
+		if err != nil {
+			log.Printf("failed to load permissions for user %d: %v", userID, err)
+			c.JSON(http.StatusForbidden, gin.H{"code": 403, "message": "forbidden"})
+			c.Abort()
+			return
+		}
+
+		c.Set("permissions", permissions)
+		c.Next()
+	}
+}
+
+func RBAC(requiredPermission string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if hasAnyRequiredPermission(c, []string{requiredPermission}) {
+			c.Next()
+			return
 		}
 
 		c.JSON(http.StatusForbidden, gin.H{"code": 403, "message": "forbidden"})
 		c.Abort()
 	}
+}
+
+func RBACAny(requiredPermissions ...string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if hasAnyRequiredPermission(c, requiredPermissions) {
+			c.Next()
+			return
+		}
+
+		c.JSON(http.StatusForbidden, gin.H{"code": 403, "message": "forbidden"})
+		c.Abort()
+	}
+}
+
+func hasAnyRequiredPermission(c *gin.Context, requiredPermissions []string) bool {
+	if len(requiredPermissions) == 0 {
+		return true
+	}
+
+	permissionsValue, exists := c.Get("permissions")
+	if !exists {
+		return false
+	}
+
+	permissions, ok := permissionsValue.([]string)
+	if !ok {
+		return false
+	}
+
+	for _, permission := range permissions {
+		for _, requiredPermission := range requiredPermissions {
+			if permission == requiredPermission {
+				return true
+			}
+		}
+	}
+	return false
 }

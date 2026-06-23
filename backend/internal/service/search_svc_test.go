@@ -1,12 +1,12 @@
-﻿package service
+package service
 
 import (
 	"errors"
 	"testing"
 
 	"mygo-immigration/backend/internal/model"
-	"time"
 	"mygo-immigration/backend/internal/repository"
+	"time"
 )
 
 // searchMockFAQRepo implements repository.FAQRepository for search service tests.
@@ -14,15 +14,15 @@ type searchMockFAQRepo struct {
 	searchFn func(keyword string) ([]model.FAQ, error)
 }
 
-func (m *searchMockFAQRepo) FindByID(id uint64) (*model.FAQ, error) { return nil, nil }
+func (m *searchMockFAQRepo) FindByID(id uint64) (*model.FAQ, error)         { return nil, nil }
 func (m *searchMockFAQRepo) FindDistinctProjects() ([]model.Project, error) { return nil, nil }
 func (m *searchMockFAQRepo) FindAll(params repository.FAQQueryParams) ([]repository.FAQWithProject, int64, error) {
 	return nil, 0, nil
 }
-func (m *searchMockFAQRepo) Create(faq *model.FAQ) error                           { return nil }
-func (m *searchMockFAQRepo) Update(faq *model.FAQ) error                           { return nil }
-func (m *searchMockFAQRepo) Delete(id uint64) error                                { return nil }
-func (m *searchMockFAQRepo) DeleteByProjectID(projectID uint64) error               { return nil }
+func (m *searchMockFAQRepo) Create(faq *model.FAQ) error              { return nil }
+func (m *searchMockFAQRepo) Update(faq *model.FAQ) error              { return nil }
+func (m *searchMockFAQRepo) Delete(id uint64) error                   { return nil }
+func (m *searchMockFAQRepo) DeleteByProjectID(projectID uint64) error { return nil }
 func (m *searchMockFAQRepo) Search(keyword string) ([]model.FAQ, error) {
 	if m.searchFn != nil {
 		return m.searchFn(keyword)
@@ -35,9 +35,12 @@ type searchMockPageRepo struct {
 	searchFn func(keyword string) ([]model.Page, error)
 }
 
-func (m *searchMockPageRepo) FindByID(id uint64) (*model.Page, error) { return nil, nil }
+func (m *searchMockPageRepo) FindByID(id uint64) (*model.Page, error)     { return nil, nil }
 func (m *searchMockPageRepo) FindBySlug(slug string) (*model.Page, error) { return nil, nil }
 func (m *searchMockPageRepo) FindAll(filter repository.PageFilter) ([]model.Page, int64, error) {
+	return nil, 0, nil
+}
+func (m *searchMockPageRepo) FindOptions(filter repository.PageFilter) ([]repository.PageOptionRow, int64, error) {
 	return nil, 0, nil
 }
 func (m *searchMockPageRepo) FindBySlugPublished(slug string) (*model.Page, error) {
@@ -202,7 +205,7 @@ func TestSearch_KeywordForwardedCorrectly(t *testing.T) {
 	}
 }
 
-func (m *searchMockPageRepo) FindAllCoverImages() ([]string, error) { return nil, nil }
-func (m *searchMockPageRepo) FindAllContents() ([]string, error) { return nil, nil }
-func (m *searchMockPageRepo) Count() (int64, error) { return 0, nil }
+func (m *searchMockPageRepo) FindAllCoverImages() ([]string, error)            { return nil, nil }
+func (m *searchMockPageRepo) FindAllContents() ([]string, error)               { return nil, nil }
+func (m *searchMockPageRepo) Count() (int64, error)                            { return 0, nil }
 func (m *searchMockPageRepo) CountByRange(start, end time.Time) (int64, error) { return 0, nil }

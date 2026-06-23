@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 	"encoding/json"
@@ -18,16 +18,17 @@ import (
 
 // handlerMockProjectRepo implements repository.ProjectRepository.
 type handlerMockProjectRepo struct {
-	findByID   func(id uint64) (*model.Project, error)
-	findBySlug  func(slug string) (*model.Project, error)
-	findAll     func(filter repository.ProjectFilter) ([]model.Project, int64, error)
-	findBySlugs func(slugs []string) ([]model.Project, error)
-	create      func(project *model.Project) error
-	update      func(project *model.Project) error
-	delete      func(id uint64) error
-	findNews    func(projectID uint64) ([]model.Page, error)
-	addNews     func(projectID uint64, pageIDs []uint64) error
-	removeNews  func(projectID, pageID uint64) error
+	findByID              func(id uint64) (*model.Project, error)
+	findBySlug            func(slug string) (*model.Project, error)
+	findAll               func(filter repository.ProjectFilter) ([]model.Project, int64, error)
+	findOptions           func(filter repository.ProjectFilter) ([]repository.ProjectOptionRow, int64, error)
+	findBySlugs           func(slugs []string) ([]model.Project, error)
+	create                func(project *model.Project) error
+	update                func(project *model.Project) error
+	delete                func(id uint64) error
+	findNews              func(projectID uint64) ([]model.Page, error)
+	addNews               func(projectID uint64, pageIDs []uint64) error
+	removeNews            func(projectID, pageID uint64) error
 	deleteNewsByProjectID func(projectID uint64) error
 }
 
@@ -46,6 +47,12 @@ func (m *handlerMockProjectRepo) FindBySlug(slug string) (*model.Project, error)
 func (m *handlerMockProjectRepo) FindAll(filter repository.ProjectFilter) ([]model.Project, int64, error) {
 	if m.findAll != nil {
 		return m.findAll(filter)
+	}
+	return nil, 0, nil
+}
+func (m *handlerMockProjectRepo) FindOptions(filter repository.ProjectFilter) ([]repository.ProjectOptionRow, int64, error) {
+	if m.findOptions != nil {
+		return m.findOptions(filter)
 	}
 	return nil, 0, nil
 }
@@ -492,7 +499,9 @@ func TestProjectHandler_ListProjects_ServiceError(t *testing.T) {
 	}
 }
 
-func (m *handlerMockProjectRepo) FindBySlugsLight(slugs []string) ([]model.Project, error) { return nil, nil }
-func (m *handlerMockProjectRepo) FindAllCoverImages() ([]string, error) { return nil, nil }
-func (m *handlerMockProjectRepo) Count() (int64, error) { return 0, nil }
+func (m *handlerMockProjectRepo) FindBySlugsLight(slugs []string) ([]model.Project, error) {
+	return nil, nil
+}
+func (m *handlerMockProjectRepo) FindAllCoverImages() ([]string, error)            { return nil, nil }
+func (m *handlerMockProjectRepo) Count() (int64, error)                            { return 0, nil }
 func (m *handlerMockProjectRepo) CountByRange(start, end time.Time) (int64, error) { return 0, nil }

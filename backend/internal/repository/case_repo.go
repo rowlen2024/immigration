@@ -69,6 +69,37 @@ func (r *CaseRepo) FindAll(filter CaseFilter) ([]model.Case, int64, error) {
 	return cases, total, nil
 }
 
+func (r *CaseRepo) FindOptions(filter CaseFilter) ([]CaseOptionRow, int64, error) {
+	var cases []CaseOptionRow
+	var total int64
+
+	q := r.db.Model(&model.Case{})
+	if filter.ProjectID != nil {
+		q = q.Where("project_id = ?", *filter.ProjectID)
+	}
+	if filter.CountryFrom != "" {
+		q = q.Where("country_from = ?", filter.CountryFrom)
+	}
+	if filter.Name != "" {
+		q = q.Where("name LIKE ?", "%"+filter.Name+"%")
+	}
+
+	if err := q.Session(&gorm.Session{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	q = q.Select("id", "name").Order("sort_order asc, id asc")
+	if filter.Page > 0 && filter.PerPage > 0 {
+		offset := (filter.Page - 1) * filter.PerPage
+		q = q.Offset(offset).Limit(filter.PerPage)
+	}
+
+	if err := q.Find(&cases).Error; err != nil {
+		return nil, 0, err
+	}
+	return cases, total, nil
+}
+
 func (r *CaseRepo) Create(c *model.Case) error {
 	return r.db.Create(c).Error
 }

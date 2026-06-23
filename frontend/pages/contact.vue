@@ -179,7 +179,7 @@ interface ProjectOption {
   name: string;
 }
 
-usePublicDataFreshness([{ versionKey: 'public:projects:list', dataKey: 'public:projects:list:contact' }])
+usePublicDataFreshness([{ versionKey: 'public:projects:list', dataKey: 'public:projects:options:contact' }])
 
 const projectDropdownOpen = ref(false);
 const projectSelectRef = ref<HTMLElement | null>(null);
@@ -198,8 +198,9 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
 })
 
-const { data: projectListRaw } = await useFetch<{ data?: ProjectOption[] }>('/api/v1/projects', {
-  key: 'public:projects:list:contact',
+const { data: projectListRaw } = await useFetch<{ data?: ProjectOption[] }>('/api/v1/projects/options', {
+  key: 'public:projects:options:contact',
+  query: { page: 1, per_page: 500 },
 })
 
 const projectOptions = computed<ProjectOption[]>(() => {

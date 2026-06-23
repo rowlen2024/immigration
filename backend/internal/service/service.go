@@ -16,6 +16,7 @@ type Service struct {
 	Project       *ProjectService
 	Auth          *AuthService
 	User          *UserService
+	RBAC          *RBACService
 	FAQ           *FAQService
 	Page          *PageService
 	Case          *CaseService
@@ -39,7 +40,8 @@ func New(repo *repository.Repository, cfg *config.Config) *Service {
 		repo:       repo,
 		Project:    NewProjectService(repo.Project, repo.Nav),
 		Auth:       NewAuthService(repo.User, cfg),
-		User:       NewUserService(repo.User),
+		RBAC:       NewRBACService(repo.RBAC, repo.User),
+		User:       NewUserService(repo.User, repo.RBAC),
 		FAQ:        NewFAQService(repo.FAQ),
 		Page:       NewPageService(repo.Page, repo.Nav),
 		Case:       NewCaseService(repo.Case, nil),

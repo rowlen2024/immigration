@@ -22,9 +22,9 @@ func (h *Handler) GetHomeConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.Success(configs))
 }
 
-// GetAdminHomeConfig returns full home config for admin use.
+// GetAdminHomeConfig returns home config for admin use.
 func (h *Handler) GetAdminHomeConfig(c *gin.Context) {
-	configs, err := h.svc.HomeConfig.Get()
+	configs, err := h.svc.HomeConfig.GetAdmin()
 	if err != nil {
 		logging.Logger.Error("failed in GetAdminHomeConfig", "error", err)
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))

@@ -245,8 +245,8 @@ interface PageBrief {
   slug: string;
 }
 
-const { user } = useAuth();
-const isViewer = computed(() => user.value?.role === 'viewer');
+const { hasPermission } = usePermissions();
+const isViewer = computed(() => !hasPermission('navigation:write'));
 
 const treeData = ref<NavItem[]>([]);
 const projects = ref<ProjectBrief[]>([]);
@@ -389,11 +389,11 @@ const loadOptions = async () => {
   try {
     const api = useApi();
     const [projRes, pageRes] = await Promise.all([
-      api<ProjectBrief[]>('/admin/projects'),
-      api<PageBrief[]>('/admin/pages'),
+      api<{ items: ProjectBrief[] }>('/admin/projects/options?page=1&per_page=500'),
+      api<{ items: PageBrief[] }>('/admin/pages/options?page=1&per_page=500'),
     ]);
-    projects.value = projRes || [];
-    pages.value = pageRes || [];
+    projects.value = projRes?.items || [];
+    pages.value = pageRes?.items || [];
   } catch {
     // non-critical; dropdowns will be empty
   }

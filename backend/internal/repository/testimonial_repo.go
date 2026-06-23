@@ -47,7 +47,38 @@ func (r *TestimonialRepo) FindAll(filter TestimonialFilter) ([]model.Testimonial
 		return nil, 0, err
 	}
 
-	q = q.Order("sort_order asc, id asc")
+	q = q.Order("sort_order asc, id desc")
+	if filter.Page > 0 && filter.PerPage > 0 {
+		offset := (filter.Page - 1) * filter.PerPage
+		q = q.Offset(offset).Limit(filter.PerPage)
+	}
+
+	if err := q.Find(&items).Error; err != nil {
+		return nil, 0, err
+	}
+	return items, total, nil
+}
+
+func (r *TestimonialRepo) FindOptions(filter TestimonialFilter) ([]TestimonialOptionRow, int64, error) {
+	var items []TestimonialOptionRow
+	var total int64
+
+	q := r.db.Model(&model.Testimonial{})
+	if filter.ProjectID != nil {
+		q = q.Where("project_id = ?", *filter.ProjectID)
+	}
+	if filter.Nickname != "" {
+		q = q.Where("nickname LIKE ?", "%"+filter.Nickname+"%")
+	}
+	if filter.Rating != nil {
+		q = q.Where("rating = ?", *filter.Rating)
+	}
+
+	if err := q.Session(&gorm.Session{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	q = q.Select("id", "nickname").Order("sort_order asc, id desc")
 	if filter.Page > 0 && filter.PerPage > 0 {
 		offset := (filter.Page - 1) * filter.PerPage
 		q = q.Offset(offset).Limit(filter.PerPage)

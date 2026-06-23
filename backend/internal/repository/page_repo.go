@@ -48,7 +48,38 @@ func (r *PageRepo) FindAll(filter PageFilter) ([]model.Page, int64, error) {
 		return nil, 0, err
 	}
 
-	q = q.Order("sort_order asc, id asc")
+	q = q.Order("sort_order asc, id desc")
+	if filter.Page > 0 && filter.PerPage > 0 {
+		offset := (filter.Page - 1) * filter.PerPage
+		q = q.Offset(offset).Limit(filter.PerPage)
+	}
+
+	if err := q.Find(&pages).Error; err != nil {
+		return nil, 0, err
+	}
+	return pages, total, nil
+}
+
+func (r *PageRepo) FindOptions(filter PageFilter) ([]PageOptionRow, int64, error) {
+	var pages []PageOptionRow
+	var total int64
+
+	q := r.db.Model(&model.Page{})
+	if filter.PageType != "" {
+		q = q.Where("page_type = ?", filter.PageType)
+	}
+	if filter.Title != "" {
+		q = q.Where("title LIKE ?", "%"+filter.Title+"%")
+	}
+	if filter.Status != "" {
+		q = q.Where("status = ?", filter.Status)
+	}
+
+	if err := q.Session(&gorm.Session{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	q = q.Select("id", "slug", "title").Order("sort_order asc, id desc")
 	if filter.Page > 0 && filter.PerPage > 0 {
 		offset := (filter.Page - 1) * filter.PerPage
 		q = q.Offset(offset).Limit(filter.PerPage)
