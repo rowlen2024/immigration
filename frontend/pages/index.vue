@@ -483,6 +483,11 @@ const trustItems = computed(() => {
 const trustBarRef = ref<HTMLElement | null>(null);
 const animatedNumbers = ref<string[]>([]);
 let trustAnimating = false;
+let trustAnimationRun = 0;
+
+const trustItemsSignature = computed(() => JSON.stringify(
+  trustItems.value.map((item) => [item.number, item.label]),
+));
 
 function parseTrustNumber(raw: string): number {
   const match = raw.replace(/,/g, '').match(/([\d.]+)/);
@@ -496,6 +501,7 @@ function formatTrustNumber(raw: string): string {
 function startTrustCountUp(items: Array<{ number: string }>) {
   if (trustAnimating) return;
   trustAnimating = true;
+  const runId = ++trustAnimationRun;
 
   const targets = items.map((item) => parseTrustNumber(item.number));
   const suffixes = items.map((item) => {
@@ -508,6 +514,7 @@ function startTrustCountUp(items: Array<{ number: string }>) {
   const start = performance.now();
 
   function step(timestamp: number) {
+    if (runId !== trustAnimationRun) return;
     const elapsed = timestamp - start;
     const progress = Math.min(elapsed / duration, 1);
     const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
@@ -524,6 +531,13 @@ function startTrustCountUp(items: Array<{ number: string }>) {
 
   requestAnimationFrame(step);
 }
+
+watch(trustItemsSignature, () => {
+  trustAnimationRun++;
+  animatedNumbers.value = [];
+  trustAnimating = false;
+  trustObserver?.disconnect();
+}, { flush: 'sync' });
 
 const advantageTitle = computed(() => advantageSection.value?.section_title || '为什么选择北极星移民');
 const advantageSubtitle = computed(() => advantageSection.value?.section_subtitle || '专业服务，值得信赖');

@@ -88,6 +88,7 @@ const flushFreshnessQueue = async (
       query: { keys: versionKeys.join(',') },
     })
     const freshVersions = response?.data || {}
+    const versionKeysWithFreshValue = versionKeys.filter((key) => freshVersions[key])
     const changedDataKeys = entries
       .filter((entry) => {
         const next = freshVersions[entry.versionKey]
@@ -99,15 +100,16 @@ const flushFreshnessQueue = async (
       })
       .map((entry) => entry.dataKey)
 
-    for (const key of versionKeys) {
-      if (freshVersions[key]) versions.value[key] = freshVersions[key]
+    if (changedDataKeys.length === 0) {
+      for (const key of versionKeysWithFreshValue) versions.value[key] = freshVersions[key]
+      return
     }
-    if (changedDataKeys.length === 0) return
 
     const uniqueDataKeys = Array.from(new Set(changedDataKeys))
     for (const key of uniqueDataKeys) refreshing.value[key] = true
     try {
       await refreshNuxtData(uniqueDataKeys)
+      for (const key of versionKeysWithFreshValue) versions.value[key] = freshVersions[key]
     } finally {
       for (const key of uniqueDataKeys) refreshing.value[key] = false
     }
