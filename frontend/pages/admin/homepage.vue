@@ -4,7 +4,7 @@
 
     <div class="homepage-tabs-loading">
       <AdminLoadingOverlay :show="loading" />
-      <el-tabs v-model="activeConfigTab" type="border-card" class="homepage-tabs">
+      <el-tabs v-model="activeConfigTab" tab-position="left" class="homepage-tabs">
       <el-tab-pane label="轮播管理" name="slides">
       <!-- Hero Slides Card -->
       <AdminConfigCard title="轮播管理">
@@ -851,7 +851,65 @@ onMounted(load);
 
 .homepage-tabs {
   background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.homepage-tabs :deep(.el-tabs__header) {
+  width: 176px;
+  margin-right: 0;
+  padding-top: 18px;
+  background: var(--color-bg-surface-muted);
+  border-right: 1px solid var(--color-border);
+}
+
+.homepage-tabs :deep(.el-tabs__nav-wrap::after) {
+  display: none;
+}
+
+.homepage-tabs :deep(.el-tabs__item) {
+  justify-content: flex-start;
+  height: 42px;
+  padding: 0 16px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  text-align: left;
+}
+
+.homepage-tabs :deep(.el-tabs__item.is-active) {
+  color: var(--color-primary);
+  background: #f0fdfa;
+}
+
+.homepage-tabs :deep(.el-tabs__active-bar) {
+  width: 3px;
+  background-color: var(--color-primary);
+}
+
+.homepage-tabs :deep(.el-tabs__content) {
+  padding: 18px;
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .homepage-tabs {
+    border-radius: var(--radius-sm);
+  }
+
+  .homepage-tabs :deep(.el-tabs__header) {
+    width: 128px;
+    padding-top: 12px;
+  }
+
+  .homepage-tabs :deep(.el-tabs__item) {
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .homepage-tabs :deep(.el-tabs__content) {
+    padding: 12px;
+  }
 }
 
 .sort-icon {

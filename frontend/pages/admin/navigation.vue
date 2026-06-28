@@ -520,7 +520,7 @@ onMounted(() => {
   font-size: 12px;
   font-weight: 600;
   color: var(--color-text-muted);
-  background: #f8fbff;
+  background: var(--color-bg-surface-muted);
 }
 
 .nav-th-name { min-width: 160px; }
@@ -542,7 +542,7 @@ onMounted(() => {
 }
 
 .nav-tree :deep(.el-tree-node__content:hover) {
-  background: #f8fbff;
+  background: #f0fdfa;
 }
 
 .tree-node {

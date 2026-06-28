@@ -351,6 +351,8 @@ const toolbarButtons: ToolbarButton[] = [
 
 <style scoped>
 .rich-editor {
+  width: 100%;
+  min-width: 0;
   border: 1px solid var(--el-border-color);
   border-radius: var(--el-border-radius-base);
   overflow: hidden;

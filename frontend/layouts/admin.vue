@@ -404,7 +404,9 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
 /* Sidebar */
 .admin-sidebar {
   width: var(--sidebar-width);
-  background: var(--color-bg-sidebar);
+  background:
+    linear-gradient(180deg, rgba(20, 184, 166, 0.08) 0%, rgba(17, 24, 39, 0) 32%),
+    var(--color-bg-sidebar);
   color: var(--color-text-sidebar);
   display: flex;
   flex-direction: column;
@@ -415,11 +417,11 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
   top: 0;
   height: 100vh;
   border-right: 1px solid var(--color-border-sidebar);
-  box-shadow: 1px 0 0 rgba(15, 23, 42, 0.02);
+  box-shadow: 1px 0 0 rgba(17, 24, 39, 0.18);
 }
 
 .sidebar-header {
-  padding: 18px 16px;
+  padding: 18px 14px;
   border-bottom: 1px solid var(--color-border-sidebar);
 }
 
@@ -427,14 +429,14 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
   display: flex;
   align-items: center;
   gap: 10px;
-  color: var(--color-text);
+  color: #f8fafc;
   text-decoration: none;
 }
 
 .logo-icon {
   width: 32px;
   height: 32px;
-  background: var(--color-primary);
+  background: linear-gradient(135deg, #0f766e, #0891b2);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -444,8 +446,8 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
 }
 
 .logo-text {
-  font-size: 15px;
-  font-weight: 650;
+  font-size: 14px;
+  font-weight: 700;
   white-space: nowrap;
   transition: opacity 0.2s ease;
 }
@@ -453,7 +455,7 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
 /* Nav */
 .sidebar-nav {
   flex: 1;
-  padding: 12px 8px;
+  padding: 14px 10px;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -462,11 +464,12 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
   display: flex;
   align-items: center;
   gap: 10px;
+  position: relative;
   padding: 10px 12px;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
   color: var(--color-text-sidebar);
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
   border: 1px solid transparent;
@@ -474,14 +477,25 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
 }
 
 .nav-item:hover {
-  color: var(--color-text);
+  color: #f8fafc;
   background: var(--color-bg-sidebar-hover);
 }
 
 .nav-item.active {
   color: var(--color-text-sidebar-active);
   background: var(--color-bg-sidebar-active);
-  border-color: #bfdbfe;
+  border-color: rgba(45, 212, 191, 0.22);
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  border-radius: 99px;
+  background: #2dd4bf;
 }
 
 .nav-icon {
@@ -494,8 +508,9 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
 }
 
 .nav-icon :deep(svg) {
-  width: 20px;
-  height: 20px;
+  width: 19px;
+  height: 19px;
+  stroke-width: 1.8;
 }
 
 .nav-label {
@@ -529,7 +544,7 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
 }
 
 .nav-sub-item {
-  padding-left: 44px;
+  padding-left: 42px;
   font-size: 13px;
 }
 
@@ -553,8 +568,8 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
   width: 32px;
   height: 32px;
   border-radius: var(--radius-sm);
-  background: var(--color-info-soft);
-  color: var(--color-primary);
+  background: rgba(20, 184, 166, 0.16);
+  color: #99f6e4;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -570,7 +585,7 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
 .user-name {
   font-size: 13px;
   font-weight: 500;
-  color: var(--color-text);
+  color: #f8fafc;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -597,7 +612,7 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
 }
 
 .sidebar-collapse-btn:hover {
-  color: var(--color-primary);
+  color: #f8fafc;
   background: var(--color-bg-sidebar-hover);
 }
 
@@ -660,7 +675,7 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
 /* Topbar */
 .admin-topbar {
   height: var(--topbar-height);
-  background: var(--color-bg-surface);
+  background: rgba(255, 255, 255, 0.92);
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
@@ -670,7 +685,8 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
   position: sticky;
   top: 0;
   z-index: 50;
-  box-shadow: var(--shadow-xs);
+  box-shadow: none;
+  backdrop-filter: blur(10px);
 }
 
 .menu-toggle {
@@ -713,7 +729,7 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
 
 .topbar-link:hover {
   color: var(--color-primary);
-  background: var(--color-info-soft);
+  background: #f0fdfa;
 }
 
 .logout-btn:hover {
@@ -723,7 +739,7 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
 /* Content */
 .admin-content {
   flex: 1;
-  padding: 24px;
+  padding: 24px 28px;
   overflow-y: auto;
 }
 

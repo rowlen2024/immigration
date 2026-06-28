@@ -330,14 +330,14 @@ onMounted(() => {
 }
 
 .media-card:hover {
-  border-color: #bfdbfe;
-  box-shadow: var(--shadow-md);
+  border-color: #99f6e4;
+  box-shadow: var(--shadow-sm);
 }
 
 .media-preview-btn {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 10;
   padding: 0;
   border: 0;
   background: var(--color-bg-app);
@@ -353,7 +353,7 @@ onMounted(() => {
 
 .media-card-body {
   min-width: 0;
-  padding: 12px;
+  padding: 10px 12px;
   border-top: 1px solid var(--color-border-light);
 }
 
@@ -371,13 +371,13 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 5px;
   font-size: 12px;
   color: var(--color-text-muted);
 }
 
 .media-card-url {
-  margin-top: 8px;
+  margin-top: 6px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -389,7 +389,8 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   gap: 4px;
-  padding: 8px 10px 10px;
+  padding: 6px 10px 9px;
+  border-top: 1px solid var(--color-border-light);
 }
 
 .media-card-actions .action-btn {
@@ -409,7 +410,7 @@ onMounted(() => {
 
 .media-card-actions .action-btn:hover {
   color: var(--color-primary);
-  background: var(--color-info-soft);
+  background: #f0fdfa;
 }
 
 .media-card-actions .action-btn.danger:hover {
@@ -432,6 +433,25 @@ onMounted(() => {
 @media (max-width: 767px) {
   .media-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .media-preview-btn {
+    aspect-ratio: 4 / 3;
+  }
+
+  .media-card-body {
+    padding: 10px;
+  }
+
+  .media-card-title {
+    font-size: 13px;
+  }
+
+  .media-card-meta {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2px;
   }
 }
 

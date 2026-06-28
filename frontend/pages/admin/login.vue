@@ -3,7 +3,7 @@
     <div class="login-card">
       <div class="login-logo">
         <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="48" height="48" rx="10" fill="#2563eb"/>
+          <rect width="48" height="48" rx="10" fill="#0f766e"/>
           <path d="M14 24L21 17L27 23L34 16" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M14 32L21 25L27 31L34 24" stroke="#d1fae5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
           <circle cx="14" cy="24" r="2" fill="#d1fae5"/>
@@ -101,15 +101,15 @@ const handleLogin = async () => {
   justify-content: center;
   padding: 24px;
   background:
-    radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 34%),
-    linear-gradient(135deg, #f8fafc 0%, #eef6ff 52%, #f8fafc 100%);
+    radial-gradient(circle at top left, rgba(15, 118, 110, 0.14), transparent 34%),
+    linear-gradient(135deg, #f4f6f8 0%, #eef7f6 52%, #f4f6f8 100%);
 }
 
 .login-card {
   width: min(420px, 100%);
   padding: 44px 40px 36px;
   background: #ffffff;
-  border: 1px solid #e4ecfc;
+  border: 1px solid #d8dee8;
   border-radius: var(--radius-md);
   box-shadow: 0 20px 60px rgba(15, 23, 42, 0.10);
 }
@@ -152,10 +152,10 @@ const handleLogin = async () => {
 }
 
 :deep(.el-button--primary) {
-  --el-button-bg-color: #2563eb;
-  --el-button-border-color: #2563eb;
-  --el-button-hover-bg-color: #1d4ed8;
-  --el-button-hover-border-color: #1d4ed8;
+  --el-button-bg-color: #0f766e;
+  --el-button-border-color: #0f766e;
+  --el-button-hover-bg-color: #115e59;
+  --el-button-hover-border-color: #115e59;
 }
 
 @media (max-width: 480px) {

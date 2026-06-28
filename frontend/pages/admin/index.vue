@@ -334,6 +334,15 @@ onMounted(async () => {
 }
 
 /* Quick link icon sizing */
+.admin-dashboard-right .admin-links-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-dashboard-right .admin-quick-link {
+  min-height: 58px;
+  padding: 12px;
+}
+
 .admin-quick-link :deep(svg) {
   display: block;
   flex-shrink: 0;
