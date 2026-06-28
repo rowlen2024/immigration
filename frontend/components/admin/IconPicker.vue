@@ -68,7 +68,7 @@ const activeCategory = ref('全部')
 const searchQuery = ref('')
 
 const selectedIcon = computed(() => getIconByName(props.modelValue))
-const selectedIconSvg = computed(() => getIconSvg(props.modelValue, 20, '#c8963e'))
+const selectedIconSvg = computed(() => getIconSvg(props.modelValue, 20))
 
 const filteredIcons = computed(() => {
   if (searchQuery.value) return searchIcons(searchQuery.value)
@@ -89,15 +89,15 @@ function select(name: string) {
   width: 100%;
   height: 32px;
   padding: 0 12px;
-  border: 1px solid var(--el-border-color, #dcdfe6);
-  border-radius: var(--el-border-radius-base, 4px);
-  background: var(--el-fill-color-blank, #fff);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-surface);
   cursor: pointer;
   transition: border-color 0.2s;
   box-sizing: border-box;
 }
 .icon-picker__trigger:hover {
-  border-color: var(--el-color-primary, #c8963e);
+  border-color: var(--color-primary);
 }
 .icon-picker__selected {
   display: flex;
@@ -108,32 +108,32 @@ function select(name: string) {
 .icon-picker__svg {
   width: 18px;
   height: 18px;
-  color: #c8963e;
+  color: var(--color-primary);
   flex-shrink: 0;
 }
 .icon-picker__name {
   font-size: 13px;
-  color: #303133;
+  color: var(--color-text);
 }
 .icon-picker__placeholder {
   font-size: 13px;
-  color: #c0c4cc;
+  color: var(--color-text-muted);
   display: flex;
   align-items: center;
   gap: 6px;
   flex: 1;
 }
 .icon-picker__search-icon {
-  color: #c0c4cc;
+  color: var(--color-text-muted);
   flex-shrink: 0;
 }
 .icon-picker__chevron {
-  color: #c0c4cc;
+  color: var(--color-text-muted);
   flex-shrink: 0;
   transition: transform 0.2s;
 }
 .icon-picker__trigger:hover .icon-picker__chevron {
-  color: var(--el-color-primary, #c8963e);
+  color: var(--color-primary);
 }
 .icon-picker__dialog {
   max-height: 460px;
@@ -148,18 +148,18 @@ function select(name: string) {
 .icon-picker__tab {
   padding: 4px 12px;
   font-size: 12px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  color: #606266;
-  background: #f5f7fa;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-app);
   transition: all 0.2s;
 }
 .icon-picker__tab.active {
-  background: #1a3a5c;
+  background: var(--color-primary);
   color: #fff;
 }
 .icon-picker__tab:hover:not(.active) {
-  background: #e8eaed;
+  background: var(--color-border-light);
 }
 .icon-picker__search {
   margin-bottom: 12px;
@@ -174,31 +174,31 @@ function select(name: string) {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   border: 2px solid transparent;
   transition: all 0.15s;
 }
 .icon-picker__item:hover {
-  background: rgba(26, 58, 92, 0.06);
+  background: var(--color-info-soft);
 }
 .icon-picker__item.selected {
-  border-color: #c8963e;
-  background: rgba(200, 150, 62, 0.1);
+  border-color: var(--color-primary);
+  background: var(--color-info-soft);
 }
 .icon-picker__item-svg {
   width: 22px;
   height: 22px;
-  color: #606266;
+  color: var(--color-text-secondary);
 }
 .icon-picker__item.selected .icon-picker__item-svg {
-  color: #c8963e;
+  color: var(--color-primary);
 }
 .icon-picker__selected-name {
   margin-top: 12px;
   padding-top: 10px;
-  border-top: 1px solid #ebeef5;
+  border-top: 1px solid var(--color-border-light);
   font-size: 13px;
-  color: #909399;
+  color: var(--color-text-muted);
 }
 </style>

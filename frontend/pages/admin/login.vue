@@ -3,16 +3,17 @@
     <div class="login-card">
       <div class="login-logo">
         <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="48" height="48" rx="12" fill="#0f172a"/>
-          <path d="M14 24L21 17L27 23L34 16" stroke="#e2a83e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M14 32L21 25L27 31L34 24" stroke="#e2a83e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="14" cy="24" r="2" fill="#e2a83e"/>
-          <circle cx="34" cy="16" r="2" fill="#e2a83e"/>
-          <circle cx="14" cy="32" r="2" fill="#e2a83e"/>
-          <circle cx="34" cy="24" r="2" fill="#e2a83e"/>
+          <rect width="48" height="48" rx="10" fill="#2563eb"/>
+          <path d="M14 24L21 17L27 23L34 16" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M14 32L21 25L27 31L34 24" stroke="#d1fae5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="14" cy="24" r="2" fill="#d1fae5"/>
+          <circle cx="34" cy="16" r="2" fill="#d1fae5"/>
+          <circle cx="14" cy="32" r="2" fill="#ffffff"/>
+          <circle cx="34" cy="24" r="2" fill="#ffffff"/>
         </svg>
       </div>
       <h1 class="login-title">北极星移民管理后台</h1>
+      <p class="login-subtitle">请登录以继续管理项目、内容和咨询线索</p>
       <el-form
         ref="formRef"
         :model="form"
@@ -98,15 +99,19 @@ const handleLogin = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  padding: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 34%),
+    linear-gradient(135deg, #f8fafc 0%, #eef6ff 52%, #f8fafc 100%);
 }
 
 .login-card {
-  width: 400px;
-  padding: 48px 40px 40px;
-  background: var(--color-bg-surface);
+  width: min(420px, 100%);
+  padding: 44px 40px 36px;
+  background: #ffffff;
+  border: 1px solid #e4ecfc;
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.10);
 }
 
 .login-logo {
@@ -118,17 +123,24 @@ const handleLogin = async () => {
   font-size: 22px;
   font-weight: 600;
   text-align: center;
-  margin-bottom: 32px;
-  color: var(--color-primary);
+  margin-bottom: 8px;
+  color: #0f172a;
+}
+
+.login-subtitle {
+  margin: 0 0 28px;
+  text-align: center;
+  font-size: 13px;
+  color: #64748b;
 }
 
 .login-btn {
   width: 100%;
-  height: 42px;
+  height: 44px;
 }
 
 .error-msg {
-  color: var(--color-danger);
+  color: #dc2626;
   text-align: center;
   font-size: 14px;
   margin-top: 8px;
@@ -140,9 +152,15 @@ const handleLogin = async () => {
 }
 
 :deep(.el-button--primary) {
-  --el-button-bg-color: var(--color-primary);
-  --el-button-border-color: var(--color-primary);
-  --el-button-hover-bg-color: #1e293b;
-  --el-button-hover-border-color: #1e293b;
+  --el-button-bg-color: #2563eb;
+  --el-button-border-color: #2563eb;
+  --el-button-hover-bg-color: #1d4ed8;
+  --el-button-hover-border-color: #1d4ed8;
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 36px 24px 28px;
+  }
 }
 </style>

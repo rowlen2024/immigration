@@ -1,15 +1,13 @@
 <template>
   <div>
-    <div class="admin-page-header">
-      <h2 class="admin-page-title">用户管理</h2>
-      <div class="header-actions">
+    <AdminPageHeader title="用户管理">
+      <template #actions>
         <el-button :icon="Refresh" circle @click="loadList" :loading="loading" />
         <el-button v-if="canWriteUsers" type="primary" @click="openCreate">新建用户</el-button>
-      </div>
-    </div>
+      </template>
+    </AdminPageHeader>
 
-    <div class="admin-table-wrap">
-      <AdminLoadingOverlay :show="loading" />
+    <AdminTableShell v-if="loading || list.length > 0" :loading="loading">
       <el-table :data="list">
         <el-table-column prop="username" label="用户名" min-width="140" />
         <el-table-column prop="display_name" label="显示名称" min-width="140">
@@ -30,16 +28,30 @@
         </el-table-column>
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
-            <div class="table-actions" v-if="canWriteUsers">
-              <button class="action-btn" @click="openEdit(row)">编辑</button>
-              <button class="action-btn" :class="{ danger: row.status === 1 }" @click="handleToggleStatus(row)">
-                {{ row.status === 1 ? '禁用' : '启用' }}
-              </button>
-            </div>
+            <AdminRowActions v-if="canWriteUsers">
+              <button class="action-btn" type="button" title="编辑" aria-label="编辑" @click="openEdit(row)" v-html="getIconSvg('pencil', 16)"></button>
+              <button
+                class="action-btn"
+                :class="{ danger: row.status === 1 }"
+                type="button"
+                :title="row.status === 1 ? '禁用' : '启用'"
+                :aria-label="row.status === 1 ? '禁用' : '启用'"
+                @click="handleToggleStatus(row)"
+                v-html="getIconSvg(row.status === 1 ? 'ban' : 'circle-check', 16)"
+              ></button>
+            </AdminRowActions>
           </template>
         </el-table-column>
       </el-table>
-    </div>
+    </AdminTableShell>
+    <AdminEmptyState
+      v-else
+      icon="users"
+      title="暂无用户"
+      description="点击上方按钮创建第一个用户"
+      :action-label="canWriteUsers ? '新建用户' : undefined"
+      @action="openCreate"
+    />
 
     <div class="admin-pagination-wrap" v-if="total > pageSize">
       <el-pagination v-model:current-page="page" :page-size="pageSize" :total="total" layout="total, prev, pager, next" @current-change="loadList" />
@@ -57,7 +69,7 @@
           <el-input v-model="form.display_name" />
         </el-form-item>
         <el-form-item label="角色" prop="role">
-          <el-select v-model="form.role" style="width: 100%">
+          <el-select v-model="form.role" class="admin-full-width">
             <el-option v-for="role in roles" :key="role.code" :label="role.name" :value="role.code" />
           </el-select>
         </el-form-item>
@@ -87,8 +99,11 @@
         </div>
       </el-form>
       <template #footer>
-        <el-button @click="drawerVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
+        <AdminDrawerFooter
+          :loading="saving"
+          @cancel="drawerVisible = false"
+          @confirm="handleSave"
+        />
       </template>
     </el-drawer>
   </div>
@@ -98,6 +113,7 @@
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { Refresh } from '@element-plus/icons-vue';
 import { formatDateTime } from '~/utils/date';
+import { getIconSvg } from '~/composables/lucideIcons';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
 
@@ -301,12 +317,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .permission-groups {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

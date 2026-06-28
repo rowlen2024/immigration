@@ -1,10 +1,11 @@
 <template>
   <div>
-    <div class="admin-page-header">
-      <h2 class="admin-page-title">网站设置</h2>
-    </div>
+    <AdminPageHeader
+      title="网站设置"
+      description="统一管理站点基础信息、SEO、联系方式和第三方代码"
+    />
 
-    <div class="settings-body">
+    <div class="settings-body admin-panel-shell">
       <AdminLoadingOverlay :show="loading" />
 
       <el-card v-for="group in groups" :key="group.key" class="admin-settings-card">

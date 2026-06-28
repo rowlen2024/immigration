@@ -1,11 +1,12 @@
-<template>
+﻿<template>
   <div>
-    <div class="admin-page-header">
-      <h2 class="admin-page-title">页面管理</h2>
-      <el-button type="primary" @click="openCreate">新建页面</el-button>
-    </div>
+    <AdminPageHeader title="页面管理">
+      <template #actions>
+        <el-button type="primary" @click="openCreate">新建页面</el-button>
+      </template>
+    </AdminPageHeader>
 
-    <div class="admin-toolbar">
+    <AdminToolbar>
       <el-input
         v-model="searchQuery"
         placeholder="搜索页面标题..."
@@ -25,16 +26,15 @@
         <el-option label="新闻" value="news" />
       </el-select>
       <el-button :icon="Refresh" circle @click="searchQuery='';statusFilter='';pageTypeFilter='';loadList()" :loading="loading" />
-    </div>
+    </AdminToolbar>
 
-    <div class="admin-table-wrap">
-      <AdminLoadingOverlay :show="loading" />
+    <AdminTableShell :loading="loading">
       <el-table :data="list">
         <el-table-column prop="title" label="标题" min-width="180">
           <template #default="{ row }">
             <div>
-              <div class="row-title">{{ row.title }}</div>
-              <div class="row-meta">/pages/{{ row.slug }}</div>
+              <div class="admin-row-title">{{ row.title }}</div>
+              <div class="admin-row-meta">/pages/{{ row.slug }}</div>
             </div>
           </template>
         </el-table-column>
@@ -61,31 +61,37 @@
         </el-table-column>
         <el-table-column label="操作" width="230" fixed="right">
           <template #default="{ row }">
-            <div class="table-actions">
-              <button class="action-btn" @click="handlePreview(row)">预览</button>
+            <AdminRowActions>
+              <button class="action-btn" type="button" title="预览" aria-label="预览" @click="handlePreview(row)" v-html="getIconSvg('external-link', 16)"></button>
               <button
                 class="action-btn"
                 :class="row.status === 'published' ? 'warning' : 'success'"
+                type="button"
+                :title="row.status === 'published' ? '下架' : '发布'"
+                :aria-label="row.status === 'published' ? '下架' : '发布'"
                 @click="handleToggleStatus(row)"
-              >{{ row.status === 'published' ? '下架' : '发布' }}</button>
-              <button class="action-btn" @click="openEdit(row)">编辑</button>
+                v-html="getIconSvg(row.status === 'published' ? 'archive' : 'send', 16)"
+              ></button>
+              <button class="action-btn" type="button" title="编辑" aria-label="编辑" @click="openEdit(row)" v-html="getIconSvg('pencil', 16)"></button>
               <el-popconfirm title="确定删除该页面？" confirm-button-text="删除" cancel-button-text="取消" @confirm="handleDelete(row.id)">
                 <template #reference>
-                  <button class="action-btn danger">删除</button>
+                  <button class="action-btn danger" type="button" title="删除" aria-label="删除" v-html="getIconSvg('trash-2', 16)"></button>
                 </template>
               </el-popconfirm>
-            </div>
+            </AdminRowActions>
           </template>
         </el-table-column>
       </el-table>
-    </div>
+    </AdminTableShell>
 
-    <div v-if="!loading && list.length === 0" class="admin-empty-state">
-      <div class="empty-icon" v-html="getIconSvg('file-text', 48)"></div>
-      <div class="empty-title">暂无页面</div>
-      <div class="empty-desc">点击上方按钮创建第一个页面</div>
-      <el-button type="primary" @click="openCreate">新建页面</el-button>
-    </div>
+    <AdminEmptyState
+      v-if="!loading && list.length === 0"
+      icon="file-text"
+      title="暂无页面"
+      description="点击上方按钮创建第一个页面"
+      action-label="新建页面"
+      @action="openCreate"
+    />
 
     <div class="admin-pagination-wrap" v-if="total > pageSize">
       <el-pagination v-model:current-page="page" :page-size="pageSize" :total="total" layout="total, prev, pager, next" @current-change="loadList" />
@@ -156,8 +162,11 @@
         </el-row>
       </el-form>
       <template #footer>
-        <el-button @click="drawerVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
+        <AdminDrawerFooter
+          :loading="saving"
+          @cancel="drawerVisible = false"
+          @confirm="handleSave"
+        />
       </template>
     </el-drawer>
   </div>
@@ -167,10 +176,10 @@
 import { Search, Refresh } from '@element-plus/icons-vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { useNotify } from '~/composables/useNotify';
-import { getIconSvg } from '~/composables/lucideIcons';
 import { formatDateTime } from '~/utils/date';
 import { generateSlugFromText } from '~/utils/slug';
 import ImageInput from '~/components/admin/ImageInput.vue';
+import { getIconSvg } from '~/composables/lucideIcons';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
 
@@ -341,17 +350,3 @@ onMounted(() => {
   loadList();
 });
 </script>
-
-<style scoped>
-.row-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text);
-}
-
-.row-meta {
-  font-size: 12px;
-  color: var(--color-text-muted);
-  margin-top: 2px;
-}
-</style>

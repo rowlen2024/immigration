@@ -1,12 +1,13 @@
 <template>
   <div>
-    <div class="admin-page-header">
-      <h2 class="admin-page-title">项目管理</h2>
-      <el-button type="primary" @click="openCreate">新建项目</el-button>
-    </div>
+    <AdminPageHeader title="项目管理">
+      <template #actions>
+        <el-button type="primary" @click="openCreate">新建项目</el-button>
+      </template>
+    </AdminPageHeader>
 
     <!-- Toolbar -->
-    <div class="admin-toolbar">
+    <AdminToolbar>
       <el-input
         v-model="searchQuery"
         placeholder="搜索项目名称..."
@@ -27,17 +28,16 @@
         <el-option label="草稿" value="0" />
       </el-select>
       <el-button :icon="Refresh" circle @click="searchQuery='';statusFilter='';loadList()" :loading="loading" />
-    </div>
+    </AdminToolbar>
 
     <!-- Table -->
-    <div class="admin-table-wrap">
-      <AdminLoadingOverlay :show="loading" />
+    <AdminTableShell :loading="loading">
       <el-table :data="list">
         <el-table-column prop="name" label="项目名称" min-width="180">
           <template #default="{ row }">
             <div>
-              <div class="row-title">{{ row.name }}</div>
-              <div class="row-meta">{{ row.country }}</div>
+              <div class="admin-row-title">{{ row.name }}</div>
+              <div class="admin-row-meta">{{ row.country }}</div>
             </div>
           </template>
         </el-table-column>
@@ -62,8 +62,8 @@
         </el-table-column>
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
-            <div class="table-actions">
-              <button class="action-btn" @click="openEdit(row)">编辑</button>
+            <AdminRowActions>
+              <button class="action-btn" type="button" title="编辑" aria-label="编辑" @click="openEdit(row)" v-html="getIconSvg('pencil', 16)"></button>
               <el-popconfirm
                 title="确定删除该项目？"
                 confirm-button-text="删除"
@@ -71,22 +71,24 @@
                 @confirm="handleDelete(row.id)"
               >
                 <template #reference>
-                  <button class="action-btn danger">删除</button>
+                  <button class="action-btn danger" type="button" title="删除" aria-label="删除" v-html="getIconSvg('trash-2', 16)"></button>
                 </template>
               </el-popconfirm>
-            </div>
+            </AdminRowActions>
           </template>
         </el-table-column>
       </el-table>
-    </div>
+    </AdminTableShell>
 
     <!-- Empty state -->
-    <div v-if="!loading && list.length === 0" class="admin-empty-state">
-      <div class="empty-icon" v-html="getIconSvg('folder', 48)"></div>
-      <div class="empty-title">暂无项目</div>
-      <div class="empty-desc">点击上方按钮创建第一个项目</div>
-      <el-button type="primary" @click="openCreate">新建项目</el-button>
-    </div>
+    <AdminEmptyState
+      v-if="!loading && list.length === 0"
+      icon="folder"
+      title="暂无项目"
+      description="点击上方按钮创建第一个项目"
+      action-label="新建项目"
+      @action="openCreate"
+    />
 
     <div class="admin-pagination-wrap" v-if="total > pageSize">
       <el-pagination
@@ -109,6 +111,8 @@
       <el-tabs v-model="activeTab">
         <el-tab-pane label="基本信息" name="basic">
           <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+            <section class="project-form-section">
+              <h3 class="project-form-section-title">基础信息</h3>
             <el-row :gutter="12">
               <el-col :span="12">
                 <el-form-item label="标识(slug)" prop="slug">
@@ -146,6 +150,9 @@
             <el-form-item label="标语" prop="tagline">
               <el-input v-model="form.tagline" />
             </el-form-item>
+            </section>
+            <section class="project-form-section">
+              <h3 class="project-form-section-title">金额与周期</h3>
             <el-row :gutter="12">
               <el-col :span="12">
                 <el-form-item label="投资金额" prop="investment_amount">
@@ -164,6 +171,9 @@
             <el-form-item label="目标人群" prop="target_crowd">
               <el-input v-model="form.target_crowd" />
             </el-form-item>
+            </section>
+            <section class="project-form-section">
+              <h3 class="project-form-section-title">内容文案</h3>
             <el-form-item label="概览标题" prop="overview_title">
               <el-input v-model="form.overview_title" />
             </el-form-item>
@@ -191,6 +201,9 @@
             <el-form-item label="CTA 文字" prop="cta_text">
               <el-input v-model="form.cta_text" />
             </el-form-item>
+            </section>
+            <section class="project-form-section">
+              <h3 class="project-form-section-title">Hero 展示</h3>
             <el-form-item label="Hero 标题" prop="hero_title">
               <el-input v-model="form.hero_title" />
             </el-form-item>
@@ -203,6 +216,9 @@
             <el-form-item label="Hero 渐变" prop="hero_gradient">
               <el-input v-model="form.hero_gradient" />
             </el-form-item>
+            </section>
+            <section class="project-form-section">
+              <h3 class="project-form-section-title">发布设置</h3>
             <el-row :gutter="12">
               <el-col :span="12">
                 <el-form-item label="排序" prop="sort_order">
@@ -218,13 +234,14 @@
                 </el-form-item>
               </el-col>
             </el-row>
+            </section>
           </el-form>
         </el-tab-pane>
 
         <el-tab-pane v-if="canReadProjectChildren" label="申请条件" name="requirements">
-          <div style="margin-bottom: 12px">
+          <AdminSubResourceActions>
             <el-button v-if="canWriteProjectChildren" type="primary" size="small" @click="openSubDialog('requirement')">添加条件</el-button>
-          </div>
+          </AdminSubResourceActions>
           <el-table :data="subData.requirements" border size="small">
             <el-table-column prop="label" label="条件描述" min-width="180">
               <template #default="{ row: r }">{{ r.label || '—' }}</template>
@@ -242,10 +259,10 @@
             <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row: r }">
                 <div class="table-actions">
-                  <button class="action-btn" @click="openSubDialog('requirement', r)">编辑</button>
+                  <button class="action-btn" title="编辑" aria-label="编辑" @click="openSubDialog('requirement', r)" v-html="getIconSvg('pencil', 16)"></button>
                   <el-popconfirm title="确定删除？" @confirm="deleteSubItem('requirement', r.id)">
                     <template #reference>
-                      <button class="action-btn danger">删除</button>
+                      <button class="action-btn danger" title="删除" aria-label="删除" v-html="getIconSvg('trash-2', 16)"></button>
                     </template>
                   </el-popconfirm>
                 </div>
@@ -255,9 +272,9 @@
         </el-tab-pane>
 
         <el-tab-pane v-if="canReadProjectChildren" label="费用明细" name="costItems">
-          <div style="margin-bottom: 12px">
+          <AdminSubResourceActions>
             <el-button v-if="canWriteProjectChildren" type="primary" size="small" @click="openSubDialog('costItem')">添加费用</el-button>
-          </div>
+          </AdminSubResourceActions>
           <el-table :data="subData.costItems" border size="small">
             <el-table-column prop="name" label="费用名称" min-width="140">
               <template #default="{ row: r }">{{ r.name || '—' }}</template>
@@ -274,10 +291,10 @@
             <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row: r }">
                 <div class="table-actions">
-                  <button class="action-btn" @click="openSubDialog('costItem', r)">编辑</button>
+                  <button class="action-btn" title="编辑" aria-label="编辑" @click="openSubDialog('costItem', r)" v-html="getIconSvg('pencil', 16)"></button>
                   <el-popconfirm title="确定删除？" @confirm="deleteSubItem('costItem', r.id)">
                     <template #reference>
-                      <button class="action-btn danger">删除</button>
+                      <button class="action-btn danger" title="删除" aria-label="删除" v-html="getIconSvg('trash-2', 16)"></button>
                     </template>
                   </el-popconfirm>
                 </div>
@@ -287,9 +304,9 @@
         </el-tab-pane>
 
         <el-tab-pane v-if="canReadProjectChildren" label="申请流程" name="timelinePhases">
-          <div style="margin-bottom: 12px">
+          <AdminSubResourceActions>
             <el-button v-if="canWriteProjectChildren" type="primary" size="small" @click="openSubDialog('timelinePhase')">添加步骤</el-button>
-          </div>
+          </AdminSubResourceActions>
           <el-table :data="subData.timelinePhases" border size="small">
             <el-table-column prop="phase_number" label="步骤号" width="70">
               <template #default="{ row: r }">{{ r.phase_number ?? '—' }}</template>
@@ -309,10 +326,10 @@
             <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row: r }">
                 <div class="table-actions">
-                  <button class="action-btn" @click="openSubDialog('timelinePhase', r)">编辑</button>
+                  <button class="action-btn" title="编辑" aria-label="编辑" @click="openSubDialog('timelinePhase', r)" v-html="getIconSvg('pencil', 16)"></button>
                   <el-popconfirm title="确定删除？" @confirm="deleteSubItem('timelinePhase', r.id)">
                     <template #reference>
-                      <button class="action-btn danger">删除</button>
+                      <button class="action-btn danger" title="删除" aria-label="删除" v-html="getIconSvg('trash-2', 16)"></button>
                     </template>
                   </el-popconfirm>
                 </div>
@@ -322,16 +339,16 @@
         </el-tab-pane>
 
         <el-tab-pane v-if="canReadProjectChildren" label="项目优势" name="advantages">
-          <div style="margin-bottom: 12px">
+          <AdminSubResourceActions>
             <el-button v-if="canWriteProjectChildren" type="primary" size="small" @click="openSubDialog('advantage')">添加优势</el-button>
-          </div>
+          </AdminSubResourceActions>
           <el-table :data="subData.advantages" border size="small">
             <el-table-column label="图标" width="70">
               <template #default="{ row: r }">
                 <span
                   v-if="getIconByName(r.icon)"
-                  v-html="getIconSvg(r.icon, 18, '#c8963e')"
-                  style="display:inline-flex;align-items:center"
+                  v-html="getIconSvg(r.icon, 18)"
+                  class="project-icon-preview"
                 ></span>
                 <span v-else>{{ r.icon }}</span>
               </template>
@@ -348,10 +365,10 @@
             <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row: r }">
                 <div class="table-actions">
-                  <button class="action-btn" @click="openSubDialog('advantage', r)">编辑</button>
+                  <button class="action-btn" title="编辑" aria-label="编辑" @click="openSubDialog('advantage', r)" v-html="getIconSvg('pencil', 16)"></button>
                   <el-popconfirm title="确定删除？" @confirm="deleteSubItem('advantage', r.id)">
                     <template #reference>
-                      <button class="action-btn danger">删除</button>
+                      <button class="action-btn danger" title="删除" aria-label="删除" v-html="getIconSvg('trash-2', 16)"></button>
                     </template>
                   </el-popconfirm>
                 </div>
@@ -361,9 +378,9 @@
         </el-tab-pane>
 
         <el-tab-pane v-if="canReadCases" label="成功案例" name="cases">
-          <div style="margin-bottom: 12px">
+          <AdminSubResourceActions>
             <el-button v-if="canWriteCases" type="primary" size="small" @click="openSubDialog('caseItem')">添加案例</el-button>
-          </div>
+          </AdminSubResourceActions>
           <el-table :data="subData.cases" border size="small" max-height="360">
             <el-table-column prop="name" label="名称" min-width="120">
               <template #default="{ row: r }">{{ r.name || '—' }}</template>
@@ -383,10 +400,10 @@
             <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row: r }">
                 <div class="table-actions">
-                  <button class="action-btn" @click="openSubDialog('caseItem', r)">编辑</button>
+                  <button class="action-btn" title="编辑" aria-label="编辑" @click="openSubDialog('caseItem', r)" v-html="getIconSvg('pencil', 16)"></button>
                   <el-popconfirm title="确定删除？" @confirm="deleteSubItem('caseItem', r.id)">
                     <template #reference>
-                      <button class="action-btn danger">删除</button>
+                      <button class="action-btn danger" title="删除" aria-label="删除" v-html="getIconSvg('trash-2', 16)"></button>
                     </template>
                   </el-popconfirm>
                 </div>
@@ -396,14 +413,14 @@
         </el-tab-pane>
 
         <el-tab-pane v-if="canReadTestimonials" label="客户评价" name="testimonials">
-          <div style="margin-bottom: 12px">
+          <AdminSubResourceActions>
             <el-button v-if="canWriteTestimonials" type="primary" size="small" @click="openSubDialog('testimonial')">添加评价</el-button>
-          </div>
+          </AdminSubResourceActions>
           <el-table :data="subData.testimonials" border size="small" max-height="360">
             <el-table-column label="头像" width="64">
               <template #default="{ row }">
                 <ResponsiveImage v-if="row.avatar_url" :src="row.avatar_url" variant="thumb" class="thumb-preview" />
-                <span v-else style="color:#c0c4cc">—</span>
+                <span v-else class="admin-no-thumb">—</span>
               </template>
             </el-table-column>
             <el-table-column prop="nickname" label="昵称" width="120">
@@ -423,10 +440,10 @@
             <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row: r }">
                 <div class="table-actions">
-                  <button class="action-btn" @click="openSubDialog('testimonial', r)">编辑</button>
+                  <button class="action-btn" title="编辑" aria-label="编辑" @click="openSubDialog('testimonial', r)" v-html="getIconSvg('pencil', 16)"></button>
                   <el-popconfirm title="确定删除？" @confirm="deleteSubItem('testimonial', r.id)">
                     <template #reference>
-                      <button class="action-btn danger">删除</button>
+                      <button class="action-btn danger" title="删除" aria-label="删除" v-html="getIconSvg('trash-2', 16)"></button>
                     </template>
                   </el-popconfirm>
                 </div>
@@ -436,9 +453,9 @@
         </el-tab-pane>
 
         <el-tab-pane v-if="canReadPages" label="资讯" name="news">
-          <div style="margin-bottom: 12px">
+          <AdminSubResourceActions>
             <el-button v-if="canWritePages" type="primary" size="small" @click="openNewsDialog">添加资讯</el-button>
-          </div>
+          </AdminSubResourceActions>
           <el-table :data="subNews" border size="small" max-height="360">
             <el-table-column label="标题" min-width="180">
               <template #default="{ row }">
@@ -457,7 +474,7 @@
                 <div class="table-actions">
                   <el-popconfirm title="确定解除关联？" @confirm="removeNewsLink(row.id)">
                     <template #reference>
-                      <button class="action-btn danger">移除</button>
+                      <button class="action-btn danger" title="移除" aria-label="移除" v-html="getIconSvg('x', 16)"></button>
                     </template>
                   </el-popconfirm>
                 </div>
@@ -467,18 +484,18 @@
         </el-tab-pane>
 
         <el-tab-pane v-if="canReadProjectChildren" label="项目对比" name="compare">
-          <div style="margin-bottom: 12px">
+          <AdminSubResourceActions>
             <el-button type="primary" size="small" :disabled="compareConfig.compare_with.length < 2" @click="saveCompareConfig">保存对比配置</el-button>
-          </div>
+          </AdminSubResourceActions>
           <el-form label-position="top">
             <el-form-item label="对比项目（至少 2 个）">
-              <el-select v-model="compareConfig.compare_with" multiple filterable placeholder="选择对比项目" style="width: 100%">
+              <el-select v-model="compareConfig.compare_with" multiple filterable placeholder="选择对比项目" class="admin-full-width">
                 <el-option v-for="p in projectOptions" :key="p.slug" :label="p.name" :value="p.slug" />
               </el-select>
-              <div v-if="compareConfig.compare_with.length < 2" style="font-size: 12px; color: var(--el-color-danger); margin-top: 4px">
+              <div v-if="compareConfig.compare_with.length < 2" class="compare-helper compare-helper--danger">
                 当前项目默认在内，请至少追加 1 个其他项目
               </div>
-              <div v-else style="font-size: 12px; color: var(--el-text-color-secondary); margin-top: 4px">
+              <div v-else class="compare-helper">
                 已选择 {{ compareConfig.compare_with.length }} 个项目
               </div>
             </el-form-item>
@@ -494,8 +511,11 @@
       </el-tabs>
 
       <template #footer>
-        <el-button @click="drawerVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
+        <AdminDrawerFooter
+          :loading="saving"
+          @cancel="drawerVisible = false"
+          @confirm="handleSave"
+        />
       </template>
     </el-drawer>
 
@@ -606,13 +626,16 @@
         </template>
       </el-form>
       <template #footer>
-        <el-button @click="subDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="subSaving" @click="handleSubSave">保存</el-button>
+        <AdminDrawerFooter
+          :loading="subSaving"
+          @cancel="subDialogVisible = false"
+          @confirm="handleSubSave"
+        />
       </template>
     </el-dialog>
 
     <el-dialog v-model="newsDialogVisible" title="添加资讯" width="500px" destroy-on-close>
-      <el-select v-model="newsSelected" multiple filterable placeholder="搜索新闻页面..." style="width: 100%">
+      <el-select v-model="newsSelected" multiple filterable placeholder="搜索新闻页面..." class="admin-full-width">
         <el-option v-for="n in newsOptions" :key="n.id" :label="n.title" :value="n.id" />
       </el-select>
       <template #footer>
@@ -1144,16 +1167,19 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.row-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text);
+.project-form-section {
+  padding: 16px;
+  margin-bottom: 14px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 
-.row-meta {
-  font-size: 12px;
-  color: var(--color-text-muted);
-  margin-top: 2px;
+.project-form-section-title {
+  margin: 0 0 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
 }
 
 .thumb-preview {
@@ -1161,5 +1187,21 @@ onMounted(() => {
   height: 40px;
   object-fit: cover;
   border-radius: 50%;
+}
+
+.project-icon-preview {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-accent);
+}
+
+.compare-helper {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.compare-helper--danger {
+  color: var(--color-danger);
 }
 </style>

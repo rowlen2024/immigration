@@ -11,7 +11,7 @@
         v-model="searchText"
         placeholder="搜索文件名..."
         clearable
-        style="width: 260px"
+        class="picker-search"
         @input="onSearch"
       />
       <el-upload
@@ -182,6 +182,12 @@ watch(
   gap: 12px;
   align-items: center;
   margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.picker-search {
+  width: 260px;
+  max-width: 100%;
 }
 
 .picker-body {
@@ -202,10 +208,10 @@ watch(
 .picker-item {
   aspect-ratio: 1;
   border: 2px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
   cursor: pointer;
-  background: #f5f7fa;
+  background: var(--color-bg-app);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -218,21 +224,21 @@ watch(
 }
 
 .picker-item.selected {
-  border-color: #409eff;
-  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
 }
 
 .picker-detail {
   width: 200px;
   flex-shrink: 0;
-  border-left: 1px solid #ebeef5;
+  border-left: 1px solid var(--color-border-light);
   padding-left: 16px;
 }
 
 .detail-preview {
   aspect-ratio: 1;
-  background: #f5f7fa;
-  border-radius: 6px;
+  background: var(--color-bg-app);
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -248,14 +254,14 @@ watch(
 
 .detail-name {
   font-size: 13px;
-  color: #303133;
+  color: var(--color-text);
   word-break: break-all;
   margin: 0 0 4px;
 }
 
 .detail-meta {
   font-size: 12px;
-  color: #909399;
+  color: var(--color-text-muted);
   word-break: break-all;
   margin: 0 0 2px;
 }
@@ -264,7 +270,7 @@ watch(
   grid-column: 1 / -1;
   text-align: center;
   padding: 60px 0;
-  color: #909399;
+  color: var(--color-text-muted);
   font-size: 14px;
 }
 
@@ -273,11 +279,30 @@ watch(
   justify-content: space-between;
   align-items: center;
   margin-top: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .footer-actions {
   display: flex;
   gap: 8px;
   margin-left: auto;
+}
+
+@media (max-width: 767px) {
+  .picker-body {
+    flex-direction: column;
+  }
+
+  .picker-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .picker-detail {
+    width: 100%;
+    border-left: 0;
+    border-top: 1px solid var(--color-border-light);
+    padding: 12px 0 0;
+  }
 }
 </style>

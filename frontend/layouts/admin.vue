@@ -143,10 +143,11 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <div class="password-drawer-footer">
-          <el-button @click="passwordDrawerVisible = false">取消</el-button>
-          <el-button type="primary" :loading="passwordSaving" @click="handleChangePassword">保存</el-button>
-        </div>
+        <AdminDrawerFooter
+          :loading="passwordSaving"
+          @cancel="passwordDrawerVisible = false"
+          @confirm="handleChangePassword"
+        />
       </template>
     </el-drawer>
   </div>
@@ -388,6 +389,7 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
   display: flex;
   min-height: 100vh;
   background: var(--color-bg-app);
+  color: var(--color-text);
 }
 
 /* Sidebar overlay (mobile) */
@@ -412,10 +414,12 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
   position: sticky;
   top: 0;
   height: 100vh;
+  border-right: 1px solid var(--color-border-sidebar);
+  box-shadow: 1px 0 0 rgba(15, 23, 42, 0.02);
 }
 
 .sidebar-header {
-  padding: 20px 16px;
+  padding: 18px 16px;
   border-bottom: 1px solid var(--color-border-sidebar);
 }
 
@@ -423,14 +427,14 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #fff;
+  color: var(--color-text);
   text-decoration: none;
 }
 
 .logo-icon {
   width: 32px;
   height: 32px;
-  background: var(--color-accent);
+  background: var(--color-primary);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -441,7 +445,7 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
 
 .logo-text {
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 650;
   white-space: nowrap;
   transition: opacity 0.2s ease;
 }
@@ -463,20 +467,21 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
   color: var(--color-text-sidebar);
   border-radius: var(--radius-sm);
   font-size: 14px;
+  font-weight: 500;
   white-space: nowrap;
-  border-left: 3px solid transparent;
-  transition: all 0.15s ease;
+  border: 1px solid transparent;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .nav-item:hover {
-  color: #fff;
+  color: var(--color-text);
   background: var(--color-bg-sidebar-hover);
 }
 
 .nav-item.active {
-  color: #fff;
+  color: var(--color-text-sidebar-active);
   background: var(--color-bg-sidebar-active);
-  border-left-color: var(--color-accent);
+  border-color: #bfdbfe;
 }
 
 .nav-icon {
@@ -547,9 +552,9 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
 .user-avatar {
   width: 32px;
   height: 32px;
-  border-radius: 50%;
-  background: #334155;
-  color: var(--color-accent);
+  border-radius: var(--radius-sm);
+  background: var(--color-info-soft);
+  color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -565,7 +570,7 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
 .user-name {
   font-size: 13px;
   font-weight: 500;
-  color: #fff;
+  color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -592,7 +597,7 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
 }
 
 .sidebar-collapse-btn:hover {
-  color: #fff;
+  color: var(--color-primary);
   background: var(--color-bg-sidebar-hover);
 }
 
@@ -665,6 +670,7 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
   position: sticky;
   top: 0;
   z-index: 50;
+  box-shadow: var(--shadow-xs);
 }
 
 .menu-toggle {
@@ -706,18 +712,12 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
 }
 
 .topbar-link:hover {
-  color: var(--color-text);
-  background: var(--color-bg-app);
+  color: var(--color-primary);
+  background: var(--color-info-soft);
 }
 
 .logout-btn:hover {
   color: var(--color-danger);
-}
-
-.password-drawer-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
 }
 
 /* Content */

@@ -1,23 +1,26 @@
 <template>
   <div>
-    <div class="admin-page-header">
-      <h2 class="admin-page-title">媒体库</h2>
-      <el-upload
-        :action="uploadUrl"
-        :headers="uploadHeaders"
-        accept=".jpg,.jpeg,.png,.webp"
-        :show-file-list="false"
-        :on-success="handleUploadSuccess"
-        :on-error="handleUploadError"
-      >
-        <el-button type="primary">
-          <span v-html="getIconSvg('upload', 16)" style="margin-right:6px;vertical-align:middle"></span>
-          上传图片
-        </el-button>
-      </el-upload>
-    </div>
+    <AdminPageHeader title="媒体库">
+      <template #actions>
+        <el-upload
+          :action="uploadUrl"
+          :headers="uploadHeaders"
+          accept=".jpg,.jpeg,.png,.webp"
+          :show-file-list="false"
+          :disabled="uploading"
+          :on-progress="handleUploadProgress"
+          :on-success="handleUploadSuccess"
+          :on-error="handleUploadError"
+        >
+          <el-button type="primary" :loading="uploading">
+            <span class="admin-button-icon" v-html="getIconSvg('upload', 16)"></span>
+            {{ uploading ? '上传中' : '上传图片' }}
+          </el-button>
+        </el-upload>
+      </template>
+    </AdminPageHeader>
 
-    <div class="admin-toolbar">
+    <AdminToolbar>
       <el-input
         v-model="searchQuery"
         placeholder="搜索文件名..."
@@ -30,55 +33,56 @@
       <el-button type="warning" @click="handleCleanupUnused" :loading="cleanupLoading">
         清理未使用
       </el-button>
-    </div>
+    </AdminToolbar>
 
-    <div class="admin-table-wrap">
+    <div class="admin-panel-shell">
       <AdminLoadingOverlay :show="loading" />
-      <el-table :data="list">
-        <el-table-column label="缩略图" width="80">
-          <template #default="{ row }">
+      <div v-if="list.length > 0" class="admin-media-grid media-grid">
+        <article v-for="item in list" :key="item.id" class="media-card">
+          <button class="media-preview-btn" type="button" @click="openPreview(item.url)">
             <ResponsiveImage
-              :src="row.url"
-              :alt="row.filename"
-              variant="thumb"
-              class="media-thumb"
-              @click="openPreview(row.url)"
+              :src="item.url"
+              :alt="item.filename"
+              variant="sm"
+              class="media-card-thumb"
             />
-          </template>
-        </el-table-column>
-        <el-table-column prop="original_name" label="文件名" min-width="180">
-          <template #default="{ row }">
-            <div class="row-title">{{ row.original_name || row.filename }}</div>
-          </template>
-        </el-table-column>
-        <el-table-column label="URL" min-width="240">
-          <template #default="{ row }">
-            <div class="media-url-cell" :title="row.url">{{ row.url || '—' }}</div>
-          </template>
-        </el-table-column>
-        <el-table-column label="大小" width="100">
-          <template #default="{ row }">
-            {{ formatSize(row.size_bytes) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="160">
-          <template #default="{ row }">{{ formatDateTime(row.created_at) }}</template>
-        </el-table-column>
-        <el-table-column label="操作" width="90">
-          <template #default="{ row }">
+          </button>
+          <div class="media-card-body">
+            <div class="media-card-title" :title="item.original_name || item.filename">
+              {{ item.original_name || item.filename }}
+            </div>
+            <div class="media-card-meta">
+              <span>{{ formatSize(item.size_bytes) }}</span>
+              <span>{{ formatDateTime(item.created_at) }}</span>
+            </div>
+            <div class="media-card-url" :title="item.url">{{ item.url || '—' }}</div>
+          </div>
+          <div class="media-card-actions">
+            <el-tooltip content="复制链接" placement="top">
+              <button class="action-btn" type="button" title="复制链接" aria-label="复制链接" @click="copyLink(item.url)" v-html="getIconSvg('copy', 16)"></button>
+            </el-tooltip>
+            <el-tooltip content="预览" placement="top">
+              <button class="action-btn" type="button" title="预览" aria-label="预览" @click="openPreview(item.url)" v-html="getIconSvg('eye', 16)"></button>
+            </el-tooltip>
             <el-popconfirm
               title="确定删除该文件？"
               confirm-button-text="删除"
               cancel-button-text="取消"
-              @confirm="handleDelete(row.id)"
+              @confirm="handleDelete(item.id)"
             >
               <template #reference>
-                <el-button size="small" type="danger">删除</el-button>
+                <button class="action-btn danger" type="button" title="删除" aria-label="删除" v-html="getIconSvg('trash-2', 16)"></button>
               </template>
             </el-popconfirm>
-          </template>
-        </el-table-column>
-      </el-table>
+          </div>
+        </article>
+      </div>
+      <AdminEmptyState
+        v-else-if="!loading"
+        icon="file-text"
+        title="暂无媒体文件"
+        description="上传图片后可在这里预览、复制链接和清理未使用文件"
+      />
     </div>
 
     <div class="admin-pagination-wrap" v-if="total > pageSize">
@@ -146,14 +150,16 @@ interface MediaItem {
   original_name: string;
   url: string;
   size_bytes: number;
+  created_at: string;
 }
 
 const list = ref<MediaItem[]>([]);
 const loading = ref(false);
 const searchQuery = ref('');
 const page = ref(1);
-const pageSize = ref(12);
+const pageSize = ref(10);
 const total = ref(0);
+const uploading = ref(false);
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 const previewImage = ref<string | null>(null);
@@ -178,6 +184,27 @@ const openPreview = (url: string) => {
 
 const closePreview = () => {
   previewImage.value = null;
+};
+
+const copyLink = async (url: string) => {
+  if (!url) return;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url);
+    } else {
+      const textarea = document.createElement('textarea');
+      textarea.value = url;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+    notify.success('链接已复制');
+  } catch (e) {
+    notify.error(e, '复制失败');
+  }
 };
 
 const onSearch = () => {
@@ -209,13 +236,19 @@ const loadList = async () => {
   }
 };
 
+const handleUploadProgress = () => {
+  uploading.value = true;
+};
+
 const handleUploadSuccess = () => {
+  uploading.value = false;
   notify.success('上传成功');
   loadList();
 };
 
 const handleUploadError = () => {
-  // error displayed by Element Plus upload component
+  uploading.value = false;
+  ElMessage.error('上传失败');
 };
 
 const handleDelete = async (id: string) => {
@@ -279,22 +312,127 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.media-thumb {
-  width: 56px;
-  height: 56px;
-  object-fit: cover;
-  border-radius: 6px;
-  cursor: pointer;
-  border: 1px solid var(--border-color);
+.media-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  min-height: 220px;
 }
 
-.media-url-cell {
-  max-width: 300px;
+.media-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.media-card:hover {
+  border-color: #bfdbfe;
+  box-shadow: var(--shadow-md);
+}
+
+.media-preview-btn {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  border: 0;
+  background: var(--color-bg-app);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.media-card-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.media-card-body {
+  min-width: 0;
+  padding: 12px;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.media-card-title {
+  min-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.media-card-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.media-card-url {
+  margin-top: 8px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 12px;
   color: var(--color-text-muted);
+}
+
+.media-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 8px 10px 10px;
+}
+
+.media-card-actions .action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 5px 8px;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.media-card-actions .action-btn:hover {
+  color: var(--color-primary);
+  background: var(--color-info-soft);
+}
+
+.media-card-actions .action-btn.danger:hover {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+@media (max-width: 1280px) {
+  .media-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1024px) {
+  .media-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .media-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .preview-overlay {

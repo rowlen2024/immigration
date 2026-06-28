@@ -1,11 +1,9 @@
-<template>
+﻿<template>
   <div>
-    <div class="admin-page-header">
-      <h2 class="admin-page-title">咨询管理</h2>
-    </div>
+    <AdminPageHeader title="咨询管理" />
 
-    <div class="admin-toolbar">
-      <el-select v-model="statusFilter" placeholder="状态筛选" clearable @change="loadList">
+    <AdminToolbar>
+      <el-select v-model="statusFilter" placeholder="状态筛选" clearable class="admin-filter-select" @change="loadList">
         <el-option label="全部" value="" />
         <el-option label="新咨询" value="new" />
         <el-option label="已联系" value="contacted" />
@@ -13,14 +11,13 @@
         <el-option label="已关闭" value="closed" />
       </el-select>
       <el-button :icon="Refresh" circle @click="statusFilter='';loadList()" :loading="loading" />
-    </div>
+    </AdminToolbar>
 
-    <div class="admin-table-wrap">
-      <AdminLoadingOverlay :show="loading" />
+    <AdminTableShell :loading="loading">
       <el-table :data="list" highlight-current-row>
         <el-table-column prop="name" label="姓名" width="110">
           <template #default="{ row }">
-            <div class="row-title">{{ row.name }}</div>
+            <div class="admin-row-title">{{ row.name }}</div>
           </template>
         </el-table-column>
         <el-table-column prop="phone" label="电话" width="140">
@@ -51,12 +48,13 @@
           </template>
         </el-table-column>
       </el-table>
-    </div>
+    </AdminTableShell>
 
-    <div v-if="!loading && list.length === 0" class="admin-empty-state">
-      <div class="empty-icon" v-html="getIconSvg('message-circle', 48)"></div>
-      <div class="empty-title">暂无咨询</div>
-    </div>
+    <AdminEmptyState
+      v-if="!loading && list.length === 0"
+      icon="message-circle"
+      title="暂无咨询"
+    />
 
     <div class="admin-pagination-wrap" v-if="total > pageSize">
       <el-pagination v-model:current-page="page" :page-size="pageSize" :total="total" layout="total, prev, pager, next" @current-change="loadList" />
@@ -102,8 +100,12 @@
         </el-form>
       </div>
       <template #footer>
-        <el-button @click="detailVisible = false">关闭</el-button>
-        <el-button type="primary" :loading="updating" @click="handleUpdateStatus">保存</el-button>
+        <AdminDrawerFooter
+          cancel-text="关闭"
+          :loading="updating"
+          @cancel="detailVisible = false"
+          @confirm="handleUpdateStatus"
+        />
       </template>
     </el-drawer>
   </div>
@@ -113,7 +115,6 @@
 import { ElMessage } from 'element-plus';
 import { Refresh } from '@element-plus/icons-vue';
 import { useNotify } from '~/composables/useNotify';
-import { getIconSvg } from '~/composables/lucideIcons';
 import { formatDateTime } from '~/utils/date';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
@@ -215,11 +216,3 @@ onMounted(() => {
   loadList();
 });
 </script>
-
-<style scoped>
-.row-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text);
-}
-</style>

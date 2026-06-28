@@ -1,44 +1,42 @@
-<template>
+﻿<template>
   <div>
-    <div class="admin-page-header">
-      <h2 class="admin-page-title">FAQ 管理</h2>
-      <el-button type="primary" @click="openCreate">新建 FAQ</el-button>
-    </div>
+    <AdminPageHeader title="FAQ 管理">
+      <template #actions>
+        <el-button type="primary" @click="openCreate">新建 FAQ</el-button>
+      </template>
+    </AdminPageHeader>
 
-    <div class="admin-toolbar">
-      <div class="admin-toolbar-row">
-        <el-input
-          v-model="searchQuery"
-          placeholder="搜索问题..."
-          :prefix-icon="Search"
-          clearable
-          class="admin-search-input"
-          @input="onSearch"
+    <AdminToolbar>
+      <el-input
+        v-model="searchQuery"
+        placeholder="搜索问题..."
+        :prefix-icon="Search"
+        clearable
+        class="admin-search-input"
+        @input="onSearch"
+      />
+      <el-select
+        v-model="projectFilter"
+        placeholder="按项目筛选"
+        clearable
+        class="admin-project-filter"
+        @change="onFilterChange"
+      >
+        <el-option
+          v-for="p in projects"
+          :key="p.id"
+          :label="p.name"
+          :value="String(p.id)"
         />
-        <el-select
-          v-model="projectFilter"
-          placeholder="按项目筛选"
-          clearable
-          class="admin-project-filter"
-          @change="onFilterChange"
-        >
-          <el-option
-            v-for="p in projects"
-            :key="p.id"
-            :label="p.name"
-            :value="String(p.id)"
-          />
-        </el-select>
+      </el-select>
       <el-button :icon="Refresh" circle @click="searchQuery='';projectFilter=null;loadList()" :loading="loading" />
-      </div>
-    </div>
+    </AdminToolbar>
 
-    <div class="admin-table-wrap">
-      <AdminLoadingOverlay :show="loading" />
+    <AdminTableShell :loading="loading">
       <el-table :data="list">
         <el-table-column prop="question" label="问题" min-width="220">
           <template #default="{ row }">
-            <div class="row-title">{{ row.question }}</div>
+            <div class="admin-row-title">{{ row.question }}</div>
           </template>
         </el-table-column>
         <el-table-column prop="project_name" label="所属项目" width="160">
@@ -62,25 +60,27 @@
         </el-table-column>
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
-            <div class="table-actions">
-              <button class="action-btn" @click="openEdit(row)">编辑</button>
+            <AdminRowActions>
+              <button class="action-btn" type="button" title="编辑" aria-label="编辑" @click="openEdit(row)" v-html="getIconSvg('pencil', 16)"></button>
               <el-popconfirm title="确定删除该 FAQ？" confirm-button-text="删除" cancel-button-text="取消" @confirm="handleDelete(row.id)">
                 <template #reference>
-                  <button class="action-btn danger">删除</button>
+                  <button class="action-btn danger" type="button" title="删除" aria-label="删除" v-html="getIconSvg('trash-2', 16)"></button>
                 </template>
               </el-popconfirm>
-            </div>
+            </AdminRowActions>
           </template>
         </el-table-column>
       </el-table>
-    </div>
+    </AdminTableShell>
 
-    <div v-if="!loading && list.length === 0" class="admin-empty-state">
-      <div class="empty-icon" v-html="getIconSvg('help-circle', 48)"></div>
-      <div class="empty-title">暂无 FAQ</div>
-      <div class="empty-desc">点击上方按钮创建第一个 FAQ</div>
-      <el-button type="primary" @click="openCreate">新建 FAQ</el-button>
-    </div>
+    <AdminEmptyState
+      v-if="!loading && list.length === 0"
+      icon="help-circle"
+      title="暂无 FAQ"
+      description="点击上方按钮创建第一个 FAQ"
+      action-label="新建 FAQ"
+      @action="openCreate"
+    />
 
     <div class="admin-pagination-wrap" v-if="total > pageSize">
       <el-pagination v-model:current-page="page" :page-size="pageSize" :total="total" layout="total, prev, pager, next" @current-change="loadList" />
@@ -113,8 +113,11 @@
         </el-row>
       </el-form>
       <template #footer>
-        <el-button @click="drawerVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
+        <AdminDrawerFooter
+          :loading="saving"
+          @cancel="drawerVisible = false"
+          @confirm="handleSave"
+        />
       </template>
     </el-drawer>
   </div>
@@ -124,8 +127,8 @@
 import { Search, Refresh } from '@element-plus/icons-vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { useNotify } from '~/composables/useNotify';
-import { getIconSvg } from '~/composables/lucideIcons';
 import { formatDateTime } from '~/utils/date';
+import { getIconSvg } from '~/composables/lucideIcons';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
 
@@ -270,20 +273,3 @@ onMounted(() => {
   loadList();
 });
 </script>
-
-<style scoped>
-.admin-toolbar-row {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-.admin-project-filter {
-  width: 200px;
-  flex-shrink: 0;
-}
-.row-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text);
-}
-</style>

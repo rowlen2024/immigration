@@ -1,44 +1,38 @@
 <template>
   <div class="homepage-config">
-    <div class="admin-page-header">
-      <h2 class="admin-page-title">首页配置</h2>
-    </div>
+    <AdminPageHeader title="首页配置" />
 
     <div class="homepage-tabs-loading">
       <AdminLoadingOverlay :show="loading" />
       <el-tabs v-model="activeConfigTab" type="border-card" class="homepage-tabs">
       <el-tab-pane label="轮播管理" name="slides">
       <!-- Hero Slides Card -->
-      <el-card class="config-card">
-        <template #header>
-          <h3 class="admin-card-title">轮播管理</h3>
-        </template>
+      <AdminConfigCard title="轮播管理">
         <div v-if="heroSlides.length === 0" class="admin-empty-hint">暂无轮播，点击"新增 Slide"添加。</div>
         <div v-else class="config-list">
           <div v-for="(slide, i) in heroSlides" :key="i" class="config-item">
             <ResponsiveImage v-if="slide.image" :src="slide.image" variant="thumb" class="slide-thumb" />
             <span v-else class="slide-label">(无图片)</span>
             <div class="config-item-actions">
-              <button class="action-btn" :disabled="i === 0" @click="moveSlide(i, -1)">↑</button>
-              <button class="action-btn" :disabled="i === heroSlides.length - 1" @click="moveSlide(i, 1)">↓</button>
-              <button class="action-btn" @click="openEditSlide(i)">编辑</button>
-              <button class="action-btn danger" @click="removeSlide(i)">删除</button>
+              <button class="action-btn" title="上移" aria-label="上移" :disabled="i === 0" @click="moveSlide(i, -1)"><span class="sort-icon up" v-html="getIconSvg('chevron-right', 16)"></span></button>
+              <button class="action-btn" title="下移" aria-label="下移" :disabled="i === heroSlides.length - 1" @click="moveSlide(i, 1)"><span class="sort-icon down" v-html="getIconSvg('chevron-right', 16)"></span></button>
+              <button class="action-btn" type="button" title="编辑" aria-label="编辑" @click="openEditSlide(i)" v-html="getIconSvg('pencil', 16)"></button>
+              <button class="action-btn danger" type="button" title="删除" aria-label="删除" @click="removeSlide(i)" v-html="getIconSvg('trash-2', 16)"></button>
             </div>
           </div>
         </div>
-        <div class="config-list-actions">
+        <template #actions>
           <el-button type="primary" size="small" @click="openAddSlide">新增 Slide</el-button>
-        </div>
-        <div class="card-footer">
+        </template>
+        <template #footer>
           <el-button type="primary" :loading="slideSaving" @click="saveSlides">保存轮播</el-button>
-        </div>
-      </el-card>
+        </template>
+      </AdminConfigCard>
       </el-tab-pane>
 
       <el-tab-pane label="项目展示区" name="showcase">
       <!-- Project Showcase Card -->
-      <el-card class="config-card">
-        <template #header><h3 class="admin-card-title">项目展示区</h3></template>
+      <AdminConfigCard title="项目展示区">
         <el-form label-width="100px">
           <el-form-item label="区域标题">
             <el-input v-model="projectShowcase.section_title" placeholder="精选移民项目" />
@@ -55,9 +49,9 @@
                 <div v-for="(slug, i) in projectShowcase.featured_slugs" :key="slug" class="config-item">
                   <span class="config-item-name">{{ getProjectTitle(slug) }}</span>
                   <div class="config-item-actions">
-                    <button class="action-btn" :disabled="i === 0" @click="moveFeatured(i, -1)">↑</button>
-                    <button class="action-btn" :disabled="i === projectShowcase.featured_slugs.length - 1" @click="moveFeatured(i, 1)">↓</button>
-                    <button class="action-btn danger" @click="removeFeatured(i)">移除</button>
+                    <button class="action-btn" title="上移" aria-label="上移" :disabled="i === 0" @click="moveFeatured(i, -1)"><span class="sort-icon up" v-html="getIconSvg('chevron-right', 16)"></span></button>
+                    <button class="action-btn" title="下移" aria-label="下移" :disabled="i === projectShowcase.featured_slugs.length - 1" @click="moveFeatured(i, 1)"><span class="sort-icon down" v-html="getIconSvg('chevron-right', 16)"></span></button>
+                    <button class="action-btn danger" type="button" title="移除" aria-label="移除" @click="removeFeatured(i)" v-html="getIconSvg('x', 16)"></button>
                   </div>
                 </div>
               </div>
@@ -79,18 +73,15 @@
             </div>
           </el-form-item>
         </el-form>
-        <div class="card-footer">
+        <template #footer>
           <el-button type="primary" :loading="showcaseSaving" @click="saveShowcase">保存</el-button>
-        </div>
-      </el-card>
+        </template>
+      </AdminConfigCard>
       </el-tab-pane>
 
       <el-tab-pane label="优势管理" name="advantages">
       <!-- Advantage Items Card -->
-      <el-card class="config-card">
-        <template #header>
-          <h3 class="admin-card-title">优势管理</h3>
-        </template>
+      <AdminConfigCard title="优势管理">
         <el-form label-width="100px" class="section-form">
           <el-form-item label="区域标题">
             <el-input v-model="advantageSection.section_title" placeholder="为什么选择 北极星移民？" />
@@ -108,7 +99,7 @@
             <div class="adv-icon-preview">
               <span
                 v-if="getIconByName(item.icon)"
-                v-html="getIconSvg(item.icon, 18, '#c8963e')"
+                v-html="getIconSvg(item.icon, 18)"
                 class="adv-icon-svg"
               ></span>
               <span v-else class="adv-icon-emoji">{{ item.icon }}</span>
@@ -118,25 +109,24 @@
               <span class="config-item-desc">{{ item.description }}</span>
             </div>
             <div class="config-item-actions">
-              <button class="action-btn" :disabled="i === 0" @click="moveAdv(i, -1)">↑</button>
-              <button class="action-btn" :disabled="i === advantageItems.length - 1" @click="moveAdv(i, 1)">↓</button>
-              <button class="action-btn" @click="openEditAdv(i)">编辑</button>
-              <button class="action-btn danger" @click="removeAdv(i)">删除</button>
+              <button class="action-btn" title="上移" aria-label="上移" :disabled="i === 0" @click="moveAdv(i, -1)"><span class="sort-icon up" v-html="getIconSvg('chevron-right', 16)"></span></button>
+              <button class="action-btn" title="下移" aria-label="下移" :disabled="i === advantageItems.length - 1" @click="moveAdv(i, 1)"><span class="sort-icon down" v-html="getIconSvg('chevron-right', 16)"></span></button>
+              <button class="action-btn" type="button" title="编辑" aria-label="编辑" @click="openEditAdv(i)" v-html="getIconSvg('pencil', 16)"></button>
+              <button class="action-btn danger" type="button" title="删除" aria-label="删除" @click="removeAdv(i)" v-html="getIconSvg('trash-2', 16)"></button>
             </div>
           </div>
         </div>
-        <div class="config-list-actions">
+        <template #actions>
           <el-button type="primary" size="small" @click="openAddAdv">新增优势项</el-button>
-        </div>
-        <div class="card-footer">
+        </template>
+        <template #footer>
           <el-button type="primary" :loading="advSaving" @click="saveAdvantages">保存优势设置</el-button>
-        </div>
-      </el-card>
+        </template>
+      </AdminConfigCard>
       </el-tab-pane>
 
       <el-tab-pane label="案例展示区" name="cases">
-        <el-card class="config-card">
-          <template #header><h3 class="admin-card-title">案例展示区</h3></template>
+        <AdminConfigCard title="案例展示区">
           <el-form label-width="100px">
             <el-form-item label="区域标题">
               <el-input v-model="caseShowcase.section_title" placeholder="成功案例" />
@@ -153,9 +143,9 @@
                   <div v-for="(id, i) in caseShowcase.featured_case_ids" :key="id" class="config-item">
                     <span class="config-item-name">{{ getCaseTitle(id) }}</span>
                     <div class="config-item-actions">
-                      <button class="action-btn" :disabled="i === 0" @click="moveCaseFeatured(i, -1)">↑</button>
-                      <button class="action-btn" :disabled="i === caseShowcase.featured_case_ids.length - 1" @click="moveCaseFeatured(i, 1)">↓</button>
-                      <button class="action-btn danger" @click="removeCaseFeatured(i)">移除</button>
+                      <button class="action-btn" title="上移" aria-label="上移" :disabled="i === 0" @click="moveCaseFeatured(i, -1)"><span class="sort-icon up" v-html="getIconSvg('chevron-right', 16)"></span></button>
+                      <button class="action-btn" title="下移" aria-label="下移" :disabled="i === caseShowcase.featured_case_ids.length - 1" @click="moveCaseFeatured(i, 1)"><span class="sort-icon down" v-html="getIconSvg('chevron-right', 16)"></span></button>
+                      <button class="action-btn danger" type="button" title="移除" aria-label="移除" @click="removeCaseFeatured(i)" v-html="getIconSvg('x', 16)"></button>
                     </div>
                   </div>
                 </div>
@@ -177,15 +167,14 @@
               </div>
             </el-form-item>
           </el-form>
-          <div class="card-footer">
+          <template #footer>
             <el-button type="primary" :loading="caseSaving" @click="saveCaseShowcase">保存</el-button>
-          </div>
-        </el-card>
+          </template>
+        </AdminConfigCard>
       </el-tab-pane>
 
       <el-tab-pane label="评价展示区" name="testimonials">
-        <el-card class="config-card">
-          <template #header><h3 class="admin-card-title">评价展示区</h3></template>
+        <AdminConfigCard title="评价展示区">
           <el-form label-width="100px">
             <el-form-item label="区域标题">
               <el-input v-model="testimonialShowcase.section_title" placeholder="客户评价" />
@@ -202,9 +191,9 @@
                   <div v-for="(id, i) in testimonialShowcase.featured_testimonial_ids" :key="id" class="config-item">
                     <span class="config-item-name">{{ getTestimonialTitle(id) }}</span>
                     <div class="config-item-actions">
-                      <button class="action-btn" :disabled="i === 0" @click="moveTestimonialFeatured(i, -1)">↑</button>
-                      <button class="action-btn" :disabled="i === testimonialShowcase.featured_testimonial_ids.length - 1" @click="moveTestimonialFeatured(i, 1)">↓</button>
-                      <button class="action-btn danger" @click="removeTestimonialFeatured(i)">移除</button>
+                      <button class="action-btn" title="上移" aria-label="上移" :disabled="i === 0" @click="moveTestimonialFeatured(i, -1)"><span class="sort-icon up" v-html="getIconSvg('chevron-right', 16)"></span></button>
+                      <button class="action-btn" title="下移" aria-label="下移" :disabled="i === testimonialShowcase.featured_testimonial_ids.length - 1" @click="moveTestimonialFeatured(i, 1)"><span class="sort-icon down" v-html="getIconSvg('chevron-right', 16)"></span></button>
+                      <button class="action-btn danger" type="button" title="移除" aria-label="移除" @click="removeTestimonialFeatured(i)" v-html="getIconSvg('x', 16)"></button>
                     </div>
                   </div>
                 </div>
@@ -226,17 +215,14 @@
               </div>
             </el-form-item>
           </el-form>
-          <div class="card-footer">
+          <template #footer>
             <el-button type="primary" :loading="testimonialSaving" @click="saveTestimonialShowcase">保存</el-button>
-          </div>
-        </el-card>
+          </template>
+        </AdminConfigCard>
       </el-tab-pane>
 
       <el-tab-pane label="信任数据" name="trust">
-        <el-card class="config-card">
-          <template #header>
-            <h3 class="admin-card-title">信任数据</h3>
-          </template>
+        <AdminConfigCard title="信任数据">
           <div v-if="trustItems.length === 0" class="admin-empty-hint">暂无信任数据，点击"新增条目"添加。</div>
           <div v-else class="config-list">
             <div v-for="(item, i) in trustItems" :key="i" class="config-item">
@@ -245,20 +231,20 @@
                 <span class="config-item-desc">{{ item.label }}</span>
               </div>
               <div class="config-item-actions">
-                <button class="action-btn" :disabled="i === 0" @click="moveTrust(i, -1)">↑</button>
-                <button class="action-btn" :disabled="i === trustItems.length - 1" @click="moveTrust(i, 1)">↓</button>
-                <button class="action-btn" @click="openEditTrust(i)">编辑</button>
-                <button class="action-btn danger" @click="removeTrust(i)">删除</button>
+                <button class="action-btn" title="上移" aria-label="上移" :disabled="i === 0" @click="moveTrust(i, -1)"><span class="sort-icon up" v-html="getIconSvg('chevron-right', 16)"></span></button>
+                <button class="action-btn" title="下移" aria-label="下移" :disabled="i === trustItems.length - 1" @click="moveTrust(i, 1)"><span class="sort-icon down" v-html="getIconSvg('chevron-right', 16)"></span></button>
+                <button class="action-btn" type="button" title="编辑" aria-label="编辑" @click="openEditTrust(i)" v-html="getIconSvg('pencil', 16)"></button>
+                <button class="action-btn danger" type="button" title="删除" aria-label="删除" @click="removeTrust(i)" v-html="getIconSvg('trash-2', 16)"></button>
               </div>
             </div>
           </div>
-          <div class="config-list-actions">
+          <template #actions>
             <el-button type="primary" size="small" @click="openAddTrust">新增条目</el-button>
-          </div>
-          <div class="card-footer">
+          </template>
+          <template #footer>
             <el-button type="primary" :loading="trustSaving" @click="saveTrust">保存</el-button>
-          </div>
-        </el-card>
+          </template>
+        </AdminConfigCard>
       </el-tab-pane>
       </el-tabs>
     </div>
@@ -293,8 +279,11 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="slideDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveSlide">确定</el-button>
+        <AdminDrawerFooter
+          confirm-text="确定"
+          @cancel="slideDialogVisible = false"
+          @confirm="saveSlide"
+        />
       </template>
     </el-drawer>
 
@@ -317,8 +306,11 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="advDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveAdv">确定</el-button>
+        <AdminDrawerFooter
+          confirm-text="确定"
+          @cancel="advDialogVisible = false"
+          @confirm="saveAdv"
+        />
       </template>
     </el-drawer>
 
@@ -338,8 +330,11 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="trustDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveTrustItem">确定</el-button>
+        <AdminDrawerFooter
+          confirm-text="确定"
+          @cancel="trustDialogVisible = false"
+          @confirm="saveTrustItem"
+        />
       </template>
     </el-drawer>
   </div>
@@ -857,6 +852,20 @@ onMounted(load);
 .homepage-tabs {
   background: var(--color-bg-surface);
   border-radius: var(--radius-md);
+}
+
+.sort-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sort-icon.up {
+  transform: rotate(-90deg);
+}
+
+.sort-icon.down {
+  transform: rotate(90deg);
 }
 
 /* Empty hint override for homepage */

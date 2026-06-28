@@ -1,11 +1,12 @@
 <template>
   <div>
-    <div class="admin-page-header">
-      <h2 class="admin-page-title">导航管理</h2>
-      <el-button v-if="!isViewer" type="primary" @click="openCreate()">新建导航</el-button>
-    </div>
+    <AdminPageHeader title="导航管理">
+      <template #actions>
+        <el-button v-if="!isViewer" type="primary" @click="openCreate()">新建导航</el-button>
+      </template>
+    </AdminPageHeader>
 
-    <div class="admin-toolbar">
+    <AdminToolbar>
       <el-input
         v-model="searchQuery"
         placeholder="搜索名称..."
@@ -25,10 +26,9 @@
         <el-option label="底部" value="footer" />
       </el-select>
       <el-button :icon="Refresh" circle @click="searchQuery='';typeFilter='';positionFilter='';loadTree()" :loading="loading" />
-    </div>
+    </AdminToolbar>
 
-    <div class="admin-table-wrap">
-      <AdminLoadingOverlay :show="loading" />
+    <AdminTableShell v-if="loading || filteredTreeData.length > 0" :loading="loading">
       <div class="nav-tree-header">
         <span class="nav-th nav-th-name">名称</span>
         <span class="nav-th nav-th-sort">排序</span>
@@ -103,7 +103,15 @@
           </div>
         </template>
       </el-tree>
-    </div>
+    </AdminTableShell>
+    <AdminEmptyState
+      v-else
+      icon="menu"
+      title="暂无导航"
+      description="点击上方按钮创建第一个导航项"
+      :action-label="isViewer ? undefined : '新建导航'"
+      @action="openCreate()"
+    />
 
     <el-drawer
       v-model="dialogVisible"
@@ -130,7 +138,7 @@
             placeholder="搜索并选择项目"
             filterable
             clearable
-            style="width: 100%"
+            class="admin-full-width"
             @change="onProjectChange"
           >
             <el-option
@@ -151,7 +159,7 @@
             placeholder="搜索并选择页面"
             filterable
             clearable
-            style="width: 100%"
+            class="admin-full-width"
             @change="onPageChange"
           >
             <el-option
@@ -201,8 +209,11 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
+        <AdminDrawerFooter
+          :loading="saving"
+          @cancel="dialogVisible = false"
+          @confirm="handleSave"
+        />
       </template>
     </el-drawer>
   </div>
@@ -505,11 +516,11 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   padding: 10px 16px 10px 40px;
-  border-bottom: 2px solid var(--border-color);
+  border-bottom: 1px solid var(--color-border);
   font-size: 12px;
   font-weight: 600;
   color: var(--color-text-muted);
-  background: var(--bg-gray-50, #fafafa);
+  background: #f8fbff;
 }
 
 .nav-th-name { min-width: 160px; }
@@ -527,6 +538,11 @@ onMounted(() => {
 .nav-tree :deep(.el-tree-node__content) {
   height: auto;
   padding: 0 16px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.nav-tree :deep(.el-tree-node__content:hover) {
+  background: #f8fbff;
 }
 
 .tree-node {
@@ -594,13 +610,13 @@ onMounted(() => {
 .link-preview {
   margin-top: 6px;
   font-size: 13px;
-  color: #606266;
+  color: var(--color-text-muted);
 }
 
 .link-preview code {
-  background: #f5f7fa;
+  background: var(--color-bg-app);
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   font-family: monospace;
 }
 </style>

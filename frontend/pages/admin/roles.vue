@@ -1,15 +1,13 @@
 <template>
   <div>
-    <div class="admin-page-header">
-      <h2 class="admin-page-title">角色权限</h2>
-      <div class="header-actions">
+    <AdminPageHeader title="角色权限">
+      <template #actions>
         <el-button :icon="Refresh" circle @click="loadRoles" :loading="loading" />
         <el-button v-if="canWriteRoles" type="primary" @click="openCreate">新建角色</el-button>
-      </div>
-    </div>
+      </template>
+    </AdminPageHeader>
 
-    <div class="admin-table-wrap">
-      <AdminLoadingOverlay :show="loading" />
+    <AdminTableShell v-if="loading || roles.length > 0" :loading="loading">
       <el-table :data="roles">
         <el-table-column prop="name" label="角色名称" min-width="140" />
         <el-table-column prop="code" label="角色编码" min-width="140" />
@@ -28,8 +26,8 @@
         </el-table-column>
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
-            <div class="table-actions">
-              <button v-if="canWriteRoles" class="action-btn" @click="openEdit(row)">编辑</button>
+            <AdminRowActions>
+              <button v-if="canWriteRoles" class="action-btn" type="button" title="编辑" aria-label="编辑" @click="openEdit(row)" v-html="getIconSvg('pencil', 16)"></button>
               <el-popconfirm
                 v-if="canWriteRoles && !row.is_system"
                 title="确定删除该角色？"
@@ -38,14 +36,22 @@
                 @confirm="handleDelete(row.id)"
               >
                 <template #reference>
-                  <button class="action-btn danger">删除</button>
+                  <button class="action-btn danger" type="button" title="删除" aria-label="删除" v-html="getIconSvg('trash-2', 16)"></button>
                 </template>
               </el-popconfirm>
-            </div>
+            </AdminRowActions>
           </template>
         </el-table-column>
       </el-table>
-    </div>
+    </AdminTableShell>
+    <AdminEmptyState
+      v-else
+      icon="shield-check"
+      title="暂无角色"
+      description="点击上方按钮创建第一个角色"
+      :action-label="canWriteRoles ? '新建角色' : undefined"
+      @action="openCreate"
+    />
 
     <el-drawer v-model="drawerVisible" :title="editingId ? '编辑角色' : '新建角色'" size="760px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
@@ -76,8 +82,11 @@
         </div>
       </el-form>
       <template #footer>
-        <el-button @click="drawerVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
+        <AdminDrawerFooter
+          :loading="saving"
+          @cancel="drawerVisible = false"
+          @confirm="handleSave"
+        />
       </template>
     </el-drawer>
   </div>
@@ -86,6 +95,7 @@
 <script setup lang="ts">
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { Refresh } from '@element-plus/icons-vue';
+import { getIconSvg } from '~/composables/lucideIcons';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
 
@@ -262,12 +272,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .permission-groups {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));

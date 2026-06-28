@@ -13,7 +13,7 @@
       </el-upload>
       <el-button @click="pickerVisible = true">浏览</el-button>
     </div>
-    <div v-if="urlValue" class="preview" :style="{ aspectRatio: previewRatio }">
+    <div v-if="urlValue" class="preview" :class="previewRatioClass">
       <img :src="previewSrc" alt="预览" @error="previewError = true" v-show="!previewError" />
     </div>
     <p v-if="sizeHint" class="size-hint">{{ sizeHint }}</p>
@@ -46,6 +46,12 @@ const pickerVisible = ref(false);
 const previewError = ref(false);
 
 const previewSrc = computed(() => getVariantUrl(urlValue.value, 'sm'))
+
+const previewRatioClass = computed(() => {
+  if (props.previewRatio === '1 / 1') return 'preview--square';
+  if (props.previewRatio === '3 / 4') return 'preview--portrait';
+  return 'preview--wide';
+});
 
 const uploadUrl = computed(() => {
   const ctx = props.context || 'general';
@@ -108,11 +114,22 @@ watch(
 .preview {
   margin-top: 8px;
   width: 120px;
-  aspect-ratio: 16 / 9;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
-  background: #f5f7fa;
-  border: 1px solid #ebeef5;
+  background: var(--color-bg-app);
+  border: 1px solid var(--color-border-light);
+}
+
+.preview--wide {
+  aspect-ratio: 16 / 9;
+}
+
+.preview--square {
+  aspect-ratio: 1;
+}
+
+.preview--portrait {
+  aspect-ratio: 3 / 4;
 }
 
 .preview img {
