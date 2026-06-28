@@ -1,4 +1,4 @@
-﻿package service
+package service
 
 import (
 	"errors"
@@ -7,6 +7,8 @@ import (
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // userSvcMockUserRepo implements repository.UserRepository for user service tests.
@@ -405,6 +407,73 @@ func TestUser_Update_StatusToZero(t *testing.T) {
 	}
 	if updated.Status != 0 {
 		t.Errorf("expected status 0 (disabled), got %d", updated.Status)
+	}
+}
+
+func TestUser_ChangePassword_Success(t *testing.T) {
+	oldHash, err := bcrypt.GenerateFromPassword([]byte("oldpass"), bcrypt.MinCost)
+	if err != nil {
+		t.Fatalf("failed to hash password: %v", err)
+	}
+
+	var updated *model.User
+	repo := &userSvcMockUserRepo{
+		findByIDFn: func(id uint64) (*model.User, error) {
+			return &model.User{ID: id, Username: "user", PasswordHash: string(oldHash)}, nil
+		},
+		updateFn: func(user *model.User) error {
+			updated = user
+			return nil
+		},
+	}
+
+	svc := NewUserService(repo)
+	err = svc.ChangePassword(1, "oldpass", "newpass")
+	if err != nil {
+		t.Fatalf("expected success, got error: %v", err)
+	}
+	if updated == nil {
+		t.Fatal("expected user to be updated")
+	}
+	if bcrypt.CompareHashAndPassword([]byte(updated.PasswordHash), []byte("newpass")) != nil {
+		t.Fatal("expected password hash to match new password")
+	}
+}
+
+func TestUser_ChangePassword_WrongOldPassword(t *testing.T) {
+	oldHash, err := bcrypt.GenerateFromPassword([]byte("oldpass"), bcrypt.MinCost)
+	if err != nil {
+		t.Fatalf("failed to hash password: %v", err)
+	}
+
+	updated := false
+	repo := &userSvcMockUserRepo{
+		findByIDFn: func(id uint64) (*model.User, error) {
+			return &model.User{ID: id, Username: "user", PasswordHash: string(oldHash)}, nil
+		},
+		updateFn: func(user *model.User) error {
+			updated = true
+			return nil
+		},
+	}
+
+	svc := NewUserService(repo)
+	err = svc.ChangePassword(1, "wrongpass", "newpass")
+	if err == nil {
+		t.Fatal("expected error for wrong old password")
+	}
+	if updated {
+		t.Fatal("expected password not to be updated")
+	}
+}
+
+func TestUser_ChangePassword_ZeroID(t *testing.T) {
+	repo := &userSvcMockUserRepo{}
+	svc := NewUserService(repo)
+
+	err := svc.ChangePassword(0, "oldpass", "newpass")
+	if err == nil {
+		t.Fatal("expected error for zero user id")
 	}
 }
 

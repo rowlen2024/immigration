@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"mygo-immigration/backend/internal/dto"
@@ -220,6 +221,66 @@ func TestUserHandler_AdminUpdateUser_InvalidID(t *testing.T) {
 	c.Params = gin.Params{{Key: "id", Value: "abc"}}
 
 	h.AdminUpdateUser(c)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", w.Code)
+	}
+}
+
+func TestUserHandler_AdminChangeMyPassword_Success(t *testing.T) {
+	hashed := mustHashPassword("oldpass")
+	mockRepo := &userHandlerMockUserRepo{
+		findByID: func(id uint64) (*model.User, error) {
+			return &model.User{ID: id, Username: "user", PasswordHash: hashed}, nil
+		},
+		update: func(user *model.User) error {
+			return nil
+		},
+	}
+
+	userSvc := service.NewUserService(mockRepo)
+	h := &Handler{svc: &service.Service{User: userSvc}}
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Set("user_id", uint64(1))
+	c.Request = httptest.NewRequest(http.MethodPut, "/api/v1/admin/me/password", strings.NewReader(`{"old_password":"oldpass","new_password":"newpass"}`))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	h.AdminChangeMyPassword(c)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d, body: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestUserHandler_AdminChangeMyPassword_Unauthorized(t *testing.T) {
+	userSvc := service.NewUserService(&userHandlerMockUserRepo{})
+	h := &Handler{svc: &service.Service{User: userSvc}}
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPut, "/api/v1/admin/me/password", strings.NewReader(`{"old_password":"oldpass","new_password":"newpass"}`))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	h.AdminChangeMyPassword(c)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected status 401, got %d", w.Code)
+	}
+}
+
+func TestUserHandler_AdminChangeMyPassword_InvalidRequest(t *testing.T) {
+	userSvc := service.NewUserService(&userHandlerMockUserRepo{})
+	h := &Handler{svc: &service.Service{User: userSvc}}
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Set("user_id", uint64(1))
+	c.Request = httptest.NewRequest(http.MethodPut, "/api/v1/admin/me/password", strings.NewReader(`{"old_password":"oldpass","new_password":"123"}`))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	h.AdminChangeMyPassword(c)
 
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("expected status 400, got %d", w.Code)

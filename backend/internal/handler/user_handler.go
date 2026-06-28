@@ -99,6 +99,33 @@ func (h *Handler) AdminUpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.Success(user))
 }
 
+func (h *Handler) AdminChangeMyPassword(c *gin.Context) {
+	userIDValue, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, dto.Error(401, "unauthorized"))
+		return
+	}
+	userID, ok := userIDValue.(uint64)
+	if !ok || userID == 0 {
+		c.JSON(http.StatusUnauthorized, dto.Error(401, "unauthorized"))
+		return
+	}
+
+	var req dto.ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request"))
+		return
+	}
+
+	if err := h.svc.User.ChangePassword(userID, req.OldPassword, req.NewPassword); err != nil {
+		logging.Logger.Warn("business error in AdminChangeMyPassword", "error", err)
+		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Success(nil))
+}
+
 func (h *Handler) AdminDeleteUser(c *gin.Context) {
 	id, err := parseIDParam(c, "id")
 	if err != nil {

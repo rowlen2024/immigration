@@ -55,7 +55,7 @@ export const useAuth = () => {
     }
 
     const router = useRouter();
-    router.push('/');
+    router.push('/admin/login');
   };
 
   const refresh = async () => {

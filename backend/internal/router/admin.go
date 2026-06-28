@@ -73,6 +73,7 @@ func registerAdminRoutes(api *gin.RouterGroup, h *handler.Handler, cfg *config.C
 
 		admin.GET("/permissions", middleware.RBACAny("roles:read", "users:read"), h.ListPermissions)
 		admin.GET("/me/permissions", h.MyPermissions)
+		admin.PUT("/me/password", h.AdminChangeMyPassword)
 		admin.GET("/roles", middleware.RBACAny("roles:read", "users:read"), h.ListRoles)
 		admin.GET("/roles/:id", middleware.RBAC("roles:read"), h.GetRole)
 		admin.POST("/roles", middleware.RBAC("roles:write"), h.CreateRole)

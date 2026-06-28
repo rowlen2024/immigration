@@ -187,6 +187,38 @@ func (s *UserService) Update(id uint64, req dto.UpdateUserRequest) (*model.User,
 	return existing, nil
 }
 
+// ChangePassword updates the current user's password after verifying the old password.
+func (s *UserService) ChangePassword(userID uint64, oldPassword, newPassword string) error {
+	if userID == 0 {
+		return errors.New("user id is required")
+	}
+	if oldPassword == "" {
+		return errors.New("old password is required")
+	}
+	if newPassword == "" {
+		return errors.New("new password is required")
+	}
+
+	user, err := s.repo.FindByID(userID)
+	if err != nil {
+		return fmt.Errorf("user not found: %w", err)
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(oldPassword)); err != nil {
+		return errors.New("old password is incorrect")
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+	user.PasswordHash = string(hash)
+
+	if err := s.repo.Update(user); err != nil {
+		return fmt.Errorf("failed to update password: %w", err)
+	}
+	return nil
+}
+
 // Delete hard-deletes a user by ID.
 func (s *UserService) Delete(id uint64) error {
 	if id == 0 {

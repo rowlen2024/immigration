@@ -103,6 +103,10 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
             <span>访问网站</span>
           </NuxtLink>
+          <button class="topbar-link" @click="openPasswordDrawer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span>修改密码</span>
+          </button>
           <button class="topbar-link logout-btn" @click="handleLogout">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
             <span>退出登录</span>
@@ -114,16 +118,75 @@
         <slot />
       </main>
     </div>
+
+    <el-drawer
+      v-model="passwordDrawerVisible"
+      title="修改密码"
+      size="min(420px, 92vw)"
+      destroy-on-close
+      @closed="resetPasswordForm"
+    >
+      <el-form
+        ref="passwordFormRef"
+        :model="passwordForm"
+        :rules="passwordRules"
+        label-position="top"
+      >
+        <el-form-item label="当前密码" prop="old_password">
+          <el-input v-model="passwordForm.old_password" type="password" show-password autocomplete="current-password" />
+        </el-form-item>
+        <el-form-item label="新密码" prop="new_password">
+          <el-input v-model="passwordForm.new_password" type="password" show-password autocomplete="new-password" />
+        </el-form-item>
+        <el-form-item label="确认新密码" prop="confirm_password">
+          <el-input v-model="passwordForm.confirm_password" type="password" show-password autocomplete="new-password" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="password-drawer-footer">
+          <el-button @click="passwordDrawerVisible = false">取消</el-button>
+          <el-button type="primary" :loading="passwordSaving" @click="handleChangePassword">保存</el-button>
+        </div>
+      </template>
+    </el-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { getIconSvg } from '~/composables/lucideIcons';
 
 const route = useRoute();
 
 const sidebarCollapsed = ref(false);
 const mobileOpen = ref(false);
+const passwordDrawerVisible = ref(false);
+const passwordSaving = ref(false);
+const passwordFormRef = ref<FormInstance>();
+
+const passwordForm = reactive({
+  old_password: '',
+  new_password: '',
+  confirm_password: '',
+});
+
+const passwordRules = computed<FormRules>(() => ({
+  old_password: [{ required: true, message: '请输入当前密码', trigger: 'blur' }],
+  new_password: [{ required: true, min: 6, message: '新密码至少 6 位', trigger: 'blur' }],
+  confirm_password: [
+    { required: true, message: '请再次输入新密码', trigger: 'blur' },
+    {
+      validator: (_rule: unknown, value: string, callback: (error?: Error) => void) => {
+        if (value !== passwordForm.new_password) {
+          callback(new Error('两次输入的新密码不一致'));
+          return;
+        }
+        callback();
+      },
+      trigger: 'blur',
+    },
+  ],
+}));
 
 interface NavItem {
   to: string;
@@ -262,12 +325,49 @@ function closeMobile() {
   mobileOpen.value = false;
 }
 
+const resetPasswordForm = () => {
+  passwordFormRef.value?.resetFields();
+  Object.assign(passwordForm, {
+    old_password: '',
+    new_password: '',
+    confirm_password: '',
+  });
+};
+
+const openPasswordDrawer = () => {
+  resetPasswordForm();
+  passwordDrawerVisible.value = true;
+};
+
 const handleLogout = () => {
-  const { logout } = useAuth();
   logout();
 };
 
-const { user } = useAuth();
+const handleChangePassword = async () => {
+  const valid = await passwordFormRef.value?.validate().catch(() => false);
+  if (!valid) return;
+
+  passwordSaving.value = true;
+  try {
+    const api = useApi();
+    await api('/admin/me/password', {
+      method: 'PUT',
+      body: {
+        old_password: passwordForm.old_password,
+        new_password: passwordForm.new_password,
+      },
+    });
+    ElMessage.success('密码已修改，请重新登录');
+    passwordDrawerVisible.value = false;
+    logout();
+  } catch (e: any) {
+    ElMessage.error(e?.data?.message || '修改密码失败');
+  } finally {
+    passwordSaving.value = false;
+  }
+};
+
+const { user, logout } = useAuth();
 
 onMounted(() => {
   loadPermissions();
@@ -612,6 +712,12 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase());
 
 .logout-btn:hover {
   color: var(--color-danger);
+}
+
+.password-drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 /* Content */
