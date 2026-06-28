@@ -28,6 +28,7 @@
     </div>
 
     <div class="admin-table-wrap">
+      <AdminLoadingOverlay :show="loading" />
       <div class="nav-tree-header">
         <span class="nav-th nav-th-name">名称</span>
         <span class="nav-th nav-th-sort">排序</span>
@@ -38,7 +39,6 @@
         <span v-if="!isViewer" class="nav-th nav-th-actions">操作</span>
       </div>
       <el-tree
-        v-loading="loading"
         :data="filteredTreeData"
         node-key="id"
         default-expand-all

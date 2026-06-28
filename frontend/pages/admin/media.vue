@@ -33,7 +33,8 @@
     </div>
 
     <div class="admin-table-wrap">
-      <el-table :data="list" v-loading="loading">
+      <AdminLoadingOverlay :show="loading" />
+      <el-table :data="list">
         <el-table-column label="缩略图" width="80">
           <template #default="{ row }">
             <ResponsiveImage

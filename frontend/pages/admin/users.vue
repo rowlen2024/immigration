@@ -9,7 +9,8 @@
     </div>
 
     <div class="admin-table-wrap">
-      <el-table :data="list" v-loading="loading">
+      <AdminLoadingOverlay :show="loading" />
+      <el-table :data="list">
         <el-table-column prop="username" label="用户名" min-width="140" />
         <el-table-column prop="display_name" label="显示名称" min-width="140">
           <template #default="{ row }">{{ row.display_name || '-' }}</template>

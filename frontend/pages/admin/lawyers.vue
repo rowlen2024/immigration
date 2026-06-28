@@ -18,9 +18,7 @@
     </div>
 
     <div class="admin-table-wrap">
-      <div v-if="loading" class="lawyers-loading-mask">
-        <span class="lawyers-loading-spinner"></span>
-      </div>
+      <AdminLoadingOverlay :show="loading" />
       <el-table :data="lawyers" stripe class="admin-table">
         <el-table-column label="照片" width="90">
           <template #default="{ row }">
@@ -229,35 +227,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.admin-table-wrap {
-  position: relative;
-}
-
-.lawyers-loading-mask {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.85);
-}
-
-.lawyers-loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--el-border-color-light);
-  border-top-color: var(--el-color-primary);
-  border-radius: 50%;
-  animation: lawyers-loading-spin 0.8s linear infinite;
-}
-
-@keyframes lawyers-loading-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .lawyer-thumb { width: 56px; height: 64px; object-fit: cover; border-radius: 4px; }
 .no-photo { color: #ccc; }
 .tag-chip { margin-right: 4px; margin-bottom: 4px; }

@@ -16,7 +16,8 @@
     </div>
 
     <div class="admin-table-wrap">
-      <el-table :data="list" v-loading="loading" highlight-current-row>
+      <AdminLoadingOverlay :show="loading" />
+      <el-table :data="list" highlight-current-row>
         <el-table-column prop="name" label="姓名" width="110">
           <template #default="{ row }">
             <div class="row-title">{{ row.name }}</div>

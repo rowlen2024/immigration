@@ -31,7 +31,8 @@
 
     <!-- Table -->
     <div class="admin-table-wrap">
-      <el-table :data="list" v-loading="loading">
+      <AdminLoadingOverlay :show="loading" />
+      <el-table :data="list">
         <el-table-column prop="name" label="项目名称" min-width="180">
           <template #default="{ row }">
             <div>

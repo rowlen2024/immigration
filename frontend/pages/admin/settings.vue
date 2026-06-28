@@ -5,9 +5,7 @@
     </div>
 
     <div class="settings-body">
-      <div v-if="loading" class="settings-loading-mask">
-        <span class="settings-loading-spinner"></span>
-      </div>
+      <AdminLoadingOverlay :show="loading" />
 
       <el-card v-for="group in groups" :key="group.key" class="admin-settings-card">
         <template #header>
@@ -307,31 +305,6 @@ onMounted(load);
 <style scoped>
 .settings-body {
   position: relative;
-}
-
-.settings-loading-mask {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.85);
-}
-
-.settings-loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--el-border-color-light);
-  border-top-color: var(--el-color-primary);
-  border-radius: 50%;
-  animation: settings-loading-spin 0.8s linear infinite;
-}
-
-@keyframes settings-loading-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .monospace-input :deep(textarea) {

@@ -25,7 +25,8 @@
       </el-upload>
     </div>
 
-    <div class="picker-body" v-loading="loading">
+    <div class="picker-body">
+      <AdminLoadingOverlay :show="loading" />
       <div class="picker-grid">
         <div
           v-for="item in list"
@@ -184,6 +185,7 @@ watch(
 }
 
 .picker-body {
+  position: relative;
   display: flex;
   gap: 16px;
   min-height: 320px;

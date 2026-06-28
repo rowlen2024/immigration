@@ -9,7 +9,8 @@
     </div>
 
     <div class="admin-table-wrap">
-      <el-table :data="roles" v-loading="loading">
+      <AdminLoadingOverlay :show="loading" />
+      <el-table :data="roles">
         <el-table-column prop="name" label="角色名称" min-width="140" />
         <el-table-column prop="code" label="角色编码" min-width="140" />
         <el-table-column prop="description" label="描述" min-width="180">

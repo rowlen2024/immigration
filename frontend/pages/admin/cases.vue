@@ -18,7 +18,8 @@
     </div>
 
     <div class="admin-table-wrap">
-      <el-table :data="list" v-loading="loading">
+      <AdminLoadingOverlay :show="loading" />
+      <el-table :data="list">
         <el-table-column prop="name" label="姓名" min-width="140">
           <template #default="{ row }">
             <div class="row-title">{{ row.name }}</div>

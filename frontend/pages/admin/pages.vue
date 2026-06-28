@@ -28,7 +28,8 @@
     </div>
 
     <div class="admin-table-wrap">
-      <el-table :data="list" v-loading="loading">
+      <AdminLoadingOverlay :show="loading" />
+      <el-table :data="list">
         <el-table-column prop="title" label="标题" min-width="180">
           <template #default="{ row }">
             <div>
