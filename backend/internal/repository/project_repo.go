@@ -138,6 +138,15 @@ func (r *ProjectRepo) FindBySlugsLight(slugs []string) ([]model.Project, error) 
 	return projects, nil
 }
 
+// FindByIDsLight 按 ID 查询项目，不预加载关联数据。
+func (r *ProjectRepo) FindByIDsLight(ids []uint64) ([]model.Project, error) {
+	var projects []model.Project
+	if err := r.db.Where("id IN ?", ids).Find(&projects).Error; err != nil {
+		return nil, err
+	}
+	return projects, nil
+}
+
 func (r *ProjectRepo) Create(project *model.Project) error {
 	return r.db.Create(project).Error
 }

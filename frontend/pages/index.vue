@@ -380,7 +380,7 @@ const showcaseConfig = computed(() => {
       return data.project_showcase as {
         section_title?: string;
         section_subtitle?: string;
-        featured_slugs?: string[];
+        featured_project_ids?: number[];
       };
     }
   }

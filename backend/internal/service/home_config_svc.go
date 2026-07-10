@@ -38,10 +38,10 @@ func (s *HomeConfigService) publicHomeVersion(string) (repository.PublicVersion,
 	}
 	versions = append(versions, homeCfgVersion)
 
-	if slugs := s.featuredProjectSlugs(); len(slugs) > 0 {
+	if ids := s.featuredProjectIDs(); len(ids) > 0 {
 		v, err := s.versionRepo.VersionFromQuery(
-			"SELECT MAX(updated_at) AS updated_at, COUNT(*) AS count FROM projects WHERE deleted_at IS NULL AND slug IN ?",
-			slugs,
+			"SELECT MAX(updated_at) AS updated_at, COUNT(*) AS count FROM projects WHERE deleted_at IS NULL AND id IN ?",
+			ids,
 		)
 		if err != nil {
 			return repository.PublicVersion{}, err
@@ -71,7 +71,7 @@ func (s *HomeConfigService) publicHomeVersion(string) (repository.PublicVersion,
 	return repository.MergePublicVersions(versions...), nil
 }
 
-func (s *HomeConfigService) featuredProjectSlugs() []string {
+func (s *HomeConfigService) featuredProjectIDs() []uint64 {
 	cfg, err := s.repo.FindByKey("project_showcase")
 	if err != nil {
 		return nil
@@ -80,7 +80,7 @@ func (s *HomeConfigService) featuredProjectSlugs() []string {
 	if json.Unmarshal(cfg.ConfigValue, &data) != nil {
 		return nil
 	}
-	return data.FeaturedSlugs
+	return data.FeaturedProjectIDs
 }
 
 func (s *HomeConfigService) featuredCaseIDs() []uint64 {
@@ -179,10 +179,10 @@ type FeaturedTestimonial struct {
 
 // ProjectShowcaseConfig holds the project showcase section settings.
 type ProjectShowcaseConfig struct {
-	SectionTitle     string            `json:"section_title"`
-	SectionSubtitle  string            `json:"section_subtitle"`
-	FeaturedSlugs    []string          `json:"featured_slugs"`
-	FeaturedProjects []FeaturedProject `json:"featured_projects"`
+	SectionTitle       string            `json:"section_title"`
+	SectionSubtitle    string            `json:"section_subtitle"`
+	FeaturedProjectIDs []uint64          `json:"featured_project_ids"`
+	FeaturedProjects   []FeaturedProject `json:"featured_projects,omitempty"`
 }
 
 // CaseShowcaseConfig holds the case showcase section settings.
@@ -294,33 +294,32 @@ func (s *HomeConfigService) get(includeFeaturedItems bool) (*HomeConfigData, err
 }
 
 func (s *HomeConfigService) loadFeaturedProjects(psc *ProjectShowcaseConfig) {
-	if len(psc.FeaturedSlugs) == 0 || s.projectRepo == nil {
+	if len(psc.FeaturedProjectIDs) == 0 || s.projectRepo == nil {
 		return
 	}
-	projects, err := s.projectRepo.FindBySlugsLight(psc.FeaturedSlugs)
+	projects, err := s.projectRepo.FindByIDsLight(psc.FeaturedProjectIDs)
 	if err != nil {
 		logging.Logger.Warn("home_config: failed to load featured projects", "error", err)
 		return
 	}
-	// Self-healing: remove stale slugs
-	if len(projects) < len(psc.FeaturedSlugs) {
-		foundSlugs := make(map[string]bool, len(projects))
-		for _, p := range projects {
-			foundSlugs[p.Slug] = true
-		}
-		cleanSlugs := make([]string, 0, len(projects))
-		for _, slug := range psc.FeaturedSlugs {
-			if foundSlugs[slug] {
-				cleanSlugs = append(cleanSlugs, slug)
-			}
-		}
-		logging.Logger.Warn("home_config: detected stale featured project refs, auto-healing",
-			"before", len(psc.FeaturedSlugs), "after", len(cleanSlugs))
-		psc.FeaturedSlugs = cleanSlugs
-		_ = s.persistFromJSONArrayStr("project_showcase", "featured_slugs", cleanSlugs)
+	projectByID := make(map[uint64]model.Project, len(projects))
+	for _, project := range projects {
+		projectByID[project.ID] = project
 	}
+
+	cleanIDs := make([]uint64, 0, len(projects))
 	items := make([]FeaturedProject, 0, len(projects))
-	for _, p := range projects {
+	seen := make(map[uint64]struct{}, len(projects))
+	for _, id := range psc.FeaturedProjectIDs {
+		p, ok := projectByID[id]
+		if !ok {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		cleanIDs = append(cleanIDs, id)
 		items = append(items, FeaturedProject{
 			Name:               p.Name,
 			Slug:               p.Slug,
@@ -329,6 +328,12 @@ func (s *HomeConfigService) loadFeaturedProjects(psc *ProjectShowcaseConfig) {
 			CoverImageVariants: ResolveImageVariants(p.CoverImage, UploadContextProject),
 			OverviewText:       p.OverviewText,
 		})
+	}
+	if len(cleanIDs) != len(psc.FeaturedProjectIDs) {
+		logging.Logger.Warn("home_config: detected stale featured project refs, auto-healing",
+			"before", len(psc.FeaturedProjectIDs), "after", len(cleanIDs))
+		psc.FeaturedProjectIDs = cleanIDs
+		_ = s.persistFromJSONArray("project_showcase", "featured_project_ids", cleanIDs)
 	}
 	psc.FeaturedProjects = items
 }
@@ -481,54 +486,14 @@ func (s *HomeConfigService) removeFromJSONArray(configKey, fieldName string, tar
 	return s.repo.Update(cfg)
 }
 
-// removeFromJSONArrayStr removes a string value from a JSON string array field.
-func (s *HomeConfigService) removeFromJSONArrayStr(configKey, fieldName string, target string) error {
-	cfg, err := s.repo.FindByKey(configKey)
-	if err != nil {
-		return nil
-	}
-	var m map[string]json.RawMessage
-	if err := json.Unmarshal(cfg.ConfigValue, &m); err != nil {
-		return fmt.Errorf("home_config: failed to unmarshal %s: %w", configKey, err)
-	}
-	rawSlugs, ok := m[fieldName]
-	if !ok {
-		return nil
-	}
-	var slugs []string
-	if err := json.Unmarshal(rawSlugs, &slugs); err != nil {
-		return fmt.Errorf("home_config: failed to unmarshal %s.%s: %w", configKey, fieldName, err)
-	}
-	newSlugs := make([]string, 0, len(slugs))
-	for _, s := range slugs {
-		if s != target {
-			newSlugs = append(newSlugs, s)
-		}
-	}
-	if len(newSlugs) == len(slugs) {
-		return nil
-	}
-	newRaw, err := json.Marshal(newSlugs)
-	if err != nil {
-		return fmt.Errorf("home_config: failed to marshal %s.%s: %w", configKey, fieldName, err)
-	}
-	m[fieldName] = newRaw
-	updated, err := json.Marshal(m)
-	if err != nil {
-		return fmt.Errorf("home_config: failed to marshal %s: %w", configKey, err)
-	}
-	cfg.ConfigValue = updated
-	return s.repo.Update(cfg)
-}
-
 // RemoveFeaturedCaseID removes a case ID from case_showcase.featured_case_ids.
 func (s *HomeConfigService) RemoveFeaturedCaseID(caseID uint64) error {
 	return s.removeFromJSONArray("case_showcase", "featured_case_ids", caseID)
 }
 
-// RemoveFeaturedProjectSlug removes a project slug from project_showcase.featured_slugs.
-func (s *HomeConfigService) RemoveFeaturedProjectSlug(slug string) error {
-	return s.removeFromJSONArrayStr("project_showcase", "featured_slugs", slug)
+// RemoveFeaturedProjectID 从 project_showcase.featured_project_ids 中移除项目 ID。
+func (s *HomeConfigService) RemoveFeaturedProjectID(projectID uint64) error {
+	return s.removeFromJSONArray("project_showcase", "featured_project_ids", projectID)
 }
 
 // RemoveFeaturedTestimonialID removes a testimonial ID from testimonial_showcase.featured_testimonial_ids.
@@ -636,29 +601,6 @@ func (s *HomeConfigService) persistFromJSONArray(configKey, fieldName string, id
 	return s.repo.Update(cfg)
 }
 
-// persistFromJSONArrayStr writes a string array back to a home_config JSON field.
-func (s *HomeConfigService) persistFromJSONArrayStr(configKey, fieldName string, items []string) error {
-	cfg, err := s.repo.FindByKey(configKey)
-	if err != nil {
-		return err
-	}
-	var m map[string]json.RawMessage
-	if err := json.Unmarshal(cfg.ConfigValue, &m); err != nil {
-		return err
-	}
-	raw, err := json.Marshal(items)
-	if err != nil {
-		return err
-	}
-	m[fieldName] = raw
-	updated, err := json.Marshal(m)
-	if err != nil {
-		return err
-	}
-	cfg.ConfigValue = updated
-	return s.repo.Update(cfg)
-}
-
 // SiteConfig holds all site-wide settings.
 type SiteConfig struct {
 	SiteName                string   `json:"site_name"`
@@ -735,7 +677,19 @@ func (s *HomeConfigService) UpdateSiteConfig(input *SiteConfig) error {
 
 // Update saves one or more homepage configuration entries.
 func (s *HomeConfigService) Update(configs map[string]json.RawMessage) error {
+	normalizedConfigs := make(map[string]json.RawMessage, len(configs))
 	for key, rawValue := range configs {
+		if key == "project_showcase" {
+			normalized, err := s.normalizeProjectShowcase(rawValue)
+			if err != nil {
+				return err
+			}
+			rawValue = normalized
+		}
+		normalizedConfigs[key] = rawValue
+	}
+
+	for key, rawValue := range normalizedConfigs {
 		existing, err := s.repo.FindByKey(key)
 		if err != nil {
 			cfg := &model.HomeConfig{
@@ -753,4 +707,54 @@ func (s *HomeConfigService) Update(configs map[string]json.RawMessage) error {
 		}
 	}
 	return nil
+}
+
+func (s *HomeConfigService) normalizeProjectShowcase(rawValue json.RawMessage) (json.RawMessage, error) {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(rawValue, &fields); err != nil {
+		return nil, fmt.Errorf("invalid project_showcase config: %w", err)
+	}
+	rawIDs, ok := fields["featured_project_ids"]
+	if !ok || string(rawIDs) == "null" {
+		return nil, fmt.Errorf("featured_project_ids is required")
+	}
+
+	var config ProjectShowcaseConfig
+	if err := json.Unmarshal(rawValue, &config); err != nil {
+		return nil, fmt.Errorf("invalid project_showcase config: %w", err)
+	}
+
+	seen := make(map[uint64]struct{}, len(config.FeaturedProjectIDs))
+	for _, id := range config.FeaturedProjectIDs {
+		if _, ok := seen[id]; ok {
+			return nil, fmt.Errorf("featured project id %d is duplicated", id)
+		}
+		seen[id] = struct{}{}
+	}
+
+	if len(config.FeaturedProjectIDs) > 0 {
+		if s.projectRepo == nil {
+			return nil, fmt.Errorf("project repository is unavailable")
+		}
+		projects, err := s.projectRepo.FindByIDsLight(config.FeaturedProjectIDs)
+		if err != nil {
+			return nil, fmt.Errorf("failed to validate featured projects: %w", err)
+		}
+		found := make(map[uint64]struct{}, len(projects))
+		for _, project := range projects {
+			found[project.ID] = struct{}{}
+		}
+		for _, id := range config.FeaturedProjectIDs {
+			if _, ok := found[id]; !ok {
+				return nil, fmt.Errorf("featured project id %d does not exist", id)
+			}
+		}
+	}
+
+	config.FeaturedProjects = nil
+	normalized, err := json.Marshal(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal project_showcase config: %w", err)
+	}
+	return normalized, nil
 }

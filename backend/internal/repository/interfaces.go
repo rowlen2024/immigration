@@ -77,6 +77,7 @@ type ProjectRepository interface {
 	FindOptions(filter ProjectFilter) ([]ProjectOptionRow, int64, error)
 	FindBySlugs(slugs []string) ([]model.Project, error)
 	FindBySlugsLight(slugs []string) ([]model.Project, error)
+	FindByIDsLight(ids []uint64) ([]model.Project, error)
 	Create(project *model.Project) error
 	Update(project *model.Project) error
 	Delete(id uint64) error

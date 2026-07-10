@@ -333,7 +333,7 @@ func (s *ProjectService) Delete(id uint64) error {
 		}
 	}
 
-	slug, caseIDs, testimonialIDs := s.preDeleteCleanup(id)
+	caseIDs, testimonialIDs := s.preDeleteCleanup(id)
 
 	err := repository.Tx(func(txRepo *repository.Repository) error {
 		if err := cascadeDeleteResources(txRepo, id); err != nil {
@@ -350,7 +350,7 @@ func (s *ProjectService) Delete(id uint64) error {
 		return fmt.Errorf("failed to delete project: %w", err)
 	}
 
-	s.postDeleteHomeConfigCleanup(id, slug, caseIDs, testimonialIDs)
+	s.postDeleteHomeConfigCleanup(id, caseIDs, testimonialIDs)
 	return nil
 }
 
@@ -390,12 +390,7 @@ func cascadeDeleteResources(repo *repository.Repository, id uint64) error {
 	return nil
 }
 
-func (s *ProjectService) preDeleteCleanup(id uint64) (slug string, caseIDs, testimonialIDs []uint64) {
-	if s.homeConfigSvc != nil {
-		if p, err := s.repo.FindByID(id); err == nil {
-			slug = p.Slug
-		}
-	}
+func (s *ProjectService) preDeleteCleanup(id uint64) (caseIDs, testimonialIDs []uint64) {
 	if s.caseRepo != nil {
 		if cases, _, err := s.caseRepo.FindAll(repository.CaseFilter{ProjectID: &id}); err == nil {
 			for _, c := range cases {
@@ -464,7 +459,7 @@ func (s *ProjectService) cascadeDeleteProjectResources(id uint64) {
 	}
 }
 
-func (s *ProjectService) postDeleteHomeConfigCleanup(id uint64, slug string, caseIDs, testimonialIDs []uint64) {
+func (s *ProjectService) postDeleteHomeConfigCleanup(id uint64, caseIDs, testimonialIDs []uint64) {
 	if s.homeConfigSvc == nil {
 		return
 	}
@@ -474,10 +469,8 @@ func (s *ProjectService) postDeleteHomeConfigCleanup(id uint64, slug string, cas
 				"project_id", id, "case_ids", caseIDs, "testimonial_ids", testimonialIDs, "error", err)
 		}
 	}
-	if slug != "" {
-		if err := s.homeConfigSvc.RemoveFeaturedProjectSlug(slug); err != nil {
-			logging.Logger.Warn("home_config: failed to clean up featured project ref after delete",
-				"project_id", id, "slug", slug, "error", err)
-		}
+	if err := s.homeConfigSvc.RemoveFeaturedProjectID(id); err != nil {
+		logging.Logger.Warn("home_config: failed to clean up featured project ref after delete",
+			"project_id", id, "error", err)
 	}
 }

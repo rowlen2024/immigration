@@ -502,6 +502,10 @@ func TestProjectHandler_ListProjects_ServiceError(t *testing.T) {
 func (m *handlerMockProjectRepo) FindBySlugsLight(slugs []string) ([]model.Project, error) {
 	return nil, nil
 }
+
+func (m *handlerMockProjectRepo) FindByIDsLight(ids []uint64) ([]model.Project, error) {
+	return nil, nil
+}
 func (m *handlerMockProjectRepo) FindAllCoverImages() ([]string, error)            { return nil, nil }
 func (m *handlerMockProjectRepo) Count() (int64, error)                            { return 0, nil }
 func (m *handlerMockProjectRepo) CountByRange(start, end time.Time) (int64, error) { return 0, nil }

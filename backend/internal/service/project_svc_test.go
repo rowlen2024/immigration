@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -17,6 +18,7 @@ type mockProjectRepo struct {
 	findAllFn               func(filter repository.ProjectFilter) ([]model.Project, int64, error)
 	findOptionsFn           func(filter repository.ProjectFilter) ([]repository.ProjectOptionRow, int64, error)
 	findBySlugsFn           func(slugs []string) ([]model.Project, error)
+	findByIDsLightFn        func(ids []uint64) ([]model.Project, error)
 	createFn                func(project *model.Project) error
 	updateFn                func(project *model.Project) error
 	deleteFn                func(id uint64) error
@@ -410,6 +412,31 @@ func TestProject_Delete_Success(t *testing.T) {
 	}
 }
 
+func TestProject_Delete_RemovesFeaturedProjectID(t *testing.T) {
+	projectRepo := &mockProjectRepo{
+		deleteFn: func(id uint64) error { return nil },
+	}
+	homeConfigRepo := &mockHomeConfigRepo{configs: map[string]json.RawMessage{
+		"project_showcase": json.RawMessage(`{"featured_project_ids":[3,2,1]}`),
+	}}
+	svc := NewProjectService(projectRepo, nil)
+	svc.homeConfigSvc = &HomeConfigService{repo: homeConfigRepo}
+
+	if err := svc.Delete(2); err != nil {
+		t.Fatalf("Delete returned error: %v", err)
+	}
+
+	var stored struct {
+		FeaturedProjectIDs []uint64 `json:"featured_project_ids"`
+	}
+	if err := json.Unmarshal(homeConfigRepo.configs["project_showcase"], &stored); err != nil {
+		t.Fatalf("unmarshal stored config: %v", err)
+	}
+	if len(stored.FeaturedProjectIDs) != 2 || stored.FeaturedProjectIDs[0] != 3 || stored.FeaturedProjectIDs[1] != 1 {
+		t.Fatalf("expected ids [3 1] after project deletion, got %#v", stored.FeaturedProjectIDs)
+	}
+}
+
 func TestProject_Delete_ZeroID(t *testing.T) {
 	repo := &mockProjectRepo{}
 	svc := NewProjectService(repo, nil)
@@ -526,9 +553,15 @@ func TestProject_Compare_RepoError(t *testing.T) {
 }
 
 func (m *mockProjectRepo) FindBySlugsLight(slugs []string) ([]model.Project, error) { return nil, nil }
-func (m *mockProjectRepo) FindAllCoverImages() ([]string, error)                    { return nil, nil }
-func (m *mockProjectRepo) Count() (int64, error)                                    { return 0, nil }
-func (m *mockProjectRepo) CountByRange(start, end time.Time) (int64, error)         { return 0, nil }
+func (m *mockProjectRepo) FindByIDsLight(ids []uint64) ([]model.Project, error) {
+	if m.findByIDsLightFn != nil {
+		return m.findByIDsLightFn(ids)
+	}
+	return nil, nil
+}
+func (m *mockProjectRepo) FindAllCoverImages() ([]string, error)            { return nil, nil }
+func (m *mockProjectRepo) Count() (int64, error)                            { return 0, nil }
+func (m *mockProjectRepo) CountByRange(start, end time.Time) (int64, error) { return 0, nil }
 
 func TestProjectService_Options_PublicDefaults(t *testing.T) {
 	repo := &mockProjectRepo{

@@ -42,15 +42,15 @@
           </el-form-item>
           <el-form-item label="精选项目">
             <div class="featured-area">
-              <div v-if="projectShowcase.featured_slugs.length === 0" class="admin-empty-hint">
+              <div v-if="projectShowcase.featured_project_ids.length === 0" class="admin-empty-hint">
                 未选择精选项目，首页将展示全部项目。
               </div>
               <div v-else class="config-list">
-                <div v-for="(slug, i) in projectShowcase.featured_slugs" :key="slug" class="config-item">
-                  <span class="config-item-name">{{ getProjectTitle(slug) }}</span>
+                <div v-for="(id, i) in projectShowcase.featured_project_ids" :key="id" class="config-item">
+                  <span class="config-item-name">{{ getProjectTitle(id) }}</span>
                   <div class="config-item-actions">
-                    <button class="action-btn" title="上移" aria-label="上移" :disabled="i === 0" @click="moveFeatured(i, -1)"><span class="sort-icon up" v-html="getIconSvg('chevron-right', 16)"></span></button>
-                    <button class="action-btn" title="下移" aria-label="下移" :disabled="i === projectShowcase.featured_slugs.length - 1" @click="moveFeatured(i, 1)"><span class="sort-icon down" v-html="getIconSvg('chevron-right', 16)"></span></button>
+                    <button class="action-btn" type="button" title="上移" aria-label="上移" :disabled="i === 0" @click="moveFeatured(i, -1)"><span class="sort-icon up" v-html="getIconSvg('chevron-right', 16)"></span></button>
+                    <button class="action-btn" type="button" title="下移" aria-label="下移" :disabled="i === projectShowcase.featured_project_ids.length - 1" @click="moveFeatured(i, 1)"><span class="sort-icon down" v-html="getIconSvg('chevron-right', 16)"></span></button>
                     <button class="action-btn danger" type="button" title="移除" aria-label="移除" @click="removeFeatured(i)" v-html="getIconSvg('x', 16)"></button>
                   </div>
                 </div>
@@ -60,14 +60,14 @@
                 value=""
                 placeholder="添加项目..."
                 clearable
-                @change="(val: string) => { if (val) addFeatured(val) }"
+                @change="(val: number) => { if (val) addFeatured(val) }"
                 class="add-project-select"
               >
                 <el-option
                   v-for="p in availableProjects"
-                  :key="p.slug"
+                  :key="p.id"
                   :label="p.name"
-                  :value="p.slug"
+                  :value="p.id"
                 />
               </el-select>
             </div>
@@ -143,8 +143,8 @@
                   <div v-for="(id, i) in caseShowcase.featured_case_ids" :key="id" class="config-item">
                     <span class="config-item-name">{{ getCaseTitle(id) }}</span>
                     <div class="config-item-actions">
-                      <button class="action-btn" title="上移" aria-label="上移" :disabled="i === 0" @click="moveCaseFeatured(i, -1)"><span class="sort-icon up" v-html="getIconSvg('chevron-right', 16)"></span></button>
-                      <button class="action-btn" title="下移" aria-label="下移" :disabled="i === caseShowcase.featured_case_ids.length - 1" @click="moveCaseFeatured(i, 1)"><span class="sort-icon down" v-html="getIconSvg('chevron-right', 16)"></span></button>
+                    <button class="action-btn" type="button" title="上移" aria-label="上移" :disabled="i === 0" @click="moveCaseFeatured(i, -1)"><span class="sort-icon up" v-html="getIconSvg('chevron-right', 16)"></span></button>
+                    <button class="action-btn" type="button" title="下移" aria-label="下移" :disabled="i === caseShowcase.featured_case_ids.length - 1" @click="moveCaseFeatured(i, 1)"><span class="sort-icon down" v-html="getIconSvg('chevron-right', 16)"></span></button>
                       <button class="action-btn danger" type="button" title="移除" aria-label="移除" @click="removeCaseFeatured(i)" v-html="getIconSvg('x', 16)"></button>
                     </div>
                   </div>
@@ -191,8 +191,8 @@
                   <div v-for="(id, i) in testimonialShowcase.featured_testimonial_ids" :key="id" class="config-item">
                     <span class="config-item-name">{{ getTestimonialTitle(id) }}</span>
                     <div class="config-item-actions">
-                      <button class="action-btn" title="上移" aria-label="上移" :disabled="i === 0" @click="moveTestimonialFeatured(i, -1)"><span class="sort-icon up" v-html="getIconSvg('chevron-right', 16)"></span></button>
-                      <button class="action-btn" title="下移" aria-label="下移" :disabled="i === testimonialShowcase.featured_testimonial_ids.length - 1" @click="moveTestimonialFeatured(i, 1)"><span class="sort-icon down" v-html="getIconSvg('chevron-right', 16)"></span></button>
+                    <button class="action-btn" type="button" title="上移" aria-label="上移" :disabled="i === 0" @click="moveTestimonialFeatured(i, -1)"><span class="sort-icon up" v-html="getIconSvg('chevron-right', 16)"></span></button>
+                    <button class="action-btn" type="button" title="下移" aria-label="下移" :disabled="i === testimonialShowcase.featured_testimonial_ids.length - 1" @click="moveTestimonialFeatured(i, 1)"><span class="sort-icon down" v-html="getIconSvg('chevron-right', 16)"></span></button>
                       <button class="action-btn danger" type="button" title="移除" aria-label="移除" @click="removeTestimonialFeatured(i)" v-html="getIconSvg('x', 16)"></button>
                     </div>
                   </div>
@@ -369,7 +369,7 @@ interface AdvantageItem {
 interface ProjectShowcase {
   section_title: string;
   section_subtitle: string;
-  featured_slugs: string[];
+  featured_project_ids: number[];
 }
 
 interface FeaturedCaseData {
@@ -385,6 +385,7 @@ interface CaseShowcase {
 }
 
 interface ProjectOption {
+  id: number;
   slug: string;
   name: string;
 }
@@ -400,7 +401,7 @@ const advantageSection = ref<{ section_title: string; section_subtitle: string; 
 const projectShowcase = ref<ProjectShowcase>({
   section_title: '',
   section_subtitle: '',
-  featured_slugs: [],
+  featured_project_ids: [],
 });
 const allProjects = ref<ProjectOption[]>([]);
 
@@ -494,10 +495,10 @@ const load = async () => {
     }
 
     if (projectsData?.items) {
-      const seen = new Set<string>();
+      const seen = new Set<number>();
       allProjects.value = projectsData.items.filter((p) => {
-        if (seen.has(p.slug)) return false;
-        seen.add(p.slug);
+        if (seen.has(p.id)) return false;
+        seen.add(p.id);
         return true;
       });
     }
@@ -519,8 +520,8 @@ const load = async () => {
   }
 };
 
-function getProjectTitle(slug: string): string {
-  return allProjects.value.find((p) => p.slug === slug)?.name || slug;
+function getProjectTitle(id: number): string {
+  return allProjects.value.find((p) => p.id === id)?.name || String(id);
 }
 
 // --- Hero Slides ---
@@ -591,8 +592,8 @@ async function saveSlides() {
 const showcaseSaving = ref(false);
 
 const availableProjects = computed(() => {
-  const featured = new Set(projectShowcase.value.featured_slugs);
-  return allProjects.value.filter((p) => !featured.has(p.slug));
+  const featured = new Set(projectShowcase.value.featured_project_ids);
+  return allProjects.value.filter((p) => !featured.has(p.id));
 });
 
 // --- Case Showcase ---
@@ -689,19 +690,19 @@ async function saveTestimonialShowcase() {
 
 function moveFeatured(index: number, direction: -1 | 1) {
   const target = index + direction;
-  if (target < 0 || target >= projectShowcase.value.featured_slugs.length) return;
-  const slugs = [...projectShowcase.value.featured_slugs];
-  [slugs[index], slugs[target]] = [slugs[target], slugs[index]];
-  projectShowcase.value.featured_slugs = slugs;
+  if (target < 0 || target >= projectShowcase.value.featured_project_ids.length) return;
+  const ids = [...projectShowcase.value.featured_project_ids];
+  [ids[index], ids[target]] = [ids[target], ids[index]];
+  projectShowcase.value.featured_project_ids = ids;
 }
 
 function removeFeatured(index: number) {
-  projectShowcase.value.featured_slugs.splice(index, 1);
+  projectShowcase.value.featured_project_ids.splice(index, 1);
 }
 
-function addFeatured(slug: string) {
-  if (!projectShowcase.value.featured_slugs.includes(slug)) {
-    projectShowcase.value.featured_slugs.push(slug);
+function addFeatured(id: number) {
+  if (!projectShowcase.value.featured_project_ids.includes(id)) {
+    projectShowcase.value.featured_project_ids.push(id);
   }
 }
 
@@ -711,7 +712,13 @@ async function saveShowcase() {
     const api = useApi();
     await api('/admin/home-config', {
       method: 'PUT',
-      body: { project_showcase: projectShowcase.value },
+      body: {
+        project_showcase: {
+          section_title: projectShowcase.value.section_title,
+          section_subtitle: projectShowcase.value.section_subtitle,
+          featured_project_ids: projectShowcase.value.featured_project_ids,
+        },
+      },
     });
     notify.success('项目展示区已保存');
   } catch (e) {
