@@ -54,6 +54,13 @@
             </span>
           </template>
         </el-table-column>
+        <el-table-column prop="is_pinned" label="置顶状态" width="100">
+          <template #default="{ row }">
+            <span :class="['status-pill', row.is_pinned ? 'warning' : 'draft']">
+              {{ row.is_pinned ? '已置顶' : '未置顶' }}
+            </span>
+          </template>
+        </el-table-column>
         <el-table-column prop="created_at" label="创建时间" width="160">
           <template #default="{ row }">{{ formatDateTime(row.created_at) }}</template>
         </el-table-column>
@@ -219,21 +226,26 @@
             </section>
             <section class="project-form-section">
               <h3 class="project-form-section-title">发布设置</h3>
-            <el-row :gutter="12">
-              <el-col :span="12">
-                <el-form-item label="排序" prop="sort_order">
-                  <el-input-number v-model="form.sort_order" :min="0" />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="状态" prop="status">
-                  <el-select v-model="form.status">
-                    <el-option label="草稿" :value="0" />
-                    <el-option label="已发布" :value="1" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-            </el-row>
+              <el-row :gutter="12">
+                <el-col :xs="24" :sm="8">
+                  <el-form-item label="排序" prop="sort_order">
+                    <el-input-number v-model="form.sort_order" :min="0" />
+                  </el-form-item>
+                </el-col>
+                <el-col :xs="24" :sm="8">
+                  <el-form-item label="状态" prop="status">
+                    <el-select v-model="form.status">
+                      <el-option label="草稿" :value="0" />
+                      <el-option label="已发布" :value="1" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+                <el-col :xs="24" :sm="8">
+                  <el-form-item label="是否置顶" prop="is_pinned">
+                    <el-switch v-model="form.is_pinned" active-text="是" inactive-text="否" />
+                  </el-form-item>
+                </el-col>
+              </el-row>
             </section>
           </el-form>
         </el-tab-pane>
@@ -685,6 +697,7 @@ interface Project {
   hero_gradient: string;
   cover_image: string;
   sort_order: number;
+  is_pinned: boolean;
   status: number;
   created_at: string;
   updated_at: string;
@@ -773,6 +786,7 @@ const defaultForm = () => ({
   hero_gradient: '',
   cover_image: '',
   sort_order: 0,
+  is_pinned: false,
   status: 0,
 } as Project);
 

@@ -83,7 +83,7 @@ func (r *FAQRepo) FindDistinctProjects() ([]model.Project, error) {
 		Distinct("projects.*").
 		Joins("INNER JOIN faqs ON faqs.project_id = projects.id").
 		Where("projects.deleted_at IS NULL").
-		Order("projects.sort_order asc, projects.id asc").
+		Order("projects.is_pinned desc, projects.sort_order asc, projects.id asc").
 		Find(&projects).Error
 	if err != nil {
 		return nil, err

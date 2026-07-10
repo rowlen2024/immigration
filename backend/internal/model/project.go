@@ -30,6 +30,7 @@ type Project struct {
 	HeroGradient       string         `gorm:"size:255;not null;default:''" json:"hero_gradient"`
 	CoverImage         string         `gorm:"size:512;not null;default:''" json:"cover_image"`
 	SortOrder          int            `gorm:"not null;default:0" json:"sort_order"`
+	IsPinned           bool           `gorm:"not null;default:false" json:"is_pinned"`
 
 	// 变体信息（不存数据库，仅 API 输出）
 	CoverImageVariants map[string]ImageVariantInfo `gorm:"-" json:"cover_image_variants,omitempty"`

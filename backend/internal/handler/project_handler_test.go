@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"mygo-immigration/backend/internal/dto"
@@ -336,8 +337,10 @@ func TestProjectHandler_AdminListProjects_Success(t *testing.T) {
 }
 
 func TestProjectHandler_CreateProject_Success(t *testing.T) {
+	var createdPinned bool
 	mockRepo := &handlerMockProjectRepo{
 		create: func(project *model.Project) error {
+			createdPinned = project.IsPinned
 			project.ID = 99
 			return nil
 		},
@@ -349,14 +352,18 @@ func TestProjectHandler_CreateProject_Success(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = makePostRequest("/api/v1/admin/projects", model.Project{
-		Name: "New Test Project",
-		Slug: "new-test-project",
+		Name:     "New Test Project",
+		Slug:     "new-test-project",
+		IsPinned: true,
 	})
 
 	h.CreateProject(c)
 
 	if w.Code != http.StatusCreated {
 		t.Errorf("expected status 201, got %d, body: %s", w.Code, w.Body.String())
+	}
+	if !createdPinned {
+		t.Error("expected create handler to bind is_pinned")
 	}
 }
 
@@ -411,6 +418,7 @@ func TestProjectHandler_UpdateProject_InvalidID(t *testing.T) {
 }
 
 func TestProjectHandler_UpdateProject_Success(t *testing.T) {
+	var updatedPinned bool
 	mockRepo := &handlerMockProjectRepo{
 		findByID: func(id uint64) (*model.Project, error) {
 			return &model.Project{ID: 5, Name: "Old Name", Slug: "old-slug"}, nil
@@ -419,6 +427,7 @@ func TestProjectHandler_UpdateProject_Success(t *testing.T) {
 			return nil, errors.New("not found")
 		},
 		update: func(project *model.Project) error {
+			updatedPinned = project.IsPinned
 			return nil
 		},
 	}
@@ -429,8 +438,9 @@ func TestProjectHandler_UpdateProject_Success(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = makePostRequest("/api/v1/admin/projects/5", model.Project{
-		Name: "Updated Name",
-		Slug: "updated-slug",
+		Name:     "Updated Name",
+		Slug:     "updated-slug",
+		IsPinned: true,
 	})
 	c.Params = gin.Params{{Key: "id", Value: "5"}}
 
@@ -438,6 +448,12 @@ func TestProjectHandler_UpdateProject_Success(t *testing.T) {
 
 	if w.Code != http.StatusOK {
 		t.Errorf("expected status 200, got %d, body: %s", w.Code, w.Body.String())
+	}
+	if !updatedPinned {
+		t.Error("expected update handler to bind is_pinned")
+	}
+	if !strings.Contains(w.Body.String(), `"is_pinned":true`) {
+		t.Errorf("expected response to include is_pinned, body: %s", w.Body.String())
 	}
 }
 

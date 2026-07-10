@@ -295,6 +295,7 @@ func (s *ProjectService) Update(id uint64, req dto.UpdateProjectRequest) (*model
 	existing.HeroGradient = req.HeroGradient
 	existing.CoverImage = req.CoverImage
 	existing.SortOrder = req.SortOrder
+	existing.IsPinned = req.IsPinned
 	existing.Status = req.Status
 
 	if err := s.repo.Update(existing); err != nil {

@@ -337,7 +337,7 @@ func TestProject_Update_Success(t *testing.T) {
 
 	svc := NewProjectService(repo, nil)
 
-	project, err := svc.Update(5, dto.UpdateProjectRequest{Name: "Updated Name", Slug: "updated-slug"})
+	project, err := svc.Update(5, dto.UpdateProjectRequest{Name: "Updated Name", Slug: "updated-slug", IsPinned: true})
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -349,6 +349,9 @@ func TestProject_Update_Success(t *testing.T) {
 	}
 	if updatedProject.ID != 5 {
 		t.Errorf("expected repo to receive ID 5, got %d", updatedProject.ID)
+	}
+	if !updatedProject.IsPinned {
+		t.Error("expected repo to receive pinned project")
 	}
 }
 

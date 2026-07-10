@@ -52,6 +52,7 @@ type UpdateProjectRequest struct {
 	HeroGradient       string   `json:"hero_gradient"`
 	CoverImage         string   `json:"cover_image"`
 	SortOrder          int      `json:"sort_order"`
+	IsPinned           bool     `json:"is_pinned"`
 	Status             int8     `json:"status"`
 }
 

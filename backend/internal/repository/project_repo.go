@@ -78,7 +78,7 @@ func (r *ProjectRepo) FindAll(filter ProjectFilter) ([]model.Project, int64, err
 		return nil, 0, err
 	}
 
-	q = q.Order("sort_order asc, id desc")
+	q = q.Order("is_pinned desc, sort_order asc, id desc")
 	if filter.Page > 0 && filter.PerPage > 0 {
 		offset := (filter.Page - 1) * filter.PerPage
 		q = q.Offset(offset).Limit(filter.PerPage)
@@ -106,7 +106,7 @@ func (r *ProjectRepo) FindOptions(filter ProjectFilter) ([]ProjectOptionRow, int
 		return nil, 0, err
 	}
 
-	q = q.Select("id", "slug", "name").Order("sort_order asc, id desc")
+	q = q.Select("id", "slug", "name").Order("is_pinned desc, sort_order asc, id desc")
 	if filter.Page > 0 && filter.PerPage > 0 {
 		offset := (filter.Page - 1) * filter.PerPage
 		q = q.Offset(offset).Limit(filter.PerPage)
