@@ -8,10 +8,15 @@
     <div class="card-body">
       <h3 class="card-title">{{ title }}</h3>
       <p class="card-desc">{{ description }}</p>
-      <div class="card-stats">
-        <span class="card-stat" v-for="(feat, fi) in features" :key="fi">
-          {{ feat }}
-        </span>
+      <dl v-if="keyFacts.length" class="card-facts">
+        <div v-for="fact in keyFacts" :key="fact.label" class="card-fact">
+          <dt>{{ fact.label }}</dt>
+          <dd :title="fact.value">{{ fact.value }}</dd>
+        </div>
+      </dl>
+      <div v-if="audience" class="card-audience">
+        <span class="audience-label">适合人群</span>
+        <p :title="audience">{{ audience }}</p>
       </div>
       <span class="card-link">
         了解详情
@@ -38,11 +43,29 @@ const props = defineProps<{
 }>()
 
 const variantIdx = computed(() => (props.imageVariant ?? 0) % 3)
+
+function splitFeature(feature: string) {
+  const separatorIndex = feature.search(/[：:]/)
+  if (separatorIndex === -1) return { label: '', value: feature.trim() }
+
+  return {
+    label: feature.slice(0, separatorIndex).trim(),
+    value: feature.slice(separatorIndex + 1).trim(),
+  }
+}
+
+const parsedFeatures = computed(() => props.features.filter(Boolean).map(splitFeature))
+const keyFacts = computed(() => parsedFeatures.value.filter(feature =>
+  feature.label.includes('投资金额') || feature.label.includes('办理周期'),
+))
+const audience = computed(() => parsedFeatures.value.find(feature => feature.label.includes('适合人群'))?.value || '')
 </script>
 
 <style scoped>
 .project-card {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   color: inherit;
   text-decoration: none;
   position: relative;
@@ -60,6 +83,11 @@ const variantIdx = computed(() => (props.imageVariant ?? 0) % 3)
   box-shadow: var(--shadow-xl), 0 0 0 1px rgba(200, 150, 62, 0.25);
   transform: translateY(-6px);
   border-color: rgba(200, 150, 62, 0.4);
+}
+
+.project-card:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
 }
 
 .card-image {
@@ -143,17 +171,25 @@ const variantIdx = computed(() => (props.imageVariant ?? 0) % 3)
 }
 
 .card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   padding: 22px 24px;
   position: relative;
   z-index: 2;
 }
 
 .card-title {
+  display: -webkit-box;
+  overflow: hidden;
+  min-height: 50px;
   font-size: 18px;
   font-weight: 700;
   color: var(--color-text);
   margin-bottom: 8px;
   transition: color var(--duration-normal) var(--ease-out);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .project-card:hover .card-title {
@@ -165,33 +201,73 @@ const variantIdx = computed(() => (props.imageVariant ?? 0) % 3)
   color: var(--color-text-secondary);
   line-height: 1.7;
   margin-bottom: 16px;
+  min-height: 48px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.card-stats {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 18px;
+.card-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  padding: 14px 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
 }
 
-.card-stat {
-  background: var(--color-accent-soft);
-  color: var(--color-accent-dark);
+.card-fact {
+  min-width: 0;
+  padding-right: 14px;
+}
+
+.card-fact:only-child {
+  grid-column: 1 / -1;
+  padding-right: 0;
+}
+
+.card-fact + .card-fact {
+  padding-right: 0;
+  padding-left: 16px;
+  border-left: 1px solid var(--color-border);
+}
+
+.card-fact dt,
+.audience-label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--color-text-muted);
   font-size: 12px;
   font-weight: 500;
-  padding: 4px 12px;
-  border-radius: var(--radius-full);
-  transition: background var(--duration-normal) var(--ease-out),
-              color var(--duration-normal) var(--ease-out);
+  line-height: 1.4;
 }
 
-.project-card:hover .card-stat {
-  background: rgba(200, 150, 62, 0.18);
+.card-fact dd {
+  overflow: hidden;
+  margin: 0;
   color: var(--color-accent-dark);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-audience {
+  min-height: 84px;
+  padding: 14px 0 12px;
+}
+
+.card-audience p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .card-link {
@@ -201,6 +277,7 @@ const variantIdx = computed(() => (props.imageVariant ?? 0) % 3)
   font-size: 14px;
   font-weight: 600;
   color: var(--primary);
+  margin-top: auto;
   text-decoration: none;
   transition: gap var(--duration-normal) var(--ease-out),
               color var(--duration-normal) var(--ease-out);
@@ -236,5 +313,49 @@ const variantIdx = computed(() => (props.imageVariant ?? 0) % 3)
 
 .project-card:hover .card-bottom-line {
   transform: scaleX(1);
+}
+
+@media (max-width: 767px) {
+  .card-image {
+    height: 180px;
+  }
+
+  .card-body {
+    padding: 18px 20px;
+  }
+
+  .card-title {
+    min-height: auto;
+  }
+
+  .card-desc {
+    min-height: auto;
+  }
+
+  .card-audience {
+    min-height: 80px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .project-card,
+  .card-image-glow,
+  .card-image-overlay,
+  .card-image::after,
+  .card-image :deep(img),
+  .card-title,
+  .card-link,
+  .link-arrow,
+  .card-bottom-line {
+    transition: none;
+  }
+
+  .project-card:hover {
+    transform: none;
+  }
+
+  .project-card:hover .card-image :deep(img) {
+    transform: none;
+  }
 }
 </style>
