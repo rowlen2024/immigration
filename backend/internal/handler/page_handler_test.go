@@ -15,14 +15,16 @@ import (
 	"mygo-immigration/backend/internal/service"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // handlerMockPageRepo implements repository.PageRepository.
 type handlerMockPageRepo struct {
-	findByIDFn func(id uint64) (*model.Page, error)
-	findBySlug func(slug string) (*model.Page, error)
-	createFn   func(page *model.Page) error
-	updateFn   func(page *model.Page) error
+	findByIDFn          func(id uint64) (*model.Page, error)
+	findBySlug          func(slug string) (*model.Page, error)
+	createFn            func(page *model.Page) error
+	updateFn            func(page *model.Page) error
+	findRelatedBySlugFn func(slug string, limit int) ([]model.Page, error)
 }
 
 func (m *handlerMockPageRepo) FindByID(id uint64) (*model.Page, error) {
@@ -43,6 +45,15 @@ func (m *handlerMockPageRepo) FindOptions(filter repository.PageFilter) ([]repos
 }
 func (m *handlerMockPageRepo) FindBySlugPublished(slug string) (*model.Page, error) {
 	return m.findBySlug(slug)
+}
+func (m *handlerMockPageRepo) FindRelatedBySlug(slug string, limit int) ([]model.Page, error) {
+	if m.findRelatedBySlugFn != nil {
+		return m.findRelatedBySlugFn(slug, limit)
+	}
+	return nil, nil
+}
+func (m *handlerMockPageRepo) FindProjectsByPageID(uint64) ([]model.PageProject, error) {
+	return nil, nil
 }
 func (m *handlerMockPageRepo) Create(page *model.Page) error {
 	if m.createFn != nil {
@@ -132,6 +143,86 @@ func TestPageHandler_GetPage_MissingSlug(t *testing.T) {
 
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("expected status 400, got %d", w.Code)
+	}
+}
+
+func TestPageHandler_GetRelatedPages(t *testing.T) {
+	mockRepo := &handlerMockPageRepo{findRelatedBySlugFn: func(slug string, limit int) ([]model.Page, error) {
+		if slug != "current-news" || limit != 4 {
+			t.Fatalf("unexpected query: slug=%q limit=%d", slug, limit)
+		}
+		return []model.Page{{ID: 2, Title: "Related", Slug: "related"}}, nil
+	}}
+	h := &Handler{svc: &service.Service{Page: service.NewPageService(mockRepo, nil)}}
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = makeGetRequest("/api/v1/related-pages?slug=current-news")
+	h.GetRelatedPages(c)
+
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"slug":"related"`) {
+		t.Fatalf("unexpected response: status=%d body=%s", w.Code, w.Body.String())
+	}
+}
+
+func TestPageHandler_GetRelatedPages_MissingSlug(t *testing.T) {
+	h := &Handler{}
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = makeGetRequest("/api/v1/related-pages")
+
+	h.GetRelatedPages(c)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", w.Code)
+	}
+}
+
+func TestPageHandler_GetRelatedPages_EmptyArray(t *testing.T) {
+	mockRepo := &handlerMockPageRepo{findRelatedBySlugFn: func(string, int) ([]model.Page, error) {
+		return []model.Page{}, nil
+	}}
+	h := &Handler{svc: &service.Service{Page: service.NewPageService(mockRepo, nil)}}
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = makeGetRequest("/api/v1/related-pages?slug=current-news")
+
+	h.GetRelatedPages(c)
+
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"data":[]`) {
+		t.Fatalf("expected HTTP 200 with empty data array, got status=%d body=%s", w.Code, w.Body.String())
+	}
+}
+
+func TestPageHandler_GetRelatedPages_NotFound(t *testing.T) {
+	mockRepo := &handlerMockPageRepo{findRelatedBySlugFn: func(string, int) ([]model.Page, error) {
+		return nil, gorm.ErrRecordNotFound
+	}}
+	h := &Handler{svc: &service.Service{Page: service.NewPageService(mockRepo, nil)}}
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = makeGetRequest("/api/v1/related-pages?slug=missing")
+
+	h.GetRelatedPages(c)
+
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d", w.Code)
+	}
+}
+
+func TestPageHandler_GetRelatedPages_RepositoryError(t *testing.T) {
+	mockRepo := &handlerMockPageRepo{findRelatedBySlugFn: func(string, int) ([]model.Page, error) {
+		return nil, errors.New("query failed")
+	}}
+	h := &Handler{svc: &service.Service{Page: service.NewPageService(mockRepo, nil)}}
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = makeGetRequest("/api/v1/related-pages?slug=current-news")
+
+	h.GetRelatedPages(c)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("expected status 500, got %d", w.Code)
 	}
 }
 

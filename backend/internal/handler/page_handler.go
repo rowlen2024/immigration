@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -9,6 +10,7 @@ import (
 	"mygo-immigration/backend/internal/model"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func (h *Handler) ListPages(c *gin.Context) {
@@ -36,6 +38,27 @@ func (h *Handler) GetPage(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.Success(page))
+}
+
+func (h *Handler) GetRelatedPages(c *gin.Context) {
+	slug := c.Query("slug")
+	if slug == "" {
+		c.JSON(http.StatusBadRequest, dto.Error(400, "slug is required"))
+		return
+	}
+
+	pages, err := h.svc.Page.GetRelatedBySlug(slug)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, dto.Error(404, "page not found"))
+			return
+		}
+		logging.Logger.Error("failed in GetRelatedPages", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Success(pages))
 }
 
 func (h *Handler) PreviewPage(c *gin.Context) {

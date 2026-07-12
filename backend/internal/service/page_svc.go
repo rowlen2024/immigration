@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/model"
@@ -39,6 +40,12 @@ func (s *PageService) GetBySlug(slug string) (*model.Page, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get page by slug: %w", err)
 	}
+	projects, err := s.repo.FindProjectsByPageID(page.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get page projects: %w", err)
+	}
+	page.Projects = projects
+	page.Tags, _ = normalizePageTags(page.Tags)
 	page.CoverImageVariants = ResolveImageVariants(page.CoverImage, UploadContextPageCover)
 	return page, nil
 }
@@ -52,7 +59,32 @@ func (s *PageService) GetBySlugPreview(slug string) (*model.Page, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get page by slug: %w", err)
 	}
+	page.Tags, _ = normalizePageTags(page.Tags)
 	return page, nil
+}
+
+func (s *PageService) GetRelatedBySlug(slug string) ([]dto.RelatedPage, error) {
+	if slug == "" {
+		return nil, errors.New("slug is required")
+	}
+
+	pages, err := s.repo.FindRelatedBySlug(slug, 4)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get related pages: %w", err)
+	}
+
+	items := make([]dto.RelatedPage, 0, len(pages))
+	for _, page := range pages {
+		items = append(items, dto.RelatedPage{
+			ID:                 page.ID,
+			Title:              page.Title,
+			Slug:               page.Slug,
+			CoverImage:         page.CoverImage,
+			CoverImageVariants: ResolveImageVariants(page.CoverImage, UploadContextPageCover),
+			CreatedAt:          page.CreatedAt,
+		})
+	}
+	return items, nil
 }
 
 // List returns pages with optional filtering and pagination.
@@ -68,6 +100,7 @@ func (s *PageService) List(req dto.PageListRequest) ([]model.Page, int64, error)
 		return nil, 0, fmt.Errorf("failed to list pages: %w", err)
 	}
 	for i := range pages {
+		pages[i].Tags, _ = normalizePageTags(pages[i].Tags)
 		pages[i].CoverImageVariants = ResolveImageVariants(pages[i].CoverImage, UploadContextPageCover)
 	}
 	return pages, total, nil
@@ -98,6 +131,11 @@ func (s *PageService) Create(page *model.Page) (*model.Page, error) {
 		return nil, errors.New("page slug is required")
 	}
 	page.ID = 0
+	var err error
+	page.Tags, err = normalizePageTags(page.Tags)
+	if err != nil {
+		return nil, err
+	}
 	page.Content = HTMLSanitizer.Sanitize(page.Content)
 	if err := s.repo.Create(page); err != nil {
 		return nil, fmt.Errorf("failed to create page: %w", err)
@@ -142,6 +180,10 @@ func (s *PageService) Update(id uint64, req dto.UpdatePageRequest) (*model.Page,
 	existing.Title = req.Title
 	existing.Content = HTMLSanitizer.Sanitize(req.Content)
 	existing.CoverImage = req.CoverImage
+	existing.Tags, err = normalizePageTags(req.Tags)
+	if err != nil {
+		return nil, err
+	}
 	existing.MetaTitle = req.MetaTitle
 	existing.MetaDescription = req.MetaDescription
 	existing.Template = req.Template
@@ -174,4 +216,27 @@ func (s *PageService) Delete(id uint64) error {
 		return fmt.Errorf("failed to delete page: %w", err)
 	}
 	return nil
+}
+
+func normalizePageTags(tags []string) ([]string, error) {
+	normalized := make([]string, 0, len(tags))
+	seen := make(map[string]struct{}, len(tags))
+	for _, tag := range tags {
+		tag = strings.TrimSpace(tag)
+		if tag == "" {
+			continue
+		}
+		if len([]rune(tag)) > 50 {
+			return nil, errors.New("page tag cannot exceed 50 characters")
+		}
+		if _, ok := seen[tag]; ok {
+			continue
+		}
+		seen[tag] = struct{}{}
+		normalized = append(normalized, tag)
+	}
+	if len(normalized) > 10 {
+		return nil, errors.New("page tags cannot exceed 10")
+	}
+	return normalized, nil
 }

@@ -21,6 +21,7 @@ func registerPublicRoutes(api *gin.RouterGroup, h *handler.Handler) {
 	api.GET("/projects/:slug", h.GetProject)
 	api.GET("/faqs/projects", h.ListFAQProjects)
 	api.GET("/faqs", h.ListFAQs)
+	api.GET("/related-pages", h.GetRelatedPages)
 	api.GET("/pages", h.ListPages)
 	api.GET("/pages/*slug", h.GetPage)
 	api.GET("/cases/:slug", h.GetCase)

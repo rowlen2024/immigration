@@ -7,12 +7,13 @@ import (
 )
 
 type Page struct {
-	ID         uint64  `gorm:"primaryKey;autoIncrement" json:"id"`
-	ProjectID  *uint64 `gorm:"index" json:"project_id"`
-	Title      string  `gorm:"size:255;not null" json:"title"`
-	Slug       string  `gorm:"uniqueIndex;size:255;not null" json:"slug"`
-	Content    string  `gorm:"type:longtext" json:"content"`
-	CoverImage string  `gorm:"size:512;not null;default:''" json:"cover_image"`
+	ID         uint64   `gorm:"primaryKey;autoIncrement" json:"id"`
+	ProjectID  *uint64  `gorm:"index" json:"project_id"`
+	Title      string   `gorm:"size:255;not null" json:"title"`
+	Slug       string   `gorm:"uniqueIndex;size:255;not null" json:"slug"`
+	Content    string   `gorm:"type:longtext" json:"content"`
+	CoverImage string   `gorm:"size:512;not null;default:''" json:"cover_image"`
+	Tags       []string `gorm:"type:json;serializer:json" json:"tags"`
 
 	// 变体信息（不存数据库，仅 API 输出）
 	CoverImageVariants map[string]ImageVariantInfo `gorm:"-" json:"cover_image_variants,omitempty"`
@@ -26,6 +27,13 @@ type Page struct {
 	DeletedAt          gorm.DeletedAt              `gorm:"index" json:"-"`
 	CreatedAt          time.Time                   `json:"created_at"`
 	UpdatedAt          time.Time                   `json:"updated_at"`
+	Projects           []PageProject               `gorm:"-" json:"projects,omitempty"`
+}
+
+type PageProject struct {
+	ID   uint64 `json:"id"`
+	Name string `json:"name"`
+	Slug string `json:"slug"`
 }
 
 func (Page) TableName() string { return "pages" }

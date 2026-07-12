@@ -46,6 +46,10 @@ func (m *searchMockPageRepo) FindOptions(filter repository.PageFilter) ([]reposi
 func (m *searchMockPageRepo) FindBySlugPublished(slug string) (*model.Page, error) {
 	return nil, nil
 }
+func (m *searchMockPageRepo) FindRelatedBySlug(string, int) ([]model.Page, error) { return nil, nil }
+func (m *searchMockPageRepo) FindProjectsByPageID(uint64) ([]model.PageProject, error) {
+	return nil, nil
+}
 func (m *searchMockPageRepo) Create(page *model.Page) error { return nil }
 func (m *searchMockPageRepo) Update(page *model.Page) error { return nil }
 func (m *searchMockPageRepo) Delete(id uint64) error        { return nil }

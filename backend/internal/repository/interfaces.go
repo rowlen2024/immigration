@@ -133,6 +133,8 @@ type PageRepository interface {
 	FindAll(filter PageFilter) ([]model.Page, int64, error)
 	FindOptions(filter PageFilter) ([]PageOptionRow, int64, error)
 	FindBySlugPublished(slug string) (*model.Page, error)
+	FindProjectsByPageID(pageID uint64) ([]model.PageProject, error)
+	FindRelatedBySlug(slug string, limit int) ([]model.Page, error)
 	Create(page *model.Page) error
 	Update(page *model.Page) error
 	Delete(id uint64) error

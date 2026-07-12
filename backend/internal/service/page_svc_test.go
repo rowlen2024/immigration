@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -13,15 +14,17 @@ import (
 
 // mockPageRepo implements repository.PageRepository for testing.
 type mockPageRepo struct {
-	findByIDFn            func(id uint64) (*model.Page, error)
-	findBySlugFn          func(slug string) (*model.Page, error)
-	findAllFn             func(filter repository.PageFilter) ([]model.Page, int64, error)
-	findOptionsFn         func(filter repository.PageFilter) ([]repository.PageOptionRow, int64, error)
-	findBySlugPublishedFn func(slug string) (*model.Page, error)
-	createFn              func(page *model.Page) error
-	updateFn              func(page *model.Page) error
-	deleteFn              func(id uint64) error
-	searchFn              func(keyword string) ([]model.Page, error)
+	findByIDFn             func(id uint64) (*model.Page, error)
+	findBySlugFn           func(slug string) (*model.Page, error)
+	findAllFn              func(filter repository.PageFilter) ([]model.Page, int64, error)
+	findOptionsFn          func(filter repository.PageFilter) ([]repository.PageOptionRow, int64, error)
+	findBySlugPublishedFn  func(slug string) (*model.Page, error)
+	findProjectsByPageIDFn func(pageID uint64) ([]model.PageProject, error)
+	findRelatedBySlugFn    func(slug string, limit int) ([]model.Page, error)
+	createFn               func(page *model.Page) error
+	updateFn               func(page *model.Page) error
+	deleteFn               func(id uint64) error
+	searchFn               func(keyword string) ([]model.Page, error)
 }
 
 func (m *mockPageRepo) FindByID(id uint64) (*model.Page, error) {
@@ -59,6 +62,20 @@ func (m *mockPageRepo) FindBySlugPublished(slug string) (*model.Page, error) {
 	return nil, errors.New("not found")
 }
 
+func (m *mockPageRepo) FindRelatedBySlug(slug string, limit int) ([]model.Page, error) {
+	if m.findRelatedBySlugFn != nil {
+		return m.findRelatedBySlugFn(slug, limit)
+	}
+	return nil, nil
+}
+
+func (m *mockPageRepo) FindProjectsByPageID(pageID uint64) ([]model.PageProject, error) {
+	if m.findProjectsByPageIDFn != nil {
+		return m.findProjectsByPageIDFn(pageID)
+	}
+	return nil, nil
+}
+
 func (m *mockPageRepo) Create(page *model.Page) error {
 	if m.createFn != nil {
 		return m.createFn(page)
@@ -91,6 +108,54 @@ func (m *mockPageRepo) FindAllCoverImages() ([]string, error)            { retur
 func (m *mockPageRepo) FindAllContents() ([]string, error)               { return nil, nil }
 func (m *mockPageRepo) Count() (int64, error)                            { return 0, nil }
 func (m *mockPageRepo) CountByRange(start, end time.Time) (int64, error) { return 0, nil }
+
+func TestPageService_GetRelatedBySlug(t *testing.T) {
+	createdAt := time.Date(2026, 7, 12, 10, 0, 0, 0, time.UTC)
+	repo := &mockPageRepo{
+		findRelatedBySlugFn: func(slug string, limit int) ([]model.Page, error) {
+			if slug != "current-news" || limit != 4 {
+				t.Fatalf("unexpected query: slug=%q limit=%d", slug, limit)
+			}
+			return []model.Page{{
+				ID: 2, Title: "Related", Slug: "related", CoverImage: "/uploads/related.jpg", CreatedAt: createdAt,
+			}}, nil
+		},
+	}
+
+	items, err := NewPageService(repo, nil).GetRelatedBySlug("current-news")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(items) != 1 || items[0].ID != 2 || items[0].Title != "Related" || items[0].CreatedAt != createdAt {
+		t.Fatalf("unexpected related pages: %#v", items)
+	}
+}
+
+func TestPageService_GetRelatedBySlug_Empty(t *testing.T) {
+	repo := &mockPageRepo{findRelatedBySlugFn: func(string, int) ([]model.Page, error) {
+		return []model.Page{}, nil
+	}}
+
+	items, err := NewPageService(repo, nil).GetRelatedBySlug("current-news")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if items == nil || len(items) != 0 {
+		t.Fatalf("expected an empty array, got %#v", items)
+	}
+}
+
+func TestPageService_GetRelatedBySlug_Error(t *testing.T) {
+	wantErr := errors.New("query failed")
+	repo := &mockPageRepo{findRelatedBySlugFn: func(string, int) ([]model.Page, error) {
+		return nil, wantErr
+	}}
+
+	_, err := NewPageService(repo, nil).GetRelatedBySlug("current-news")
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("expected wrapped repository error, got %v", err)
+	}
+}
 
 func TestPageService_OptionsClampsPerPage(t *testing.T) {
 	repo := &mockPageRepo{
@@ -129,6 +194,12 @@ func TestPage_GetBySlug_Success(t *testing.T) {
 			}
 			return nil, errors.New("not found")
 		},
+		findProjectsByPageIDFn: func(pageID uint64) ([]model.PageProject, error) {
+			if pageID != 1 {
+				t.Fatalf("unexpected page id: %d", pageID)
+			}
+			return []model.PageProject{{ID: 7, Name: "Project", Slug: "project"}}, nil
+		},
 	}
 
 	svc := NewPageService(repo, nil)
@@ -139,6 +210,9 @@ func TestPage_GetBySlug_Success(t *testing.T) {
 	}
 	if page.ID != 1 || page.Title != "About Us" {
 		t.Errorf("unexpected page: %+v", page)
+	}
+	if len(page.Projects) != 1 || page.Projects[0].Slug != "project" {
+		t.Errorf("unexpected projects: %+v", page.Projects)
 	}
 }
 
@@ -229,6 +303,45 @@ func TestPage_Create_XSSSanitization(t *testing.T) {
 	}
 }
 
+func TestPage_Create_NormalizesTags(t *testing.T) {
+	var savedTags []string
+	repo := &mockPageRepo{createFn: func(page *model.Page) error {
+		savedTags = append([]string(nil), page.Tags...)
+		return nil
+	}}
+
+	_, err := NewPageService(repo, nil).Create(&model.Page{
+		Title: "Test", Slug: "test", Tags: []string{" visa ", "", "visa", "investment"},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(savedTags) != 2 || savedTags[0] != "visa" || savedTags[1] != "investment" {
+		t.Fatalf("unexpected normalized tags: %#v", savedTags)
+	}
+}
+
+func TestPage_Create_RejectsMoreThanTenTags(t *testing.T) {
+	tags := make([]string, 11)
+	for i := range tags {
+		tags[i] = fmt.Sprintf("tag-%d", i)
+	}
+
+	_, err := NewPageService(&mockPageRepo{}, nil).Create(&model.Page{Title: "Test", Slug: "test", Tags: tags})
+	if err == nil || !strings.Contains(err.Error(), "cannot exceed 10") {
+		t.Fatalf("expected tag limit error, got %v", err)
+	}
+}
+
+func TestPage_Create_RejectsTagLongerThanFiftyCharacters(t *testing.T) {
+	_, err := NewPageService(&mockPageRepo{}, nil).Create(&model.Page{
+		Title: "Test", Slug: "test", Tags: []string{strings.Repeat("签", 51)},
+	})
+	if err == nil || !strings.Contains(err.Error(), "cannot exceed 50") {
+		t.Fatalf("expected tag length error, got %v", err)
+	}
+}
+
 func TestPage_Create_NilPage(t *testing.T) {
 	repo := &mockPageRepo{}
 	svc := NewPageService(repo, nil)
@@ -262,6 +375,7 @@ func TestPage_Create_MissingSlug(t *testing.T) {
 func TestPage_Update_Success(t *testing.T) {
 	var savedContent string
 	var savedPinned bool
+	var savedTags []string
 	repo := &mockPageRepo{
 		findByIDFn: func(id uint64) (*model.Page, error) {
 			return &model.Page{ID: id, Slug: "existing", Title: "Old", Content: ""}, nil
@@ -269,13 +383,14 @@ func TestPage_Update_Success(t *testing.T) {
 		updateFn: func(page *model.Page) error {
 			savedContent = page.Content
 			savedPinned = page.IsPinned
+			savedTags = append([]string(nil), page.Tags...)
 			return nil
 		},
 	}
 
 	svc := NewPageService(repo, nil)
 
-	page, err := svc.Update(1, dto.UpdatePageRequest{Title: "Updated", Slug: "updated", Content: "<p>Safe</p><script>bad</script>", IsPinned: true})
+	page, err := svc.Update(1, dto.UpdatePageRequest{Title: "Updated", Slug: "updated", Content: "<p>Safe</p><script>bad</script>", Tags: []string{" visa ", "visa"}, IsPinned: true})
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -287,6 +402,37 @@ func TestPage_Update_Success(t *testing.T) {
 	}
 	if !savedPinned || !page.IsPinned {
 		t.Error("expected update service to persist is_pinned")
+	}
+	if len(savedTags) != 1 || savedTags[0] != "visa" {
+		t.Fatalf("unexpected saved tags: %#v", savedTags)
+	}
+}
+
+func TestPage_Update_RejectsMoreThanTenTags(t *testing.T) {
+	tags := make([]string, 11)
+	for i := range tags {
+		tags[i] = fmt.Sprintf("tag-%d", i)
+	}
+	repo := &mockPageRepo{findByIDFn: func(id uint64) (*model.Page, error) {
+		return &model.Page{ID: id, Slug: "existing"}, nil
+	}}
+
+	_, err := NewPageService(repo, nil).Update(1, dto.UpdatePageRequest{Slug: "existing", Tags: tags})
+	if err == nil || !strings.Contains(err.Error(), "cannot exceed 10") {
+		t.Fatalf("expected tag limit error, got %v", err)
+	}
+}
+
+func TestPage_Update_RejectsTagLongerThanFiftyCharacters(t *testing.T) {
+	repo := &mockPageRepo{findByIDFn: func(id uint64) (*model.Page, error) {
+		return &model.Page{ID: id, Slug: "existing"}, nil
+	}}
+
+	_, err := NewPageService(repo, nil).Update(1, dto.UpdatePageRequest{
+		Slug: "existing", Tags: []string{strings.Repeat("签", 51)},
+	})
+	if err == nil || !strings.Contains(err.Error(), "cannot exceed 50") {
+		t.Fatalf("expected tag length error, got %v", err)
 	}
 }
 

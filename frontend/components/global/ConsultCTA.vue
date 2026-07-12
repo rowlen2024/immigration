@@ -1,5 +1,5 @@
 <template>
-  <section class="consult-cta">
+  <section class="consult-cta" :class="`consult-cta--${variant}`">
     <h3>{{ title }}</h3>
     <p>{{ description }}</p>
     <NuxtLink v-if="buttonLink" :to="buttonLink" class="btn-primary">{{ buttonText }}</NuxtLink>
@@ -12,9 +12,11 @@ withDefaults(defineProps<{
   description: string
   buttonText?: string
   buttonLink?: string
+  variant?: 'section' | 'sidebar'
 }>(), {
   buttonText: '免费咨询',
   buttonLink: '/contact',
+  variant: 'section',
 })
 </script>
 
@@ -40,6 +42,29 @@ withDefaults(defineProps<{
   margin-bottom: 24px;
 }
 
+.consult-cta--sidebar {
+  padding: 28px 24px;
+  margin: 0;
+  background: var(--gradient-hero);
+  text-align: left;
+  box-shadow: var(--shadow-md);
+}
+
+.consult-cta--sidebar h3 {
+  color: #fff;
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+.consult-cta--sidebar p {
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.7;
+}
+
+.consult-cta--sidebar .btn-primary {
+  width: 100%;
+}
+
 @media (max-width: 767px) {
   .consult-cta {
     padding: 36px 20px;
@@ -55,6 +80,11 @@ withDefaults(defineProps<{
     width: 100%;
     padding: 14px 0;
     font-size: 16px;
+  }
+
+  .consult-cta--sidebar {
+    padding: 28px 24px;
+    margin: 0;
   }
 }
 </style>

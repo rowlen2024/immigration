@@ -15,9 +15,93 @@
       <template v-else-if="page">
         <!-- default layout -->
         <template v-if="template === 'default'">
-          <ProjectBreadcrumb :label="page.title" />
-          <h1 class="page-title">{{ page.title }}</h1>
-          <div class="page-content" v-html="page.content"></div>
+          <template v-if="isNewsPage">
+            <ProjectBreadcrumb :label="page.title" />
+            <article class="news-article">
+              <div class="news-layout">
+                <div class="news-main">
+                  <header class="news-header">
+                    <div v-if="page.projects?.length" class="news-projects" aria-label="所属项目">
+                      <NuxtLink
+                        v-for="project in page.projects"
+                        :key="project.id"
+                        :to="`/projects/${project.slug}`"
+                        class="news-project"
+                      >
+                        {{ project.name }}
+                      </NuxtLink>
+                </div>
+                <h1 class="news-title">{{ page.title }}</h1>
+                <ul v-if="page.tags?.length" class="news-tags" aria-label="文章标签">
+                  <li v-for="tag in page.tags" :key="tag">{{ tag }}</li>
+                </ul>
+                <div class="news-meta" aria-label="文章信息">
+                      <time v-if="formattedDate" :datetime="page.created_at">{{ formattedDate }}</time>
+                      <span v-if="formattedDate" aria-hidden="true"></span>
+                      <span>{{ readingMinutes }} 分钟阅读</span>
+                    </div>
+                    <ResponsiveImage
+                      v-if="page.cover_image"
+                      class="news-cover"
+                      :src="page.cover_image"
+                      variant="lg"
+                      :variants="page.cover_image_variants"
+                      sizes="(max-width: 767px) calc(100vw - 40px), 860px"
+                      loading="eager"
+                      fetchpriority="high"
+                      :alt="page.title"
+                    />
+                  </header>
+                  <div class="page-content news-content" v-html="page.content"></div>
+                </div>
+                <aside class="news-sidebar" aria-label="文章相关内容">
+                  <section v-if="relatedPages.length" class="related-panel">
+                    <div class="sidebar-heading">
+                      <span>相关文章</span>
+                      <small>RELATED</small>
+                    </div>
+                    <div class="related-list">
+                      <NuxtLink
+                        v-for="item in relatedPages"
+                        :key="item.id"
+                        :to="`/pages/${item.slug}`"
+                        class="related-item"
+                      >
+                        <ResponsiveImage
+                          v-if="item.cover_image"
+                          class="related-cover"
+                          :src="item.cover_image"
+                          variant="thumb"
+                          :variants="item.cover_image_variants"
+                          sizes="84px"
+                          :alt="item.title"
+                        />
+                        <span class="related-copy">
+                          <strong>{{ item.title }}</strong>
+                          <time
+                            v-if="item.created_at && formatArticleDate(item.created_at)"
+                            :datetime="item.created_at"
+                          >
+                            {{ formatArticleDate(item.created_at) }}
+                          </time>
+                        </span>
+                      </NuxtLink>
+                    </div>
+                  </section>
+                  <ConsultCTA
+                    variant="sidebar"
+                    title="想知道这条路径是否适合您？"
+                    description="与顾问沟通您的家庭情况和投资目标，获取更有针对性的建议。"
+                  />
+                </aside>
+              </div>
+            </article>
+          </template>
+          <template v-else>
+            <ProjectBreadcrumb :label="page.title" />
+            <h1 class="page-title">{{ page.title }}</h1>
+            <div class="page-content" v-html="page.content"></div>
+          </template>
         </template>
 
         <!-- fullwidth layout -->
@@ -39,6 +123,8 @@
 </template>
 
 <script setup lang="ts">
+import type { ImageVariantInfo } from '~/utils/image';
+
 const route = useRoute();
 
 const slug = computed(() => {
@@ -53,8 +139,27 @@ interface CmsPage {
   content: string;
   template?: string;
   cover_image?: string;
+  cover_image_variants?: Record<string, ImageVariantInfo>;
+  page_type?: string;
+  created_at?: string;
+  projects?: Array<{ id: number; name: string; slug: string }>;
+  tags?: string[];
   meta_title?: string;
   meta_description?: string;
+}
+
+interface RelatedPage {
+  id: number;
+  title: string;
+  slug: string;
+  cover_image?: string;
+  cover_image_variants?: Record<string, ImageVariantInfo>;
+  created_at?: string;
+}
+
+interface RelatedPagesEnvelope {
+  code: number;
+  data: RelatedPage[];
 }
 
 usePublicDataFreshness(() => [pageDataKey.value]);
@@ -73,6 +178,67 @@ const { data, pending, error: fetchError, refresh } = await useFetch(
 const page = computed(() => data.value || null);
 
 const template = computed(() => page.value?.template || 'default');
+const isNewsPage = computed(() => page.value?.page_type === 'news');
+
+const relatedDataKey = computed(() => `public:page:${slug.value}:related`);
+const { data: relatedResponse } = await useFetch<RelatedPagesEnvelope>(
+  () => `/api/v1/related-pages?slug=${encodeURIComponent(String(slug.value))}`,
+  {
+    key: relatedDataKey,
+    immediate: isNewsPage.value && template.value === 'default',
+    watch: false,
+  },
+);
+
+const relatedPages = computed(() => relatedResponse.value?.data?.slice(0, 4) ?? []);
+
+let relatedRequestToken = 0;
+watch(
+  [slug, isNewsPage, template],
+  async ([currentSlug, currentIsNews, currentTemplate]) => {
+    if (!import.meta.client) return;
+    const requestToken = ++relatedRequestToken;
+    relatedResponse.value = null;
+    if (!currentIsNews || currentTemplate !== 'default') return;
+    try {
+      const response = await $fetch<RelatedPagesEnvelope>(
+        `/api/v1/related-pages?slug=${encodeURIComponent(String(currentSlug))}`,
+      );
+      if (
+        requestToken !== relatedRequestToken
+        || slug.value !== currentSlug
+        || !isNewsPage.value
+        || template.value !== currentTemplate
+      ) return;
+      relatedResponse.value = response;
+    } catch {
+      // Related content is supplementary and must not block the article.
+    }
+  },
+  { immediate: true },
+);
+
+const readingMinutes = computed(() => {
+  const plainText = (page.value?.content || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&[a-zA-Z0-9#]+;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return Math.max(1, Math.ceil(plainText.length / 400));
+});
+
+function formatArticleDate(value?: string) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
+}
+
+const formattedDate = computed(() => page.value?.created_at ? formatArticleDate(page.value.created_at) : '');
 
 const error = computed(() => {
   if (!fetchError.value) return null;
@@ -91,6 +257,197 @@ useSeo({
 </script>
 
 <style scoped>
+.news-article {
+  padding-bottom: 64px;
+}
+
+.news-header {
+  max-width: 860px;
+  margin-bottom: 40px;
+}
+
+.news-projects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.news-project {
+  display: inline-flex;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-dark);
+  font-size: 13px;
+  font-weight: 600;
+  transition: background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+
+.news-project:hover {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.news-title {
+  max-width: 18em;
+  margin-bottom: 18px;
+  color: var(--text-primary);
+  font-family: var(--font-serif);
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+.news-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.news-tags li {
+  padding: 5px 11px;
+  border: 1px solid rgba(200, 150, 62, 0.28);
+  border-radius: var(--radius-full);
+  background: var(--color-accent-soft);
+  color: var(--color-primary-light);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.news-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+  color: var(--text-light);
+  font-size: 14px;
+}
+
+.news-meta > span[aria-hidden='true'] {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+.news-cover {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+}
+
+.news-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(240px, 1fr);
+  gap: 48px;
+  align-items: start;
+}
+
+.news-main {
+  min-width: 0;
+}
+
+.news-content {
+  max-width: 760px;
+  margin-bottom: 0;
+  color: var(--color-text-secondary);
+  font-size: 17px;
+  line-height: 1.95;
+}
+
+.news-content :deep(h2) {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+  font-family: var(--font-serif);
+}
+
+.news-sidebar {
+  position: sticky;
+  top: calc(var(--header-scrolled-height) + 28px);
+  display: grid;
+  gap: 24px;
+}
+
+.related-panel {
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--bg-white);
+}
+
+.sidebar-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.sidebar-heading small {
+  color: var(--color-accent-dark);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+
+.related-list {
+  display: grid;
+}
+
+.related-item {
+  display: flex;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-border-light);
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.related-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.related-item:hover {
+  color: var(--color-accent-dark);
+}
+
+.related-cover {
+  flex: 0 0 84px;
+  width: 84px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+}
+
+.related-copy {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+}
+
+.related-copy strong {
+  display: -webkit-box;
+  overflow: hidden;
+  color: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.related-copy time {
+  color: var(--text-light);
+  font-size: 12px;
+}
+
 .page-title {
   font-size: 36px;
   font-weight: 700;
@@ -218,6 +575,50 @@ useSeo({
   margin-bottom: 32px;
 }
 
+@media (max-width: 890px) {
+  .news-article {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .news-header {
+    margin-bottom: 32px;
+  }
+
+  .news-title {
+    font-size: 30px;
+  }
+
+  .news-tags {
+    gap: 6px;
+  }
+
+  .news-tags li {
+    padding: 4px 10px;
+  }
+
+  .news-cover {
+    border-radius: var(--radius-md);
+  }
+
+  .news-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 36px;
+  }
+
+  .news-sidebar {
+    position: static;
+  }
+
+  .news-content {
+    font-size: 16px;
+    line-height: 1.85;
+  }
+
+  .related-panel {
+    padding: 20px;
+  }
+}
+
 @media (max-width: 767px) {
   .page-title {
     font-size: 28px;
@@ -257,6 +658,13 @@ useSeo({
   .page-content :deep(blockquote) {
     padding: 10px 16px;
     margin: 16px 0;
+  }
+}
+
+@media (min-width: 891px) and (max-width: 1023px) {
+  .news-layout {
+    grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
+    gap: 32px;
   }
 }
 

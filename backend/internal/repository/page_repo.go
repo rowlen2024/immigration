@@ -100,6 +100,87 @@ func (r *PageRepo) FindBySlugPublished(slug string) (*model.Page, error) {
 	return &page, nil
 }
 
+func (r *PageRepo) FindProjectsByPageID(pageID uint64) ([]model.PageProject, error) {
+	var projects []model.PageProject
+	err := r.db.Model(&model.Project{}).
+		Select("projects.id, projects.name, projects.slug").
+		Joins("JOIN project_news ON project_news.project_id = projects.id").
+		Where("project_news.page_id = ?", pageID).
+		Order("projects.id asc").
+		Find(&projects).Error
+	if err != nil {
+		return nil, err
+	}
+	return projects, nil
+}
+
+func (r *PageRepo) FindRelatedBySlug(slug string, limit int) ([]model.Page, error) {
+	var current model.Page
+	if err := r.db.Where("slug = ? AND status = ? AND page_type = ?", slug, "published", "news").First(&current).Error; err != nil {
+		return nil, err
+	}
+	if limit <= 0 {
+		return []model.Page{}, nil
+	}
+
+	projectIDs := r.db.Model(&model.ProjectNews{}).
+		Select("project_id").
+		Where("page_id = ?", current.ID)
+
+	pages := make([]model.Page, 0, limit)
+	err := r.db.Model(&model.Page{}).
+		Distinct("pages.*").
+		Joins("JOIN project_news ON project_news.page_id = pages.id").
+		Where("project_news.project_id IN (?)", projectIDs).
+		Where("pages.id <> ? AND pages.status = ? AND pages.page_type = ?", current.ID, "published", "news").
+		Order("pages.is_pinned desc, pages.created_at desc, pages.id desc").
+		Limit(limit).
+		Find(&pages).Error
+	if err != nil {
+		return nil, err
+	}
+
+	excludedIDs := []uint64{current.ID}
+	for _, page := range pages {
+		excludedIDs = append(excludedIDs, page.ID)
+	}
+
+	if len(pages) < limit && len(current.Tags) > 0 {
+		var tagged []model.Page
+		err = r.db.Model(&model.Page{}).
+			Joins("JOIN JSON_TABLE(pages.tags, '$[*]' COLUMNS(tag VARCHAR(255) PATH '$')) AS page_tags").
+			Where("pages.id NOT IN ?", excludedIDs).
+			Where("pages.status = ? AND pages.page_type = ?", "published", "news").
+			Where("BINARY page_tags.tag IN ?", current.Tags).
+			Group("pages.id").
+			Order("COUNT(DISTINCT page_tags.tag) desc, pages.is_pinned desc, pages.created_at desc, pages.id desc").
+			Limit(limit - len(pages)).
+			Find(&tagged).Error
+		if err != nil {
+			return nil, err
+		}
+		pages = append(pages, tagged...)
+		for _, page := range tagged {
+			excludedIDs = append(excludedIDs, page.ID)
+		}
+	}
+
+	if len(pages) < limit {
+		var fallback []model.Page
+		err = r.db.Model(&model.Page{}).
+			Where("id NOT IN ?", excludedIDs).
+			Where("status = ? AND page_type = ?", "published", "news").
+			Order("is_pinned desc, created_at desc, id desc").
+			Limit(limit - len(pages)).
+			Find(&fallback).Error
+		if err != nil {
+			return nil, err
+		}
+		pages = append(pages, fallback...)
+	}
+	return pages, nil
+}
+
 func (r *PageRepo) Create(page *model.Page) error {
 	return r.db.Create(page).Error
 }

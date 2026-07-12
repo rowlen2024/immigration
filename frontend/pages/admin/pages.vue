@@ -128,6 +128,18 @@
         <el-form-item label="封面图片" prop="cover_image">
           <ImageInput v-model="form.cover_image" placeholder="封面图片URL" size-hint="推荐 360×240px (3:2 横向)" context="page-cover" />
         </el-form-item>
+        <el-form-item label="文章标签" prop="tags">
+          <el-select
+            v-model="form.tags"
+            multiple
+            filterable
+            allow-create
+            default-first-option
+            :multiple-limit="10"
+            placeholder="输入标签后按回车创建，最多 10 个"
+            style="width: 100%"
+          />
+        </el-form-item>
         <el-row :gutter="12">
           <el-col :span="12">
             <el-form-item label="SEO 标题" prop="meta_title">
@@ -207,6 +219,7 @@ const notify = useNotify();
     page_type: string;
     status: string;
     is_pinned: boolean;
+    tags: string[];
     created_at: string;
     updated_at: string;
     deleted_at?: string;
@@ -248,6 +261,9 @@ const defaultForm = () => ({
   page_type: 'default',
   status: 'draft',
   is_pinned: false,
+  tags: [],
+  created_at: '',
+  updated_at: '',
 } as Page);
 
 const form = reactive(defaultForm());
@@ -285,7 +301,7 @@ const openCreate = () => {
 const openEdit = (row: Page) => {
   editingId.value = row.id;
   const { id, created_at, updated_at, deleted_at, ...cleanRow } = row;
-  Object.assign(form, cleanRow);
+  Object.assign(form, cleanRow, { tags: [...(row.tags ?? [])] });
   drawerVisible.value = true;
 };
 
@@ -293,17 +309,24 @@ const handleSave = async () => {
   const valid = await formRef.value?.validate().catch(() => false);
   if (!valid) return;
 
+  const normalizedTags = [...new Set((form.tags ?? []).map(tag => tag.trim()).filter(Boolean))];
+  if (normalizedTags.length > 10) {
+    ElMessage.warning('文章标签最多可添加 10 个');
+    return;
+  }
+  form.tags = normalizedTags;
+
   saving.value = true;
   try {
     const api = useApi();
     if (editingId.value) {
       await api(`/admin/pages/${editingId.value}`, {
         method: 'PUT',
-        body: form,
+        body: { ...form, tags: normalizedTags },
       });
       notify.success('更新成功');
     } else {
-      await api('/admin/pages', { method: 'POST', body: form });
+      await api('/admin/pages', { method: 'POST', body: { ...form, tags: normalizedTags } });
       notify.success('创建成功');
     }
     drawerVisible.value = false;
