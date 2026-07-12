@@ -58,6 +58,7 @@ type RBACRepository interface {
 // ProjectFilter holds optional query conditions for project list queries.
 type ProjectFilter struct {
 	Name    string
+	Country string
 	Status  string
 	Page    int
 	PerPage int

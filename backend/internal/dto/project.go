@@ -3,8 +3,9 @@ package dto
 // ProjectListRequest 项目列表查询请求
 type ProjectListRequest struct {
 	PaginationRequest
-	Name   string `form:"name"`
-	Status string `form:"status"`
+	Name    string `form:"name"`
+	Country string `form:"country"`
+	Status  string `form:"status"`
 }
 
 // DashboardStats holds admin dashboard statistics.

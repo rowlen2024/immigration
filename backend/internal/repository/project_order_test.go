@@ -71,6 +71,48 @@ func TestProjectRepoFindAllOrdersPinnedProjectsFirst(t *testing.T) {
 	}
 }
 
+func TestProjectRepoFindAllFiltersByCountry(t *testing.T) {
+	db, recorder := newDryRunDB(t)
+	repo := &ProjectRepo{db: db}
+
+	if _, _, err := repo.FindAll(ProjectFilter{Country: "Canada"}); err != nil {
+		t.Fatalf("failed to generate project list SQL: %v", err)
+	}
+
+	if len(recorder.statements) != 2 {
+		t.Fatalf("expected count and find SQL, got %d statements", len(recorder.statements))
+	}
+	for _, statement := range recorder.statements {
+		sql := normalizeSQL(statement)
+		if !strings.Contains(sql, "where country like '%canada%'") {
+			t.Fatalf("expected country filter in count and find SQL, got: %s", sql)
+		}
+	}
+}
+
+func TestProjectRepoFindAllCombinesCountryAndNameFilters(t *testing.T) {
+	db, recorder := newDryRunDB(t)
+	repo := &ProjectRepo{db: db}
+
+	if _, _, err := repo.FindAll(ProjectFilter{Country: "Canada", Name: "Invest", Page: 1, PerPage: 12}); err != nil {
+		t.Fatalf("failed to generate project list SQL: %v", err)
+	}
+
+	if len(recorder.statements) != 2 {
+		t.Fatalf("expected count and find SQL, got %d statements", len(recorder.statements))
+	}
+	for _, statement := range recorder.statements {
+		sql := normalizeSQL(statement)
+		if !strings.Contains(sql, "name like '%invest%'") || !strings.Contains(sql, "country like '%canada%'") {
+			t.Fatalf("expected name and country filters in count and find SQL, got: %s", sql)
+		}
+	}
+	findSQL := normalizeSQL(recorder.statements[len(recorder.statements)-1])
+	if !strings.Contains(findSQL, "order by is_pinned desc, sort_order asc, id desc") {
+		t.Fatalf("expected existing pinned ordering, got: %s", findSQL)
+	}
+}
+
 func TestProjectRepoFindOptionsOrdersPinnedProjectsFirst(t *testing.T) {
 	db, recorder := newDryRunDB(t)
 	repo := &ProjectRepo{db: db}

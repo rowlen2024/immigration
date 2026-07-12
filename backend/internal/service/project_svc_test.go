@@ -147,8 +147,14 @@ func TestProject_List_Filter(t *testing.T) {
 			if filter.Name != "test" {
 				t.Errorf("expected Name 'test', got '%s'", filter.Name)
 			}
+			if filter.Country != "Canada" {
+				t.Errorf("expected Country 'Canada', got '%s'", filter.Country)
+			}
 			if filter.Status != "published" {
 				t.Errorf("expected Status 'published', got '%s'", filter.Status)
+			}
+			if filter.Page != 2 || filter.PerPage != 12 {
+				t.Errorf("expected pagination 2/12, got %d/%d", filter.Page, filter.PerPage)
 			}
 			return []model.Project{}, 0, nil
 		},
@@ -156,8 +162,10 @@ func TestProject_List_Filter(t *testing.T) {
 
 	svc := NewProjectService(repo, nil)
 	_, _, err := svc.List(dto.ProjectListRequest{
-		Name:   "test",
-		Status: "published",
+		PaginationRequest: dto.PaginationRequest{Page: 2, PerPage: 12},
+		Name:              "test",
+		Country:           "Canada",
+		Status:            "published",
 	})
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)

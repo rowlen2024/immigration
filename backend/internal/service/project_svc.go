@@ -95,6 +95,7 @@ func (s *ProjectService) GetBySlug(slug string) (*model.Project, error) {
 func (s *ProjectService) List(req dto.ProjectListRequest) ([]model.Project, int64, error) {
 	projects, total, err := s.repo.FindAll(repository.ProjectFilter{
 		Name:    req.Name,
+		Country: req.Country,
 		Status:  req.Status,
 		Page:    req.Page,
 		PerPage: req.PerPage,

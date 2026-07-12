@@ -109,6 +109,12 @@ func (m *handlerMockProjectRepo) DeleteNewsByProjectID(projectID uint64) error {
 func TestProjectHandler_ListProjects(t *testing.T) {
 	mockRepo := &handlerMockProjectRepo{
 		findAll: func(filter repository.ProjectFilter) ([]model.Project, int64, error) {
+			if filter.Country != "Canada" || filter.Name != "invest" {
+				t.Errorf("expected country/name filters Canada/invest, got %q/%q", filter.Country, filter.Name)
+			}
+			if filter.Page != 1 || filter.PerPage != 10 {
+				t.Errorf("expected pagination 1/10, got %d/%d", filter.Page, filter.PerPage)
+			}
 			return []model.Project{
 				{ID: 1, Name: "Project A", Slug: "project-a"},
 				{ID: 2, Name: "Project B", Slug: "project-b"},
@@ -121,7 +127,7 @@ func TestProjectHandler_ListProjects(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request = makeGetRequest("/api/v1/projects?page=1&per_page=10")
+	c.Request = makeGetRequest("/api/v1/projects?country=Canada&name=invest&page=1&per_page=10")
 
 	h.ListProjects(c)
 
@@ -135,6 +141,20 @@ func TestProjectHandler_ListProjects(t *testing.T) {
 	}
 	if resp.Code != 200 {
 		t.Errorf("expected response code 200, got %d", resp.Code)
+	}
+}
+
+func TestProjectHandler_ListProjects_InvalidPagination(t *testing.T) {
+	h := &Handler{svc: &service.Service{Project: service.NewProjectService(&handlerMockProjectRepo{}, nil)}}
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = makeGetRequest("/api/v1/projects?page=1&per_page=101")
+
+	h.ListProjects(c)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d, body: %s", w.Code, w.Body.String())
 	}
 }
 

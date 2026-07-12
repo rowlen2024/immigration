@@ -70,6 +70,9 @@ func (r *ProjectRepo) FindAll(filter ProjectFilter) ([]model.Project, int64, err
 	if filter.Name != "" {
 		q = q.Where("name LIKE ?", "%"+filter.Name+"%")
 	}
+	if filter.Country != "" {
+		q = q.Where("country LIKE ?", "%"+filter.Country+"%")
+	}
 	if filter.Status != "" {
 		q = q.Where("status = ?", filter.Status)
 	}
