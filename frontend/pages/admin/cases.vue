@@ -42,6 +42,13 @@
         <el-table-column prop="sort_order" label="排序" width="70">
           <template #default="{ row }">{{ row.sort_order ?? '—' }}</template>
         </el-table-column>
+        <el-table-column prop="is_pinned" label="置顶状态" width="100">
+          <template #default="{ row }">
+            <span :class="['status-pill', row.is_pinned ? 'warning' : 'draft']">
+              {{ row.is_pinned ? '已置顶' : '未置顶' }}
+            </span>
+          </template>
+        </el-table-column>
         <el-table-column prop="created_at" label="创建时间" width="160">
           <template #default="{ row }">{{ formatDateTime(row.created_at) }}</template>
         </el-table-column>
@@ -107,6 +114,9 @@
         <el-form-item label="排序" prop="sort_order">
           <el-input-number v-model="form.sort_order" :min="0" />
         </el-form-item>
+        <el-form-item label="是否置顶" prop="is_pinned">
+          <el-switch v-model="form.is_pinned" active-text="是" inactive-text="否" />
+        </el-form-item>
       </el-form>
       <template #footer>
         <AdminDrawerFooter
@@ -144,6 +154,7 @@ interface CaseItem {
   investment_value: number;
   processing_period: string;
   sort_order: number;
+  is_pinned: boolean;
 }
 
 const list = ref<CaseItem[]>([]);
@@ -179,6 +190,7 @@ const defaultForm = () => ({
   investment_value: 0,
   processing_period: '',
   sort_order: 0,
+  is_pinned: false,
 });
 
 const form = reactive(defaultForm());
@@ -234,6 +246,7 @@ const openEdit = (row: CaseItem) => {
     investment_value: row.investment_value,
     processing_period: row.processing_period,
     sort_order: row.sort_order,
+    is_pinned: row.is_pinned,
   });
   drawerVisible.value = true;
 };

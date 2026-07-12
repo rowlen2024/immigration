@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -20,6 +21,8 @@ import (
 type handlerMockPageRepo struct {
 	findByIDFn func(id uint64) (*model.Page, error)
 	findBySlug func(slug string) (*model.Page, error)
+	createFn   func(page *model.Page) error
+	updateFn   func(page *model.Page) error
 }
 
 func (m *handlerMockPageRepo) FindByID(id uint64) (*model.Page, error) {
@@ -41,8 +44,18 @@ func (m *handlerMockPageRepo) FindOptions(filter repository.PageFilter) ([]repos
 func (m *handlerMockPageRepo) FindBySlugPublished(slug string) (*model.Page, error) {
 	return m.findBySlug(slug)
 }
-func (m *handlerMockPageRepo) Create(page *model.Page) error                    { return nil }
-func (m *handlerMockPageRepo) Update(page *model.Page) error                    { return nil }
+func (m *handlerMockPageRepo) Create(page *model.Page) error {
+	if m.createFn != nil {
+		return m.createFn(page)
+	}
+	return nil
+}
+func (m *handlerMockPageRepo) Update(page *model.Page) error {
+	if m.updateFn != nil {
+		return m.updateFn(page)
+	}
+	return nil
+}
 func (m *handlerMockPageRepo) Delete(id uint64) error                           { return nil }
 func (m *handlerMockPageRepo) Search(keyword string) ([]model.Page, error)      { return nil, nil }
 func (m *handlerMockPageRepo) FindAllCoverImages() ([]string, error)            { return nil, nil }
@@ -119,5 +132,78 @@ func TestPageHandler_GetPage_MissingSlug(t *testing.T) {
 
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("expected status 400, got %d", w.Code)
+	}
+}
+
+func TestPageHandler_CreatePage_BindsPinned(t *testing.T) {
+	var createdPinned bool
+	mockRepo := &handlerMockPageRepo{
+		findBySlug: func(string) (*model.Page, error) { return nil, errors.New("not found") },
+		createFn: func(page *model.Page) error {
+			createdPinned = page.IsPinned
+			page.ID = 99
+			return nil
+		},
+	}
+
+	pageSvc := service.NewPageService(mockRepo, nil)
+	h := &Handler{svc: &service.Service{Page: pageSvc}}
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = makePostRequest("/api/v1/admin/pages", model.Page{
+		Title:    "New Page",
+		Slug:     "new-page",
+		IsPinned: true,
+	})
+
+	h.CreatePage(c)
+
+	if w.Code != http.StatusCreated {
+		t.Errorf("expected status 201, got %d, body: %s", w.Code, w.Body.String())
+	}
+	if !createdPinned {
+		t.Error("expected create handler to bind is_pinned")
+	}
+	if !strings.Contains(w.Body.String(), `"is_pinned":true`) {
+		t.Errorf("expected response to include is_pinned, body: %s", w.Body.String())
+	}
+}
+
+func TestPageHandler_UpdatePage_BindsPinned(t *testing.T) {
+	var updatedPinned bool
+	mockRepo := &handlerMockPageRepo{
+		findByIDFn: func(id uint64) (*model.Page, error) {
+			return &model.Page{ID: id, Title: "Old", Slug: "old"}, nil
+		},
+		findBySlug: func(string) (*model.Page, error) { return nil, errors.New("not found") },
+		updateFn: func(page *model.Page) error {
+			updatedPinned = page.IsPinned
+			return nil
+		},
+	}
+
+	pageSvc := service.NewPageService(mockRepo, nil)
+	h := &Handler{svc: &service.Service{Page: pageSvc}}
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = makePostRequest("/api/v1/admin/pages/5", dto.UpdatePageRequest{
+		Title:    "Updated Page",
+		Slug:     "updated-page",
+		IsPinned: true,
+	})
+	c.Params = gin.Params{{Key: "id", Value: "5"}}
+
+	h.UpdatePage(c)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d, body: %s", w.Code, w.Body.String())
+	}
+	if !updatedPinned {
+		t.Error("expected update handler to bind is_pinned")
+	}
+	if !strings.Contains(w.Body.String(), `"is_pinned":true`) {
+		t.Errorf("expected response to include is_pinned, body: %s", w.Body.String())
 	}
 }

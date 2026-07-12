@@ -11,6 +11,7 @@ type UpdateCaseRequest struct {
 	Content          string   `json:"content"`
 	PhotoURL         string   `json:"photo_url"`
 	SortOrder        int      `json:"sort_order"`
+	IsPinned         bool     `json:"is_pinned"`
 }
 
 // UpdatePageRequest 页面更新请求
@@ -26,6 +27,7 @@ type UpdatePageRequest struct {
 	PageType        string  `json:"page_type"`
 	Status          string  `json:"status"`
 	SortOrder       int     `json:"sort_order"`
+	IsPinned        bool    `json:"is_pinned"`
 }
 
 // UpdateProjectRequest 项目更新请求

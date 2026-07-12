@@ -148,6 +148,7 @@ func (s *PageService) Update(id uint64, req dto.UpdatePageRequest) (*model.Page,
 	existing.PageType = req.PageType
 	existing.Status = req.Status
 	existing.SortOrder = req.SortOrder
+	existing.IsPinned = req.IsPinned
 
 	if err := s.repo.Update(existing); err != nil {
 		return nil, fmt.Errorf("failed to update page: %w", err)

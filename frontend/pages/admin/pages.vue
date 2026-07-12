@@ -53,6 +53,13 @@
             </span>
           </template>
         </el-table-column>
+        <el-table-column prop="is_pinned" label="置顶状态" width="100">
+          <template #default="{ row }">
+            <span :class="['status-pill', row.is_pinned ? 'warning' : 'draft']">
+              {{ row.is_pinned ? '已置顶' : '未置顶' }}
+            </span>
+          </template>
+        </el-table-column>
         <el-table-column prop="created_at" label="创建时间" width="160">
           <template #default="{ row }">{{ formatDateTime(row.created_at) }}</template>
         </el-table-column>
@@ -133,6 +140,9 @@
             </el-form-item>
           </el-col>
         </el-row>
+        <el-form-item label="是否置顶" prop="is_pinned">
+          <el-switch v-model="form.is_pinned" active-text="是" inactive-text="否" />
+        </el-form-item>
         <el-row :gutter="12">
           <el-col :span="8">
             <el-form-item label="模板" prop="template">
@@ -196,6 +206,7 @@ const notify = useNotify();
     template: string;
     page_type: string;
     status: string;
+    is_pinned: boolean;
     created_at: string;
     updated_at: string;
     deleted_at?: string;
@@ -236,6 +247,7 @@ const defaultForm = () => ({
   template: 'default',
   page_type: 'default',
   status: 'draft',
+  is_pinned: false,
 } as Page);
 
 const form = reactive(defaultForm());

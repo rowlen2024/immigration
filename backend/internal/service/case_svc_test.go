@@ -337,19 +337,21 @@ func TestCase_Create_MissingName(t *testing.T) {
 
 func TestCase_Update_Success(t *testing.T) {
 	updated := false
+	updatedPinned := false
 	repo := &mockCaseRepo{
 		findByIDFn: func(id uint64) (*model.Case, error) {
 			return &model.Case{ID: id, Slug: "existing-slug"}, nil
 		},
 		updateFn: func(c *model.Case) error {
 			updated = true
+			updatedPinned = c.IsPinned
 			return nil
 		},
 	}
 
 	svc := NewCaseService(repo, nil)
 
-	c, err := svc.Update(1, dto.UpdateCaseRequest{Name: "Updated Case"})
+	c, err := svc.Update(1, dto.UpdateCaseRequest{Name: "Updated Case", IsPinned: true})
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -358,6 +360,9 @@ func TestCase_Update_Success(t *testing.T) {
 	}
 	if c.ID != 1 {
 		t.Errorf("expected ID 1, got %d", c.ID)
+	}
+	if !updatedPinned || !c.IsPinned {
+		t.Error("expected update service to persist is_pinned")
 	}
 }
 

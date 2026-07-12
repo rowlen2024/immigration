@@ -261,19 +261,21 @@ func TestPage_Create_MissingSlug(t *testing.T) {
 
 func TestPage_Update_Success(t *testing.T) {
 	var savedContent string
+	var savedPinned bool
 	repo := &mockPageRepo{
 		findByIDFn: func(id uint64) (*model.Page, error) {
 			return &model.Page{ID: id, Slug: "existing", Title: "Old", Content: ""}, nil
 		},
 		updateFn: func(page *model.Page) error {
 			savedContent = page.Content
+			savedPinned = page.IsPinned
 			return nil
 		},
 	}
 
 	svc := NewPageService(repo, nil)
 
-	page, err := svc.Update(1, dto.UpdatePageRequest{Title: "Updated", Slug: "updated", Content: "<p>Safe</p><script>bad</script>"})
+	page, err := svc.Update(1, dto.UpdatePageRequest{Title: "Updated", Slug: "updated", Content: "<p>Safe</p><script>bad</script>", IsPinned: true})
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -282,6 +284,9 @@ func TestPage_Update_Success(t *testing.T) {
 	}
 	if strings.Contains(savedContent, "<script>") {
 		t.Errorf("expected script tag to be sanitized in update, got: %s", savedContent)
+	}
+	if !savedPinned || !page.IsPinned {
+		t.Error("expected update service to persist is_pinned")
 	}
 }
 

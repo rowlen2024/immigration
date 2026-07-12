@@ -57,7 +57,7 @@ func (r *CaseRepo) FindAll(filter CaseFilter) ([]model.Case, int64, error) {
 		return nil, 0, err
 	}
 
-	q = q.Order("sort_order asc, id desc")
+	q = q.Order("is_pinned desc, sort_order asc, id desc")
 	if filter.Page > 0 && filter.PerPage > 0 {
 		offset := (filter.Page - 1) * filter.PerPage
 		q = q.Offset(offset).Limit(filter.PerPage)
@@ -88,7 +88,7 @@ func (r *CaseRepo) FindOptions(filter CaseFilter) ([]CaseOptionRow, int64, error
 		return nil, 0, err
 	}
 
-	q = q.Select("id", "name").Order("sort_order asc, id desc")
+	q = q.Select("id", "name").Order("is_pinned desc, sort_order asc, id desc")
 	if filter.Page > 0 && filter.PerPage > 0 {
 		offset := (filter.Page - 1) * filter.PerPage
 		q = q.Offset(offset).Limit(filter.PerPage)

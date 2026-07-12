@@ -94,6 +94,7 @@ func (s *CaseService) Update(id uint64, req dto.UpdateCaseRequest) (*model.Case,
 	existing.Content = HTMLSanitizer.Sanitize(req.Content)
 	existing.PhotoURL = req.PhotoURL
 	existing.SortOrder = req.SortOrder
+	existing.IsPinned = req.IsPinned
 	if err := s.repo.Update(existing); err != nil {
 		return nil, fmt.Errorf("failed to update case: %w", err)
 	}
