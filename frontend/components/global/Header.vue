@@ -162,11 +162,18 @@
       </nav>
 
       <div class="header-actions">
-        <a :href="`tel:${siteConfig?.contact_phone || '400-963-6933'}`" class="header-cta">
-          <svg class="header-cta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <a
+          :href="`tel:${siteConfig?.contact_phone || '400-963-6933'}`"
+          class="header-cta"
+          :aria-label="`拨打全国咨询热线 ${siteConfig?.contact_phone || '400-963-6933'}`"
+        >
+          <svg class="header-cta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
           </svg>
-          全国咨询热线：{{ siteConfig?.contact_phone || '400-963-6933' }}
+          <span class="header-cta-text">
+            <span class="header-cta-label">全国咨询热线：</span>
+            <span class="header-cta-number">{{ siteConfig?.contact_phone || '400-963-6933' }}</span>
+          </span>
         </a>
 
         <button
@@ -332,13 +339,14 @@ watch(() => route.path, () => {
 }
 
 .header-container {
-  max-width: var(--max-width);
+  width: 100%;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 0 24px;
   height: 100%;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
 }
 
 /* ==================== Logo ==================== */
@@ -347,6 +355,7 @@ watch(() => route.path, () => {
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  justify-self: start;
   gap: 10px;
   text-decoration: none;
 }
@@ -389,6 +398,7 @@ watch(() => route.path, () => {
 
 .header-nav {
   display: flex;
+  justify-self: center;
 }
 
 .nav-list {
@@ -644,6 +654,7 @@ a.nav-link {
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
+  justify-self: end;
 }
 
 /* ==================== CTA Button ==================== */
@@ -724,9 +735,43 @@ a.nav-link {
   transform: rotate(180deg);
 }
 
-/* ==================== Mobile ==================== */
+/* ==================== Compact Desktop ==================== */
 
-@media (max-width: 767px) {
+@media (min-width: 1280px) and (max-width: 1599px) {
+  .header-container {
+    padding: 0 16px;
+  }
+
+  .nav-separator {
+    display: none;
+  }
+
+  .nav-link {
+    padding-right: 6px;
+    padding-left: 6px;
+  }
+
+  .header-cta {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .header-cta-label {
+    display: none;
+  }
+}
+
+/* ==================== Collapsed Navigation ==================== */
+
+@media (max-width: 1279px) {
+  .header-container {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .header-actions {
+    grid-column: 2;
+  }
+
   .logo-text {
     font-size: 16px;
     letter-spacing: 1px;
@@ -941,7 +986,6 @@ a.nav-link {
   }
 
   .header-cta {
-    font-size: 0;
     padding: 6px;
     gap: 0;
     border-radius: 6px;
@@ -952,6 +996,10 @@ a.nav-link {
     background: transparent;
     box-shadow: none;
     color: var(--bg-white);
+  }
+
+  .header-cta-text {
+    display: none;
   }
 
   .header-cta:hover {
