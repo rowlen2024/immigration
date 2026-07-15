@@ -242,7 +242,7 @@ func TestPageHandler_CreatePage_BindsPinned(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request = makePostRequest("/api/v1/admin/pages", model.Page{
+	c.Request = makePostRequest("/api/v1/admin/pages", dto.CreatePageRequest{
 		Title:    "New Page",
 		Slug:     "new-page",
 		IsPinned: true,
@@ -258,6 +258,52 @@ func TestPageHandler_CreatePage_BindsPinned(t *testing.T) {
 	}
 	if !strings.Contains(w.Body.String(), `"is_pinned":true`) {
 		t.Errorf("expected response to include is_pinned, body: %s", w.Body.String())
+	}
+}
+
+func TestPageHandler_CreatePage_IgnoresServerManagedFields(t *testing.T) {
+	var received *model.Page
+	mockRepo := &handlerMockPageRepo{
+		createFn: func(page *model.Page) error {
+			copyPage := *page
+			received = &copyPage
+			page.ID = 99
+			return nil
+		},
+	}
+
+	pageSvc := service.NewPageService(mockRepo, nil)
+	h := &Handler{svc: &service.Service{Page: pageSvc}}
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = makePostRequest("/api/v1/admin/pages", map[string]interface{}{
+		"id":               123,
+		"title":            "adadfsfsfsdgdhfjh",
+		"slug":             "adadfsfsfsdgdhfjh",
+		"content":          "<p>ggggggggggggggggggggggggdfgdfytjttttttttttttttttttttttttttttttttttttt</p>",
+		"cover_image":      "/uploads/1784084792587275333.png",
+		"meta_title":       "",
+		"meta_description": "",
+		"template":         "default",
+		"page_type":        "default",
+		"status":           "draft",
+		"is_pinned":        false,
+		"tags":             []string{},
+		"created_at":       "",
+		"updated_at":       "",
+	})
+
+	h.CreatePage(c)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d, body: %s", w.Code, w.Body.String())
+	}
+	if received == nil {
+		t.Fatal("expected repository to receive page")
+	}
+	if received.ID != 0 || !received.CreatedAt.IsZero() || !received.UpdatedAt.IsZero() {
+		t.Fatalf("expected server-managed fields to remain zero, got ID=%d created_at=%v updated_at=%v", received.ID, received.CreatedAt, received.UpdatedAt)
 	}
 }
 

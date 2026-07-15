@@ -287,7 +287,7 @@ func TestPage_Create_XSSSanitization(t *testing.T) {
 	svc := NewPageService(repo, nil)
 
 	xssContent := `<p>Hello</p><script>alert("xss")</script><b>World</b>`
-	page, err := svc.Create(&model.Page{Title: "Test", Slug: "test", Content: xssContent})
+	page, err := svc.Create(&dto.CreatePageRequest{Title: "Test", Slug: "test", Content: xssContent})
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -303,6 +303,55 @@ func TestPage_Create_XSSSanitization(t *testing.T) {
 	}
 }
 
+func TestPage_Create_MapsWritableFields(t *testing.T) {
+	projectID := uint64(7)
+	var saved model.Page
+	repo := &mockPageRepo{createFn: func(page *model.Page) error {
+		saved = *page
+		return nil
+	}}
+
+	_, err := NewPageService(repo, nil).Create(&dto.CreatePageRequest{
+		ProjectID:       &projectID,
+		Title:           "测试页面",
+		Slug:            "test-page",
+		Content:         "<p>正文</p>",
+		CoverImage:      "/uploads/cover.png",
+		Tags:            []string{" 移民 ", "投资"},
+		MetaTitle:       "SEO 标题",
+		MetaDescription: "SEO 描述",
+		Template:        "landing",
+		PageType:        "news",
+		Status:          "published",
+		SortOrder:       8,
+		IsPinned:        true,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if saved.ProjectID == nil || *saved.ProjectID != projectID {
+		t.Fatalf("unexpected project ID: %v", saved.ProjectID)
+	}
+	if saved.Title != "测试页面" || saved.Slug != "test-page" || saved.Content != "<p>正文</p>" {
+		t.Fatalf("unexpected page content fields: %#v", saved)
+	}
+	if saved.CoverImage != "/uploads/cover.png" || saved.MetaTitle != "SEO 标题" || saved.MetaDescription != "SEO 描述" {
+		t.Fatalf("unexpected page metadata fields: %#v", saved)
+	}
+	if saved.Template != "landing" || saved.PageType != "news" || saved.Status != "published" {
+		t.Fatalf("unexpected page type fields: %#v", saved)
+	}
+	if saved.SortOrder != 8 || !saved.IsPinned {
+		t.Fatalf("unexpected page ordering fields: %#v", saved)
+	}
+	if len(saved.Tags) != 2 || saved.Tags[0] != "移民" || saved.Tags[1] != "投资" {
+		t.Fatalf("unexpected normalized tags: %#v", saved.Tags)
+	}
+	if saved.ID != 0 || !saved.CreatedAt.IsZero() || !saved.UpdatedAt.IsZero() {
+		t.Fatalf("expected server-managed fields to remain zero: %#v", saved)
+	}
+}
+
 func TestPage_Create_NormalizesTags(t *testing.T) {
 	var savedTags []string
 	repo := &mockPageRepo{createFn: func(page *model.Page) error {
@@ -310,7 +359,7 @@ func TestPage_Create_NormalizesTags(t *testing.T) {
 		return nil
 	}}
 
-	_, err := NewPageService(repo, nil).Create(&model.Page{
+	_, err := NewPageService(repo, nil).Create(&dto.CreatePageRequest{
 		Title: "Test", Slug: "test", Tags: []string{" visa ", "", "visa", "investment"},
 	})
 	if err != nil {
@@ -327,14 +376,14 @@ func TestPage_Create_RejectsMoreThanTenTags(t *testing.T) {
 		tags[i] = fmt.Sprintf("tag-%d", i)
 	}
 
-	_, err := NewPageService(&mockPageRepo{}, nil).Create(&model.Page{Title: "Test", Slug: "test", Tags: tags})
+	_, err := NewPageService(&mockPageRepo{}, nil).Create(&dto.CreatePageRequest{Title: "Test", Slug: "test", Tags: tags})
 	if err == nil || !strings.Contains(err.Error(), "cannot exceed 10") {
 		t.Fatalf("expected tag limit error, got %v", err)
 	}
 }
 
 func TestPage_Create_RejectsTagLongerThanFiftyCharacters(t *testing.T) {
-	_, err := NewPageService(&mockPageRepo{}, nil).Create(&model.Page{
+	_, err := NewPageService(&mockPageRepo{}, nil).Create(&dto.CreatePageRequest{
 		Title: "Test", Slug: "test", Tags: []string{strings.Repeat("签", 51)},
 	})
 	if err == nil || !strings.Contains(err.Error(), "cannot exceed 50") {
@@ -356,7 +405,7 @@ func TestPage_Create_MissingTitle(t *testing.T) {
 	repo := &mockPageRepo{}
 	svc := NewPageService(repo, nil)
 
-	_, err := svc.Create(&model.Page{Slug: "test-slug"})
+	_, err := svc.Create(&dto.CreatePageRequest{Slug: "test-slug"})
 	if err == nil {
 		t.Fatal("expected error for missing title")
 	}
@@ -366,7 +415,7 @@ func TestPage_Create_MissingSlug(t *testing.T) {
 	repo := &mockPageRepo{}
 	svc := NewPageService(repo, nil)
 
-	_, err := svc.Create(&model.Page{Title: "Test Title"})
+	_, err := svc.Create(&dto.CreatePageRequest{Title: "Test Title"})
 	if err == nil {
 		t.Fatal("expected error for missing slug")
 	}
@@ -635,7 +684,7 @@ func TestPage_Create_RepoError(t *testing.T) {
 
 	svc := NewPageService(repo, nil)
 
-	_, err := svc.Create(&model.Page{Title: "Test", Slug: "test", Content: "content"})
+	_, err := svc.Create(&dto.CreatePageRequest{Title: "Test", Slug: "test", Content: "content"})
 	if err == nil {
 		t.Fatal("expected error from repo")
 	}

@@ -7,7 +7,6 @@ import (
 
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/logging"
-	"mygo-immigration/backend/internal/model"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -99,14 +98,14 @@ func (h *Handler) AdminListPages(c *gin.Context) {
 }
 
 func (h *Handler) CreatePage(c *gin.Context) {
-	var page model.Page
-	if err := c.ShouldBindJSON(&page); err != nil {
+	var req dto.CreatePageRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logging.Logger.Warn("invalid request in CreatePage", "error", err)
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request"))
 		return
 	}
 
-	page.ID = 0 // ensure DB auto-increment
-	created, err := h.svc.Page.Create(&page)
+	created, err := h.svc.Page.Create(&req)
 	if err != nil {
 		logging.Logger.Warn("business error in CreatePage", "error", err)
 		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))

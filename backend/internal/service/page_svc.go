@@ -119,18 +119,34 @@ func (s *PageService) Search(q string) ([]model.Page, error) {
 	return pages, nil
 }
 
-// Create creates a new page, sanitizing the content field against XSS.
-func (s *PageService) Create(page *model.Page) (*model.Page, error) {
-	if page == nil {
+// Create 创建页面并净化正文中的不安全 HTML。
+func (s *PageService) Create(req *dto.CreatePageRequest) (*model.Page, error) {
+	if req == nil {
 		return nil, errors.New("page is nil")
 	}
-	if page.Title == "" {
+	if req.Title == "" {
 		return nil, errors.New("page title is required")
 	}
-	if page.Slug == "" {
+	if req.Slug == "" {
 		return nil, errors.New("page slug is required")
 	}
-	page.ID = 0
+
+	page := &model.Page{
+		ProjectID:       req.ProjectID,
+		Title:           req.Title,
+		Slug:            req.Slug,
+		Content:         req.Content,
+		CoverImage:      req.CoverImage,
+		Tags:            req.Tags,
+		MetaTitle:       req.MetaTitle,
+		MetaDescription: req.MetaDescription,
+		Template:        req.Template,
+		PageType:        req.PageType,
+		Status:          req.Status,
+		SortOrder:       req.SortOrder,
+		IsPinned:        req.IsPinned,
+	}
+
 	var err error
 	page.Tags, err = normalizePageTags(page.Tags)
 	if err != nil {

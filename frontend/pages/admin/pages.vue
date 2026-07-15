@@ -207,23 +207,28 @@ definePageMeta({ layout: 'admin', middleware: 'auth' });
 
 const notify = useNotify();
 
-  interface Page {
-    id: string;
-    title: string;
-    slug: string;
-    content: string;
-    cover_image: string;
-    meta_title: string;
-    meta_description: string;
-    template: string;
-    page_type: string;
-    status: string;
-    is_pinned: boolean;
-    tags: string[];
-    created_at: string;
-    updated_at: string;
-    deleted_at?: string;
-  }
+interface PageForm {
+  project_id: number | null;
+  title: string;
+  slug: string;
+  content: string;
+  cover_image: string;
+  meta_title: string;
+  meta_description: string;
+  template: string;
+  page_type: string;
+  status: string;
+  sort_order: number;
+  is_pinned: boolean;
+  tags: string[];
+}
+
+interface Page extends PageForm {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
+}
 
 const list = ref<Page[]>([]);
 const loading = ref(false);
@@ -249,8 +254,8 @@ const onSearch = () => {
   }, 300);
 };
 
-const defaultForm = () => ({
-  id: undefined as string | undefined,
+const defaultForm = (): PageForm => ({
+  project_id: null,
   title: '',
   slug: '',
   content: '',
@@ -260,13 +265,32 @@ const defaultForm = () => ({
   template: 'default',
   page_type: 'default',
   status: 'draft',
+  sort_order: 0,
   is_pinned: false,
   tags: [],
-  created_at: '',
-  updated_at: '',
-} as Page);
+});
 
-const form = reactive(defaultForm());
+const form = reactive<PageForm>(defaultForm());
+
+const buildPagePayload = (
+  source: PageForm,
+  tags: string[] = source.tags,
+  status: string = source.status,
+): PageForm => ({
+  project_id: source.project_id,
+  title: source.title,
+  slug: source.slug,
+  content: source.content,
+  cover_image: source.cover_image,
+  meta_title: source.meta_title,
+  meta_description: source.meta_description,
+  template: source.template,
+  page_type: source.page_type,
+  status,
+  sort_order: source.sort_order,
+  is_pinned: source.is_pinned,
+  tags: [...tags],
+});
 
 const rules: FormRules = {
   title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
@@ -300,8 +324,7 @@ const openCreate = () => {
 
 const openEdit = (row: Page) => {
   editingId.value = row.id;
-  const { id, created_at, updated_at, deleted_at, ...cleanRow } = row;
-  Object.assign(form, cleanRow, { tags: [...(row.tags ?? [])] });
+  Object.assign(form, buildPagePayload(row));
   drawerVisible.value = true;
 };
 
@@ -315,6 +338,7 @@ const handleSave = async () => {
     return;
   }
   form.tags = normalizedTags;
+  const payload = buildPagePayload(form, normalizedTags);
 
   saving.value = true;
   try {
@@ -322,11 +346,11 @@ const handleSave = async () => {
     if (editingId.value) {
       await api(`/admin/pages/${editingId.value}`, {
         method: 'PUT',
-        body: { ...form, tags: normalizedTags },
+        body: payload,
       });
       notify.success('更新成功');
     } else {
-      await api('/admin/pages', { method: 'POST', body: { ...form, tags: normalizedTags } });
+      await api('/admin/pages', { method: 'POST', body: payload });
       notify.success('创建成功');
     }
     drawerVisible.value = false;
@@ -348,7 +372,7 @@ const handleToggleStatus = async (row: Page) => {
     const api = useApi();
     await api(`/admin/pages/${row.id}`, {
       method: 'PUT',
-      body: { ...row, status: newStatus },
+      body: buildPagePayload(row, row.tags, newStatus),
     });
     row.status = newStatus;
     notify.success(newStatus === 'published' ? '已发布' : '已下架');
