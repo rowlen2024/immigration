@@ -30,6 +30,12 @@ export const useSeo = (options: SeoOptions) => {
     const links: Link[] = []
     const scripts: Script[] = []
 
+    // 百度统计
+    metas.push({name: "baidu-site-verification", content: "codeva-spiwx4inGs"})
+
+    // 必应
+    metas.push({name: "msvalidate.01", content: "EFC906F85E9EE0CA6B69D87204515B66"})
+
     // ── Description / OG / Twitter ──
     const desc = options.description || siteConfig.value?.seo_description || ''
     if (desc) {
