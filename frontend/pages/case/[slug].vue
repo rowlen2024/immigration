@@ -101,6 +101,14 @@ const { data, pending, error, refresh } = await useFetch<{ data: any }>(
   { key: caseDataKey },
 );
 
+if (error.value?.statusCode === 404) {
+  throw createError({
+    statusCode: 404,
+    statusMessage: '案例不存在',
+    fatal: true,
+  });
+}
+
 const item = computed(() => data.value?.data ?? null);
 
 import { stripHtml } from '~/utils/html'

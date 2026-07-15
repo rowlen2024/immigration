@@ -31,8 +31,9 @@ export default defineNuxtConfig({
       // ISR — SSR on first request / after 5min TTL, cached static HTML otherwise
       '/': { swr: 300 },
       '/projects': { swr: 300 },
-      '/projects/*': { swr: 300 },
-      '/pages/*': { swr: 300 },
+      '/projects/**': { ssr: true, swr: 300 },
+      '/pages/**': { ssr: true, swr: 300 },
+      '/case/**': { ssr: true, swr: 300 },
       // '/projects/cies': { swr: 300 },
       // '/projects/panama': { swr: 300 },
       '/cases': { swr: 300 },
@@ -42,9 +43,6 @@ export default defineNuxtConfig({
 
       // Admin — never SSR
       '/admin/**': { ssr: false },
-
-      // All other routes — SPA fallback (no runtime SSR)
-      '/**': { ssr: false },
 
       // Legacy redirects
       '/usa/eb5': { redirect: '/projects/eb5' },

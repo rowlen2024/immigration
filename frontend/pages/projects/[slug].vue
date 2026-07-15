@@ -262,6 +262,14 @@ const { data, pending, error, refresh } = await useFetch<{ data: ApiProject }>(
   { key: projectDataKey },
 );
 
+if (error.value?.statusCode === 404) {
+  throw createError({
+    statusCode: 404,
+    statusMessage: '项目不存在',
+    fatal: true,
+  });
+}
+
 const project = computed(() => {
   const p = data.value?.data;
   return {

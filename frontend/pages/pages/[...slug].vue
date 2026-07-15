@@ -175,6 +175,14 @@ const { data, pending, error: fetchError, refresh } = await useFetch(
   }
 );
 
+if (fetchError.value?.statusCode === 404) {
+  throw createError({
+    statusCode: 404,
+    statusMessage: '页面不存在',
+    fatal: true,
+  });
+}
+
 const page = computed(() => data.value || null);
 
 const template = computed(() => page.value?.template || 'default');
