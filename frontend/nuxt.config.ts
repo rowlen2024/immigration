@@ -12,6 +12,7 @@ export default defineNuxtConfig({
   sitemap: {
     autoLastmod: true,
     exclude: ['/admin/**', '/preview/**'],
+    sources: ['/sitemap-urls'],
   },
 
   experimental: {
