@@ -57,6 +57,15 @@ interface ApiCaseItem {
   project?: { name: string }
 }
 
+interface CasesResponse {
+  data: ApiCaseItem[]
+  pagination?: {
+    page: number
+    per_page: number
+    total: number
+  }
+}
+
 interface CaseItem {
   id: string
   slug: string
@@ -107,19 +116,19 @@ onUnmounted(() => {
   observer?.disconnect()
 })
 
-const { pending, error: fetchError } = await useFetch(
+const { data: firstPageResponse, pending, error: fetchError } = await useFetch<CasesResponse>(
   () => `/api/v1/cases?page=1&per_page=${PER_PAGE}`,
   {
     key: 'public:cases:list:page1',
-    onResponse({ response }) {
-      const body = response._data as any
-      if (body?.data) {
-        items.value = (body.data as ApiCaseItem[]).map(mapCase)
-        totalCount.value = body.pagination?.total ?? 0
-      }
-    },
   },
 )
+
+watch(firstPageResponse, (body) => {
+  if (!body) return
+  items.value = body.data.map(mapCase)
+  totalCount.value = body.pagination?.total ?? 0
+  page.value = 1
+}, { immediate: true })
 
 const initialLoading = computed(() => pending.value && items.value.length === 0)
 const allLoaded = computed(() => items.value.length >= totalCount.value && totalCount.value > 0)

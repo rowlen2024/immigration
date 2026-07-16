@@ -95,6 +95,15 @@ interface ApiProject {
   target_crowd: string
 }
 
+interface ProjectsResponse {
+  data: ApiProject[]
+  pagination?: {
+    page: number
+    per_page: number
+    total: number
+  }
+}
+
 interface ProjectItem {
   slug: string
   title: string
@@ -162,21 +171,20 @@ onUnmounted(() => {
   observer?.disconnect()
 })
 
-const { pending, error: fetchError } = await useFetch(
+const { data: firstPageResponse, pending, error: fetchError } = await useFetch<ProjectsResponse>(
   () => `/api/v1/projects?page=1&per_page=${PER_PAGE}`,
   {
     key: 'public:projects:list:page1',
-    onResponse({ response }) {
-      if (requestToken !== 0) return
-      const body = response._data as any
-      if (body?.data) {
-        items.value = (body.data as ApiProject[]).map(mapProject)
-        totalCount.value = body.pagination?.total ?? 0
-        hasLoaded.value = true
-      }
-    },
   },
 )
+
+watch(firstPageResponse, (body) => {
+  if (!body || requestToken !== 0) return
+  items.value = body.data.map(mapProject)
+  totalCount.value = body.pagination?.total ?? 0
+  page.value = 1
+  hasLoaded.value = true
+}, { immediate: true })
 
 const initialLoading = computed(() => ((requestToken === 0 && pending.value) || searching.value) && items.value.length === 0)
 const allLoaded = computed(() => hasLoaded.value && items.value.length >= totalCount.value)
