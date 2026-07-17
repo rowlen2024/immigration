@@ -1,0 +1,15 @@
+# 新增或已更新的页面
+https://www.northstarvisa.com/
+https://www.northstarvisa.com/about
+https://www.northstarvisa.com/projects
+
+# 已删除的旧版页面，提交前应在线返回 404 或 410
+https://www.northstarvisa.com/web/about/
+https://www.northstarvisa.com/web/yazhou/yiminxiangmu/xianggang/
+https://www.northstarvisa.com/web/meizhou/yiminxiangmu/meiguo/yiminxiangmu/467.html
+https://www.northstarvisa.com/web/meizhou/yiminxiangmu/meiguo/yiminxiangmu/468.html
+https://www.northstarvisa.com/web/yazhou/yiminxiangmu/xianggang/yiminxiangmu/464.html
+https://www.northstarvisa.com/web/yazhou/yiminxiangmu/xinjiapo/ymxm/438.html
+https://www.northstarvisa.com/web/meizhou/yiminxiangmu/jianada/yiminxiangmu/470.html
+https://www.northstarvisa.com/web/meizhou/yiminxiangmu/jianada/yiminxiangmu/469.html
+https://www.northstarvisa.com/web/yazhou/yiminxiangmu/xianggang/yiminxiangmu/462.html
