@@ -1,0 +1,3 @@
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\submit-indexnow.ps1 `
+  -UrlFile .\scripts\indexnow-urls.example.txt

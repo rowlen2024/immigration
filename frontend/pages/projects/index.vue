@@ -3,8 +3,8 @@
     <div class="container">
       <ProjectBreadcrumb label="项目列表" />
 
-      <h1 class="page-title">移民项目</h1>
-      <p class="page-subtitle">探索最适合您的投资移民项目</p>
+      <h1 class="page-title">北极星移民投资移民项目</h1>
+      <p class="page-subtitle">查看北极星移民提供的美国EB-5、香港及其他全球身份方案，了解申请条件、周期与项目特点。</p>
 
       <form class="search-form" @submit.prevent="searchProjects">
         <div class="search-field">

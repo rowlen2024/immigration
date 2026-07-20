@@ -3,8 +3,8 @@
     <div class="container">
       <ProjectBreadcrumb />
 
-      <h1 class="page-title">常见问题</h1>
-      <p class="page-subtitle">关于投资移民的常见问题解答</p>
+      <h1 class="page-title">北极星移民投资移民常见问题</h1>
+      <p class="page-subtitle">北极星移民为您解答投资移民的申请条件、费用、办理周期与项目选择等常见问题。</p>
 
       <!-- Filter Buttons -->
       <div ref="projectPickerRef" class="project-picker">

@@ -636,7 +636,7 @@ type SiteConfig struct {
 func DefaultSiteConfig() *SiteConfig {
 	return &SiteConfig{
 		SiteName:      "北极星移民",
-		SeoTitle:      "{site_name} | 专业投资移民服务",
+		SeoTitle:      "{site_name} - 专业投资移民服务",
 		CopyrightText: "© {year} {site_name}. All rights reserved.",
 	}
 }

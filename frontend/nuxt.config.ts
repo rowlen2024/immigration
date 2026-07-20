@@ -1,12 +1,20 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+const SITE_URL = 'https://www.northstarvisa.com'
+
 export default defineNuxtConfig({
   css: ['~/assets/css/variables.css', '~/assets/css/global.css', '~/assets/css/admin.css'],
 
   modules: ['@pinia/nuxt', '@element-plus/nuxt', '@nuxtjs/sitemap'],
 
   site: {
-    url: 'https://www.northstarvisa.com',
+    url: SITE_URL,
     name: '北极星移民',
+  },
+
+  runtimeConfig: {
+    public: {
+      siteUrl: SITE_URL,
+    },
   },
 
   sitemap: {
@@ -80,7 +88,7 @@ export default defineNuxtConfig({
       mode: 'out-in',
     },
     head: {
-      title: '北极星移民 | 专业投资移民服务',
+      title: '北极星移民 - 专业投资移民服务',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },

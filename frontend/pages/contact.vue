@@ -3,8 +3,8 @@
     <div class="container">
       <ProjectBreadcrumb />
 
-      <h1 class="page-title">联系我们</h1>
-      <p class="page-subtitle">填写下方表单，我们的专业顾问将在24小时内与您联系</p>
+      <h1 class="page-title">联系北极星移民</h1>
+      <p class="page-subtitle">通过北极星移民官方联系方式提交咨询，我们的专业顾问将在24小时内与您联系。</p>
 
       <div class="contact-grid">
         <!-- Contact Form -->

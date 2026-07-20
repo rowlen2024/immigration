@@ -3,8 +3,8 @@
     <div class="container">
       <ProjectBreadcrumb />
 
-      <h1 class="page-title">成功案例</h1>
-      <p class="page-subtitle">每一位客户的成功获批，都是我们最大的骄傲</p>
+      <h1 class="page-title">北极星移民客户成功案例</h1>
+      <p class="page-subtitle">浏览北极星移民不同项目的客户案例，了解申请背景、办理路径与获批结果。</p>
 
       <div v-if="initialLoading" class="page-skeleton-wrapper"><PageSkeleton variant="cards" :count="6" /></div>
 

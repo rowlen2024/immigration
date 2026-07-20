@@ -8,9 +8,9 @@
     <section class="hero">
       <div class="container hero-inner">
         <span class="hero-badge">SINCE 2013</span>
-        <h1>领航全球<span class="dot">·</span>智启未来</h1>
-        <p class="hero-sub">北极星移民，您值得信赖的国际化伙伴</p>
-        <p class="hero-desc">深耕移民行业十余载，以专业洞见与诚信服务，为数千家庭精准指引全球身份规划方向</p>
+        <h1>关于北极星移民</h1>
+        <p class="hero-sub">北极星移民，全球身份规划与移民服务团队</p>
+        <p class="hero-desc">北极星移民由深圳福瑞特出入境信息咨询有限公司运营，专注海外身份规划、投资移民与配套服务</p>
         <NuxtLink to="/contact" class="btn-primary hero-cta">免费咨询</NuxtLink>
       </div>
     </section>

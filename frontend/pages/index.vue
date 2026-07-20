@@ -25,20 +25,21 @@
           <div class="hero-glow hero-glow--blue"></div>
           <div class="hero-glow hero-glow--amber"></div>
           <div class="hero-glow hero-glow--deep-blue"></div>
-          <div class="hero-content container">
-            <div class="hero-badge">
-              <span>精 品 投 资 移 民 决 策 平 台</span>
-            </div>
-            <h1 class="hero-title">{{ slide.title }}</h1>
-            <p class="hero-subtitle">{{ slide.subtitle }}</p>
-            <div class="hero-actions">
-              <NuxtLink v-if="slide.link" :to="slide.link" class="btn-hero-primary">
-                查看项目详情
-              </NuxtLink>
-              <NuxtLink to="/contact" class="btn-hero-secondary">
-                免费咨询
-              </NuxtLink>
-            </div>
+        </div>
+
+        <div class="hero-content container">
+          <div class="hero-badge">
+            <span>精 品 投 资 移 民 决 策 平 台</span>
+          </div>
+          <h1 class="hero-title">北极星移民｜{{ activeHeroSlide.title }}</h1>
+          <p class="hero-subtitle">{{ activeHeroSubtitle }}</p>
+          <div class="hero-actions">
+            <NuxtLink v-if="activeHeroSlide.link" :to="activeHeroSlide.link" class="btn-hero-primary">
+              查看项目详情
+            </NuxtLink>
+            <NuxtLink to="/contact" class="btn-hero-secondary">
+              免费咨询
+            </NuxtLink>
           </div>
         </div>
 
@@ -229,7 +230,7 @@
 
 <script setup lang="ts">
 
-useSeo({ title: '首页' });
+useSeo({});
 
 const { siteConfig } = useMygoSiteConfig();
 
@@ -297,6 +298,14 @@ const defaultSlides: HeroSlide[] = [
 ];
 
 const heroSlides = ref<HeroSlide[]>(defaultSlides);
+const activeHeroSlide = computed(() => heroSlides.value[currentSlide.value] || defaultSlides[0]);
+const activeHeroSubtitle = computed(() => {
+  const subtitle = activeHeroSlide.value.subtitle.trim();
+  if (!subtitle) return '北极星移民专注全球身份规划与投资移民服务';
+  return subtitle.includes('北极星移民')
+    ? subtitle
+    : `北极星移民专注全球身份规划与投资移民服务：${subtitle}`;
+});
 
 let trustObserver: IntersectionObserver | null = null;
 
@@ -1467,11 +1476,11 @@ watch([trustBarRef, trustItems], ([el, items]) => {
   }
 
   .hero-title {
-    font-size: 32px;
+    font-size: 28px;
   }
 
   .hero-subtitle {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .hero-badge {
