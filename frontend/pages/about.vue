@@ -36,7 +36,7 @@
             <span class="section-label">关于我们</span>
             <p>北极星移民是深圳福瑞特出入境信息咨询有限公司运营的移民服务品牌，成立于<strong>2013年</strong>，总部位于深圳，专注于海外身份规划与全球资产配置等高端移民服务。</p>
             <p>作为移民领域的权威机构，北极星移民汇聚了一支由资深移民顾问、专业项目风控团队、文案律师团队、税务专家及跨国教育顾问组成的精英团队。他们凭借对各国移民政策的深刻解读与丰富的实操经验，为客户精准匹配最优路径。</p>
-            <p>作为<strong>美国EB-5投资移民、香港投资移民、巴拿马购房投资移民，美国EB-1A杰出人才移民、还是欧洲黄金签证、加勒比海等各国护照的先驱者</strong>，北极星向来以数据化分析、个性化方案及全程透明化管理，确保成功率与效率的双重保障。同时，我们更提供涵盖海外置业、税务优化、国际教育等增值服务，真正实现"移民+安家+发展"的一站式解决方案。</p>
+            <p>作为<strong>美国EB-5投资移民、香港投资移民、土耳其投资移民、巴拿马购房投资移民、美国EB-1A杰出人才移民、还是欧洲黄金签证、加勒比海等各国护照的先驱者</strong>，北极星向来以数据化分析、个性化方案及全程透明化管理，确保成功率与效率的双重保障。同时，我们更提供涵盖海外置业、税务优化、国际教育等增值服务，真正实现"移民+安家+发展"的一站式解决方案。</p>
           </div>
           <div class="intro-img reveal">
             <img :src="`/static/about/images/intro.jpg`" alt="北极星移民团队" width="800" height="600" loading="lazy" />
@@ -118,11 +118,24 @@
           <h2>荣誉满载，见证实力与口碑</h2>
           <p>每一个奖状、每一份证书，都是社会以及项目机构对北极星移民坚守专业、诚信服务的最好背书。</p>
         </div>
-        <div class="honors-grid reveal">
-          <figure v-for="(h, i) in honorImgs" :key="h.src" tabindex="0" role="button" :aria-label="`查看${h.alt}大图`" @click="selectedCert = i" @keydown.enter="selectedCert = i" @keydown.space.prevent="selectedCert = i">
-            <img :src="`/static/about/images/${h.src}`" :alt="h.alt" width="600" height="800" loading="lazy" />
-          </figure>
-        </div>
+        <el-carousel
+          class="honors-carousel reveal"
+          :type="honorCarouselType"
+          height="420px"
+          trigger="click"
+          arrow="always"
+          indicator-position="outside"
+          :autoplay="true"
+          :interval="4000"
+          :loop="true"
+          :pause-on-hover="true"
+        >
+          <el-carousel-item v-for="(h, i) in honorImgs" :key="h.src">
+            <figure tabindex="0" role="button" :aria-label="`查看${h.alt}大图`" @click="selectedCert = i" @keydown.enter="selectedCert = i" @keydown.space.prevent="selectedCert = i">
+              <img :src="`/static/about/images/${h.src}`" :alt="h.alt" width="600" height="800" loading="lazy" />
+            </figure>
+          </el-carousel-item>
+        </el-carousel>
       </div>
     </section>
 
@@ -409,6 +422,10 @@ onMounted(() => {
     { threshold: 0.15 },
   )
   document.querySelectorAll('.reveal').forEach((el) => observer.observe(el))
+
+  honorCarouselMedia = window.matchMedia('(max-width: 767px)')
+  updateHonorCarouselType(honorCarouselMedia)
+  honorCarouselMedia.addEventListener('change', updateHonorCarouselType)
 })
 
 const honorImgs = [
@@ -416,9 +433,20 @@ const honorImgs = [
   { src: '1778637708046637702.jpg', alt: '北极星移民企业荣誉证书 — 优秀服务机构' },
   { src: '1778637719093755072.jpg', alt: '北极星移民企业荣誉证书 — 诚信经营示范单位' },
   { src: '1778637728035122831.jpg', alt: '北极星移民企业荣誉证书 — 行业标杆品牌' },
+  { src: '20260721140058.jpg', alt: '北极星移民企业荣誉证书 — 副会长单位' },
 ]
 
 const selectedCert = ref<number | null>(null)
+const honorCarouselType = ref<'card' | ''>('card')
+let honorCarouselMedia: MediaQueryList | null = null
+
+function updateHonorCarouselType(event: MediaQueryList | MediaQueryListEvent) {
+  honorCarouselType.value = event.matches ? '' : 'card'
+}
+
+onUnmounted(() => {
+  honorCarouselMedia?.removeEventListener('change', updateHonorCarouselType)
+})
 
 const icons: Record<string, string> = {
   clock: getIconSvg('clock', 28),
@@ -433,7 +461,7 @@ const advantages = [
   {
     icon: getIconSvg('file-text', 28),
     title: '专业的文案团队',
-    points: ['文案团队平均8年以上行业经验', '深度挖掘客户的背景情况', '1000+案子的申请经历'],
+    points: ['文案团队平均8年以上行业经验', '深度挖掘客户的背景情况', '20000+案子的申请经历'],
   },
   {
     icon: getIconSvg('users', 28),
@@ -582,11 +610,32 @@ const advantages = [
 .biz-highlight { font-size: 14px; color: var(--text-primary); font-weight: 600; line-height: 1.7; margin-top: 12px; }
 
 /* ══════ Honors ══════ */
-.honors-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
-.honors-grid figure { background: var(--bg-white); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); transition: box-shadow .25s ease; cursor: pointer; }
-.honors-grid figure:hover { box-shadow: var(--shadow-md); }
-.honors-grid figure:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
-.honors-grid img { width: 100%; aspect-ratio: 3/4; object-fit: contain; }
+.honors-carousel { margin: 0 auto; }
+.honors-carousel figure {
+  height: 100%;
+  margin: 0 12px;
+  padding: 24px;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: box-shadow .25s ease, transform .25s ease;
+}
+.honors-carousel figure:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.honors-carousel figure:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.honors-carousel img { width: 100%; height: 100%; object-fit: contain; }
+.honors-carousel :deep(.el-carousel__item) { padding: 10px 0; }
+.honors-carousel :deep(.el-carousel__item--card) { opacity: .55; }
+.honors-carousel :deep(.el-carousel__item--card.is-active) { opacity: 1; }
+.honors-carousel :deep(.el-carousel__arrow) {
+  width: 44px;
+  height: 44px;
+  color: #fff;
+  background: rgba(200, 150, 62, .52);
+  box-shadow: 0 4px 14px rgba(200, 150, 62, .18);
+}
+.honors-carousel :deep(.el-carousel__arrow:hover) { background: rgba(200, 150, 62, .78); }
+.honors-carousel :deep(.el-carousel__button) { background-color: var(--accent); }
 
 /* ══════ Quality ══════ */
 .quality-card { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; background: var(--gradient-hero); border-radius: var(--radius-xl); padding: 52px; color: #fff; }
@@ -607,7 +656,7 @@ const advantages = [
 .card:focus-visible,
 .adv-card:focus-visible,
 .biz-card:focus-visible,
-.honors-grid figure:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.honors-carousel figure:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
 
 /* ══════ Reveal ══════ */
 .reveal { opacity: 0; transform: translateY(28px); transition: opacity .6s ease, transform .6s ease; }
@@ -645,7 +694,10 @@ const advantages = [
   .founder-profile { grid-template-columns: 1fr; gap: 24px; }
   .founder-img { max-width: 240px; }
   .founder-gallery { grid-template-columns: repeat(2, 1fr); }
-  .honors-grid { grid-template-columns: repeat(2, 1fr); }
+  .honors-carousel { margin: 0 -12px; }
+  .honors-carousel :deep(.el-carousel__container) { height: 360px !important; }
+  .honors-carousel figure { margin: 0 6px; padding: 16px; }
+  .honors-carousel :deep(.el-carousel__arrow) { width: 38px; height: 38px; }
   .quality-card { grid-template-columns: 1fr; padding: 32px 24px; gap: 24px; }
 }
 </style>
