@@ -29,7 +29,7 @@
 
         <div class="hero-content container">
           <div class="hero-badge">
-            <span>精 品 投 资 移 民 决 策 平 台</span>
+            <span>13 年 运 营 经 验 持 牌 移 民 机 构</span>
           </div>
           <h1 class="hero-title">北极星移民｜{{ activeHeroSlide.title }}</h1>
           <p class="hero-subtitle">{{ activeHeroSubtitle }}</p>
@@ -178,7 +178,7 @@
       <div class="container">
         <div class="section-header">
           <h2>专业律师团队</h2>
-          <p>资深移民律师，为您保驾护航</p>
+          <p>美国移民局前副主任 <strong>Ricky Murray</strong> 领衔律师团</p>
         </div>
         <LawyerCarousel :lawyers="lawyers" />
       </div>
