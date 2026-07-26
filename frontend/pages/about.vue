@@ -10,7 +10,7 @@
         <span class="hero-badge">SINCE 2013</span>
         <h1>领航全球<span class="dot">·</span>智启未来</h1>
         <p class="hero-sub">北极星移民，您值得信赖的国际化伙伴</p>
-        <p class="hero-desc">2013 年至今持续运营移民业务，累计服务 5000 + 组家庭，提供可量化、可追溯的海外身份、资产、教育一体化落地服务</p>
+        <p class="hero-desc">2013 年至今持续运营移民业务，累计服务 20000 + 组家庭，提供可量化、可追溯的海外身份、资产、教育一体化落地服务</p>
         <NuxtLink to="/contact" class="btn-primary hero-cta">免费咨询</NuxtLink>
       </div>
     </section>
