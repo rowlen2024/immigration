@@ -16,7 +16,7 @@
         <!-- default layout -->
         <template v-if="template === 'default'">
           <template v-if="isNewsPage">
-            <ProjectBreadcrumb :label="page.title" />
+            <ProjectBreadcrumb :items="breadcrumbs" />
             <article class="news-article">
               <div class="news-layout">
                 <div class="news-main">
@@ -98,7 +98,7 @@
             </article>
           </template>
           <template v-else>
-            <ProjectBreadcrumb :label="page.title" />
+            <ProjectBreadcrumb :items="breadcrumbs" />
             <h1 class="page-title">{{ page.title }}</h1>
             <div class="page-content" v-html="page.content"></div>
           </template>
@@ -106,7 +106,7 @@
 
         <!-- fullwidth layout -->
         <template v-else-if="template === 'fullwidth'">
-          <ProjectBreadcrumb :label="page.title" />
+          <ProjectBreadcrumb :items="breadcrumbs" />
           <div class="container">
             <h1 class="page-title">{{ page.title }}</h1>
           </div>
@@ -115,6 +115,9 @@
 
         <!-- landing layout -->
         <template v-else-if="template === 'landing'">
+          <div class="container">
+            <ProjectBreadcrumb :items="breadcrumbs" />
+          </div>
           <div class="page-content page-content--landing" v-html="page.content"></div>
         </template>
       </template>
@@ -124,6 +127,7 @@
 
 <script setup lang="ts">
 import type { ImageVariantInfo } from '~/utils/image';
+import { HOME_BREADCRUMB } from '~/utils/breadcrumb'
 
 const route = useRoute();
 
@@ -184,6 +188,17 @@ if (fetchError.value?.statusCode === 404) {
 }
 
 const page = computed(() => data.value || null);
+
+/** 仅在取得真实 CMS 标题后生成页面路径。 */
+const breadcrumbs = computed(() => {
+  const title = page.value?.title?.trim();
+  if (!title) return [];
+
+  return [
+    HOME_BREADCRUMB,
+    { label: title, href: route.path },
+  ];
+});
 
 const template = computed(() => page.value?.template || 'default');
 const isNewsPage = computed(() => page.value?.page_type === 'news');
@@ -259,7 +274,7 @@ const error = computed(() => {
 useSeo({
   title: page.value?.meta_title || page.value?.title || '内容页面',
   description: page.value?.meta_description || '',
-  breadcrumbLabel: page.value?.title,
+  breadcrumbs,
 });
 
 </script>

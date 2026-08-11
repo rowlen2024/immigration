@@ -1,18 +1,20 @@
 import { buildBreadcrumbListJsonLd, toJsonLdScript } from '~/utils/jsonld'
 import type { Link, Meta, Script } from '@unhead/vue'
+import type { MaybeRefOrGetter } from 'vue'
+import type { BreadcrumbItem } from '~/utils/breadcrumb'
 
 interface SeoOptions {
   title?: string
   description?: string
   /** @deprecated 请使用 utils/jsonld.ts 的纯函数 + useHead 替代 */
   jsonLd?: Record<string, unknown>
-  breadcrumbLabel?: string
+  /** 页面提供的稳定语义面包屑。 */
+  breadcrumbs?: MaybeRefOrGetter<readonly BreadcrumbItem[] | null | undefined>
   robots?: string
 }
 
 export const useSeo = (options: SeoOptions) => {
   const { siteConfig } = useMygoSiteConfig()
-  const { getBreadcrumb } = useNavigation()
   const route = useRoute()
   const runtimeConfig = useRuntimeConfig()
 
@@ -93,18 +95,9 @@ export const useSeo = (options: SeoOptions) => {
     }
 
     // ── JSON-LD: BreadcrumbList ──
-    const crumbs = getBreadcrumb(route.path, options.breadcrumbLabel)
-    if (crumbs.length > 0) {
-      // SSR 场景下导航数据可能未加载，此时面包屑标签是原始路径段
-      const hasCJK = (s: string) => /[一-鿿]/.test(s)
-      const fixedCrumbs = crumbs.map((item, index) => {
-        const isLast = index === crumbs.length - 1
-        const label = (!hasCJK(item.label) && isLast && options.breadcrumbLabel)
-          ? options.breadcrumbLabel
-          : item.label
-        return { label, link: item.link }
-      })
-      const breadcrumbLd = buildBreadcrumbListJsonLd(fixedCrumbs, canonicalBase.value)
+    const breadcrumbs = toValue(options.breadcrumbs) ?? []
+    if (breadcrumbs.length > 1) {
+      const breadcrumbLd = buildBreadcrumbListJsonLd(breadcrumbs, canonicalBase.value)
       const script = toJsonLdScript(breadcrumbLd)
       if (script) scripts.push(script)
     }

@@ -23,7 +23,7 @@ useHead(() => {
   const scripts: any[] = []
 
   if (sc?.site_favicon) {
-    links.push({ rel: 'icon', type: 'image/x-icon', href: sc.site_favicon })
+    links.push({ rel: 'icon', href: sc.site_favicon })
   }
 
   if (sc?.ga_tracking_id) {

@@ -1,7 +1,7 @@
 <template>
   <div class="project-detail">
     <div class="container">
-      <ProjectBreadcrumb :label="project.title" />
+      <ProjectBreadcrumb :items="breadcrumbs" />
     </div>
 
     <section class="detail-hero" :style="heroFallbackStyle">
@@ -210,6 +210,7 @@ import { getIconByName, getIconSvg } from '~/composables/lucideIcons';
 import type { ImageVariantInfo } from '~/utils/image'
 import { stripHtml } from '~/utils/html'
 import { buildServiceJsonLd, buildFAQPageJsonLd, toJsonLdConfig, toJsonLdScripts } from '~/utils/jsonld'
+import { HOME_BREADCRUMB } from '~/utils/breadcrumb'
 
 const route = useRoute();
 const slug = computed(() => route.params.slug as string);
@@ -326,6 +327,18 @@ const project = computed(() => {
   };
 });
 
+/** 仅在取得真实项目名称后生成项目详情路径。 */
+const breadcrumbs = computed(() => {
+  const name = data.value?.data?.name?.trim()
+  if (!name) return []
+
+  return [
+    HOME_BREADCRUMB,
+    { label: '移民项目', href: '/projects' },
+    { label: name, href: route.path },
+  ]
+})
+
 // Compare data fetch
 interface CompareRowData {
   label: string;
@@ -425,7 +438,7 @@ function hasDiff(row: { values: string[]; items?: string[][] }): boolean {
 useSeo({
   title: project.value.title || '项目详情',
   description: project.value.summary || '',
-  breadcrumbLabel: project.value.title,
+  breadcrumbs,
 });
 
 // Structured data for search engines (Baidu AI, Google Knowledge Graph)

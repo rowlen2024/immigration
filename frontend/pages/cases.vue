@@ -1,7 +1,7 @@
 <template>
   <div class="cases-page">
     <div class="container">
-      <ProjectBreadcrumb />
+      <ProjectBreadcrumb :items="breadcrumbs" />
 
       <h1 class="page-title">北极星移民客户成功案例</h1>
       <p class="page-subtitle">浏览北极星移民不同项目的客户案例，了解申请背景、办理路径与获批结果。</p>
@@ -42,9 +42,16 @@
 </template>
 
 <script setup lang="ts">
-useSeo({ title: '成功案例' })
-
 import type { ImageVariantInfo } from '~/utils/image'
+import { HOME_BREADCRUMB } from '~/utils/breadcrumb'
+
+/** 案例列表的稳定面包屑路径。 */
+const breadcrumbs = [
+  HOME_BREADCRUMB,
+  { label: '成功案例', href: '/cases' },
+]
+
+useSeo({ title: '成功案例', breadcrumbs })
 
 interface ApiCaseItem {
   id: number

@@ -1,7 +1,7 @@
 <template>
   <div class="about-page">
     <div class="container">
-      <ProjectBreadcrumb label="公司简介"/>
+      <ProjectBreadcrumb :items="breadcrumbs" />
     </div>
 
     <!-- ── Hero ── -->
@@ -396,11 +396,18 @@
 <script setup lang="ts">
 import { getIconSvg } from '~/composables/lucideIcons'
 import { buildAboutPageJsonLd, toJsonLdScripts } from '~/utils/jsonld'
+import { HOME_BREADCRUMB } from '~/utils/breadcrumb'
+
+/** 关于我们页面的稳定面包屑路径。 */
+const breadcrumbs = [
+  HOME_BREADCRUMB,
+  { label: '关于我们', href: '/about' },
+]
 
 useSeo({
   title: '关于我们',
   description: '北极星移民成立于2013年，专注海外身份规划与全球资产配置。13年+行业经验，2万+成功案例，成功率96.67%。',
-  breadcrumbLabel: '关于我们',
+  breadcrumbs,
 })
 
 useHead(() => ({

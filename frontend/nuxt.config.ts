@@ -57,6 +57,7 @@ export default defineNuxtConfig({
       '/usa/eb5': { redirect: '/projects/eb5' },
       '/hongkong/cies': { redirect: '/projects/cies' },
       '/panama/property': { redirect: '/projects/panama' },
+      '/pages/about': { redirect : '/about'}
     },
   },
 
@@ -99,11 +100,6 @@ export default defineNuxtConfig({
         },
       ],
       link: [
-        {
-          rel: 'icon',
-          type: 'image/x-icon',
-          href: '/favicon.ico',
-        },
         {
           rel: 'preconnect',
           href: 'https://fonts.googleapis.com',

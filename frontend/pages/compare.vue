@@ -1,7 +1,8 @@
 <template>
-  <div class="compare-page">
+  <NuxtPage v-if="isComparisonDetail" />
+  <div v-else class="compare-page">
     <div class="container">
-      <ProjectBreadcrumb />
+      <ProjectBreadcrumb :items="breadcrumbs" />
 
       <h1 class="page-title">项目对比</h1>
       <p class="page-subtitle">选择两个移民项目进行详细对比，帮助您做出最佳选择</p>
@@ -82,7 +83,23 @@
 </template>
 
 <script setup lang="ts">
-useSeo({ title: '项目对比' });
+import { HOME_BREADCRUMB } from '~/utils/breadcrumb'
+
+const route = useRoute();
+
+/** 当前路由是否命中比较详情子页面。 */
+const isComparisonDetail = computed(() => Boolean(route.params.a && route.params.b));
+
+/** 项目对比页面的稳定面包屑路径。 */
+const breadcrumbs = [
+  HOME_BREADCRUMB,
+  { label: '项目对比', href: '/compare' },
+]
+
+/** 子页面接管时不再由父页面输出重复的结构化面包屑。 */
+const seoBreadcrumbs = computed(() => isComparisonDetail.value ? [] : breadcrumbs);
+
+useSeo({ title: '项目对比', breadcrumbs: seoBreadcrumbs });
 
 interface ProjectOption {
   slug: string;
@@ -114,7 +131,6 @@ const {
   immediate: false,
 });
 
-const route = useRoute();
 onMounted(() => {
   const queryA = route.query.a as string | undefined;
   const queryB = route.query.b as string | undefined;

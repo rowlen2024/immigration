@@ -1,7 +1,7 @@
 <template>
   <div class="projects-page">
     <div class="container">
-      <ProjectBreadcrumb label="项目列表" />
+      <ProjectBreadcrumb :items="breadcrumbs" />
 
       <h1 class="page-title">北极星移民投资移民项目</h1>
       <p class="page-subtitle">查看北极星移民提供的美国EB-5、香港及其他全球身份方案，了解申请条件、周期与项目特点。</p>
@@ -79,9 +79,16 @@
 </template>
 
 <script setup lang="ts">
-useSeo({ title: '移民项目', description: '探索最适合您的投资移民项目' })
-
 import type { ImageVariantInfo } from '~/utils/image'
+import { HOME_BREADCRUMB } from '~/utils/breadcrumb'
+
+/** 项目列表的稳定面包屑路径。 */
+const breadcrumbs = [
+  HOME_BREADCRUMB,
+  { label: '移民项目', href: '/projects' },
+]
+
+useSeo({ title: '移民项目', description: '探索最适合您的投资移民项目', breadcrumbs })
 
 interface ApiProject {
   slug: string

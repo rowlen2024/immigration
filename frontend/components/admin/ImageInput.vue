@@ -45,7 +45,7 @@ const urlValue = ref(props.modelValue);
 const pickerVisible = ref(false);
 const previewError = ref(false);
 
-const previewSrc = computed(() => getVariantUrl(urlValue.value, 'sm'))
+const previewSrc = computed(() => props.context === 'favicon' ? urlValue.value : getVariantUrl(urlValue.value, 'sm'))
 
 const previewRatioClass = computed(() => {
   if (props.previewRatio === '1 / 1') return 'preview--square';

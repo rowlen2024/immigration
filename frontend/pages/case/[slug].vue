@@ -1,7 +1,7 @@
 <template>
   <div class="case-detail-page">
     <div class="container">
-      <ProjectBreadcrumb :label="item?.name" parentLabel="成功案例" parentLink="/cases" />
+      <ProjectBreadcrumb :items="breadcrumbs" />
 
       <div v-if="pending" class="page-skeleton-wrapper"><PageSkeleton variant="detail" /></div>
       <div v-else-if="error" class="error-state">{{ error }}</div>
@@ -87,6 +87,7 @@
 
 <script setup lang="ts">
 import { getIconSvg } from '~/composables/lucideIcons'
+import { HOME_BREADCRUMB } from '~/utils/breadcrumb'
 
 const route = useRoute();
 const slug = computed(() => route.params.slug as string);
@@ -111,6 +112,18 @@ if (error.value?.statusCode === 404) {
 
 const item = computed(() => data.value?.data ?? null);
 
+/** 仅在取得真实案例名称后生成案例详情路径。 */
+const breadcrumbs = computed(() => {
+  const name = item.value?.name?.trim();
+  if (!name) return [];
+
+  return [
+    HOME_BREADCRUMB,
+    { label: '成功案例', href: '/cases' },
+    { label: name, href: route.path },
+  ];
+});
+
 import { stripHtml } from '~/utils/html'
 import { buildArticleJsonLd, toJsonLdConfig, toJsonLdScripts } from '~/utils/jsonld'
 
@@ -122,6 +135,7 @@ useSeo({
     const text = c.content ? stripHtml(c.content, 160) : '';
     return text || `${c.name} — ${c.country_from}${c.project?.name ? ' · ' + c.project.name : ''}`;
   })(),
+  breadcrumbs,
 });
 
 const { siteConfig: csConfig } = useMygoSiteConfig();

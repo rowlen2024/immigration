@@ -6,11 +6,6 @@ interface NavItem {
   status: boolean;
 }
 
-interface BreadcrumbItem {
-  label: string;
-  link?: string;
-}
-
 type NavPosition = 'header' | 'footer'
 
 const FALLBACK_HEADER: NavItem[] = [
@@ -76,65 +71,6 @@ const FALLBACK_FOOTER: NavItem[] = [
   },
 ];
 
-const findNode = (items: NavItem[], path: string): NavItem | null => {
-  for (const item of items) {
-    if (item.link === path) return item;
-    const found = findNode(item.children, path);
-    if (found) return found;
-  }
-  return null;
-};
-
-const collectAncestors = (
-  items: NavItem[],
-  target: NavItem,
-  ancestors: NavItem[] = [],
-): NavItem[] | null => {
-  for (const item of items) {
-    if (item === target) return ancestors;
-    const result = collectAncestors(item.children, target, [...ancestors, item]);
-    if (result) return result;
-  }
-  return null;
-};
-
-const buildBreadcrumb = (navItems: NavItem[], path: string, label?: string): BreadcrumbItem[] => {
-  const cleanPath = path.replace(/#.*$/, '');
-
-  const node = findNode(navItems, cleanPath);
-
-  if (node) {
-    const ancestors = collectAncestors(navItems, node) || [];
-    const items: BreadcrumbItem[] = [];
-    for (const a of ancestors) {
-      items.push({ label: a.label, link: a.link || undefined });
-    }
-    items.push({ label: node.label });
-
-    if (label && label !== node.label) {
-      items.push({ label });
-    }
-    return items;
-  }
-
-  // Try progressively shorter paths for unmatched routes (e.g. /compare/eb5-vs-cies)
-  const segments = cleanPath.split('/').filter(Boolean);
-  while (segments.length > 0) {
-    segments.pop();
-    const parentPath = '/' + segments.join('/');
-    const parentResult = buildBreadcrumb(navItems, parentPath, undefined);
-    if (parentResult.length > 0) {
-      const lastSegment = path.split('/').filter(Boolean).pop() || '';
-      parentResult.push({ label: label || lastSegment });
-      return parentResult;
-    }
-  }
-
-  const lastSeg = path.split('/').filter(Boolean).pop() || '';
-  if (!lastSeg) return [];
-  return [{ label: label || lastSeg }];
-};
-
 export const useNavigation = (position: NavPosition = 'header') => {
   const { data } = useFetch('/api/v1/navigation', {
     key: `public:navigation:${position}`,
@@ -150,18 +86,10 @@ export const useNavigation = (position: NavPosition = 'header') => {
     return (items && items.length > 0) ? items : fallback
   })
 
-  const getBreadcrumb = (path: string, label?: string, parentCrumb?: BreadcrumbItem): BreadcrumbItem[] => {
-    const result = buildBreadcrumb(navItems.value, path, label);
-    if (parentCrumb && result.length > 0 && !result[0].link) {
-      result[0] = parentCrumb;
-    }
-    return result;
-  };
-
   // 客户端强制刷新（绕过 Nuxt payload 缓存）
   const refreshNavigation = () => {
     refreshNuxtData(`public:navigation:${position}`)
   }
 
-  return { navItems, getBreadcrumb, refreshNavigation, data };
+  return { navItems, refreshNavigation, data };
 };

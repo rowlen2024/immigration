@@ -1,7 +1,7 @@
 <template>
   <div class="compare-detail-page">
     <div class="container">
-      <ProjectBreadcrumb :label="`${slugA} vs ${slugB}`" />
+      <ProjectBreadcrumb :items="breadcrumbs" />
 
       <div v-if="pending" class="page-skeleton-wrapper"><PageSkeleton variant="detail" /></div>
       <div v-else-if="error" class="error-state">{{ error }}</div>
@@ -87,14 +87,14 @@
 </template>
 
 <script setup lang="ts">
+import { HOME_BREADCRUMB } from '~/utils/breadcrumb'
+
 const route = useRoute();
 const slugA = computed(() => (route.params.a as string) || '');
 const slugB = computed(() => (route.params.b as string) || '');
 const compareDataKey = computed(() => `public:compare:${slugA.value}:${slugB.value}`);
 
 usePublicDataFreshness(() => [compareDataKey.value]);
-
-useSeo({ title: '项目对比详情', breadcrumbLabel: `${slugA.value} vs ${slugB.value}` });
 
 interface DetailedComparison {
   projectA: string;
@@ -107,6 +107,18 @@ interface DetailedComparison {
   timeB: string;
   requirementRows: Array<{ label: string; a: boolean; b: boolean }>;
   summary: string;
+}
+
+/** 比较接口中供面包屑使用的最小响应结构。 */
+interface CompareBreadcrumbResponse {
+  /** 接口信封内的业务数据。 */
+  data?: {
+    /** 按请求顺序返回的项目列表。 */
+    projects?: Array<{
+      /** 项目显示名称。 */
+      title?: string;
+    }>;
+  };
 }
 
 const { data, pending, error, refresh } = await useFetch<DetailedComparison>(
@@ -182,6 +194,23 @@ const comparison = computed(() => {
       '以上三个移民项目各有特点：EB-5适合希望获得美国身份的高净值家庭；香港CIES适合希望在亚洲金融中心定居的投资者；巴拿马购房移民门槛最低、速度最快，适合寻求快速获得海外身份的投资者。建议根据自身资产规模、移民目的和时间规划综合考虑。',
   };
 });
+
+/** 仅使用接口返回的真实项目名称生成比较详情路径。 */
+const breadcrumbs = computed(() => {
+  /** 只读取后端实际返回的项目标题，不使用展示层的兜底值。 */
+  const response = data.value as unknown as CompareBreadcrumbResponse | null;
+  const projectA = response?.data?.projects?.[0]?.title?.trim();
+  const projectB = response?.data?.projects?.[1]?.title?.trim();
+  if (!projectA || !projectB) return [];
+
+  return [
+    HOME_BREADCRUMB,
+    { label: '项目对比', href: '/compare' },
+    { label: `${projectA} 与 ${projectB}`, href: route.path },
+  ];
+});
+
+useSeo({ title: '项目对比详情', breadcrumbs });
 
 </script>
 

@@ -4,6 +4,7 @@ https://www.northstarvisa.com/about
 https://www.northstarvisa.com/projects
 
 # 已删除的旧版页面，提交前应在线返回 404 或 410
+https://www.northstarvisa.com/index.php
 https://www.northstarvisa.com/web/about/
 https://www.northstarvisa.com/web/yazhou/yiminxiangmu/xianggang/
 https://www.northstarvisa.com/web/meizhou/yiminxiangmu/meiguo/yiminxiangmu/467.html
@@ -14,7 +15,6 @@ https://www.northstarvisa.com/web/meizhou/yiminxiangmu/jianada/yiminxiangmu/470.
 https://www.northstarvisa.com/web/meizhou/yiminxiangmu/jianada/yiminxiangmu/469.html
 https://www.northstarvisa.com/web/yazhou/yiminxiangmu/xianggang/yiminxiangmu/462.html
 https://www.northstarvisa.com/web/meizhou/
-https://www.northstarvisa.com/web/about/
 https://www.northstarvisa.com/web/dayangzhou/
 https://www.northstarvisa.com/web/ouzhou/
 https://www.northstarvisa.com/web/kuajing/

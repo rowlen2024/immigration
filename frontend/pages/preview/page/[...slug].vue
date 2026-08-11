@@ -13,7 +13,7 @@
       </template>
     </div>
     <template v-else-if="page">
-      <ProjectBreadcrumb :label="page.title" />
+      <ProjectBreadcrumb :items="breadcrumbs" />
       <h1 class="page-title">{{ page.title }}</h1>
       <div class="page-content" v-html="page.content"></div>
     </template>
@@ -21,6 +21,8 @@
 </template>
 
 <script setup lang="ts">
+import { HOME_BREADCRUMB } from '~/utils/breadcrumb'
+
 const route = useRoute();
 
 const slug = computed(() => {
@@ -39,6 +41,17 @@ interface CmsPage {
 const page = ref<CmsPage | null>(null);
 const pending = ref(true);
 const error = ref<string | null>(null);
+
+/** 预览页面仅展示由真实标题组成的路径。 */
+const breadcrumbs = computed(() => {
+  const title = page.value?.title?.trim();
+  if (!title) return [];
+
+  return [
+    HOME_BREADCRUMB,
+    { label: title, href: route.path },
+  ];
+});
 
 const load = async () => {
   pending.value = true;

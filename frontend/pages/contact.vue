@@ -1,7 +1,7 @@
 <template>
   <div class="contact-page">
     <div class="container">
-      <ProjectBreadcrumb />
+      <ProjectBreadcrumb :items="breadcrumbs" />
 
       <h1 class="page-title">联系北极星移民</h1>
       <p class="page-subtitle">通过北极星移民官方联系方式提交咨询，我们的专业顾问将在24小时内与您联系。</p>
@@ -170,7 +170,19 @@
 </template>
 
 <script setup lang="ts">
-useSeo({ title: '联系我们', description: '联系北极星移民，获取专业投资移民咨询。电话、微信、邮箱、地址等联系方式一应俱全。' });
+import { HOME_BREADCRUMB } from '~/utils/breadcrumb'
+
+/** 联系页面的稳定面包屑路径。 */
+const breadcrumbs = [
+  HOME_BREADCRUMB,
+  { label: '联系我们', href: '/contact' },
+]
+
+useSeo({
+  title: '联系我们',
+  description: '联系北极星移民，获取专业投资移民咨询。电话、微信、邮箱、地址等联系方式一应俱全。',
+  breadcrumbs,
+});
 
 const { siteConfig } = useMygoSiteConfig();
 

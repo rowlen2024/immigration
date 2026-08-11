@@ -1,7 +1,7 @@
 <template>
   <div class="faq-page">
     <div class="container">
-      <ProjectBreadcrumb />
+      <ProjectBreadcrumb :items="breadcrumbs" />
 
       <h1 class="page-title">北极星移民投资移民常见问题</h1>
       <p class="page-subtitle">北极星移民为您解答投资移民的申请条件、费用、办理周期与项目选择等常见问题。</p>
@@ -114,9 +114,18 @@
 </template>
 
 <script setup lang="ts">
+import { HOME_BREADCRUMB } from '~/utils/breadcrumb'
+
+/** 常见问题页面的稳定面包屑路径。 */
+const breadcrumbs = [
+  HOME_BREADCRUMB,
+  { label: '常见问题', href: '/faq' },
+]
+
 useSeo({
   title: '常见问题',
   description: '北极星移民常见问题解答，涵盖美国EB-5、香港投资移民、巴拿马购房移民等投资移民相关问题。',
+  breadcrumbs,
 });
 
 const page = ref(1);

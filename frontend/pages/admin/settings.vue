@@ -155,7 +155,7 @@ const defaultForm = (): SiteConfig => ({
 const tips: Record<string, string> = {
   site_name: '网站在导航栏、浏览器标题栏等位置显示的名称',
   site_logo: '网站主 Logo 图片地址，显示在页头导航栏',
-  site_favicon: '浏览器标签页和书签栏显示的小图标，建议 32×32px',
+  site_favicon: '浏览器标签页和搜索结果显示的小图标，建议上传 192×192px PNG',
   seo_title: '首页搜索结果使用的完整标题，仅用于首页。支持 <code>{site_name}</code> 占位符；内页使用“页面标题 - 网站名称”，页面标题已含网站名称时不重复追加',
   seo_description: '首页使用的默认 Meta 描述；内页没有独立描述时回退此内容，建议 120-160 字',
   seo_keywords: '页面关键词，用逗号分隔。现代搜索引擎权重已降低，但仍建议填写',
@@ -211,7 +211,7 @@ const groups: GroupDef[] = [
     fields: [
       { key: 'site_name', label: '网站名称', placeholder: '北极星移民', tip: tips.site_name },
       { key: 'site_logo', label: '网站 Logo', image: true, placeholder: '/images/logo.png', sizeHint: '推荐 SVG 或 200×60px PNG（透明背景）', previewRatio: '16 / 5', context: 'general', tip: tips.site_logo },
-      { key: 'site_favicon', label: 'Favicon', image: true, placeholder: '/favicon.ico', sizeHint: '推荐 32×32px PNG 或 ICO', previewRatio: '1 / 1', context: 'favicon', tip: tips.site_favicon },
+      { key: 'site_favicon', label: 'Favicon', image: true, placeholder: '上传 192×192 PNG 图标', sizeHint: '推荐 192×192px PNG', previewRatio: '1 / 1', context: 'favicon', tip: tips.site_favicon },
     ],
   },
   {

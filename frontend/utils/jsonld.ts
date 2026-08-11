@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════════
 
 import { stripHtml } from './html'
+import type { BreadcrumbItem } from './breadcrumb'
 
 // ── 共享类型 ──────────────────────────────────
 
@@ -46,11 +47,6 @@ export interface ArticleJsonLdInput {
 export interface FaqItem {
   question: string
   answer: string
-}
-
-export interface BreadcrumbItem {
-  label: string
-  link?: string
 }
 
 // ── 工具函数 ──────────────────────────────────
@@ -203,19 +199,19 @@ export function buildFAQPageJsonLd(items: FaqItem[]): Record<string, unknown> | 
   })
 }
 
-/** BreadcrumbList */
+/** 构建 BreadcrumbList 结构化数据。 */
 export function buildBreadcrumbListJsonLd(
-  items: BreadcrumbItem[],
+  items: readonly BreadcrumbItem[],
   baseUrl: string,
 ): Record<string, unknown> | null {
-  if (!items.length) return null
+  if (items.length < 2 || !baseUrl) return null
 
   return context('BreadcrumbList', {
     itemListElement: items.map((item, index) => ({
       '@type': 'ListItem',
       position: index + 1,
       name: item.label,
-      item: item.link ? baseUrl + item.link : undefined,
+      item: new URL(item.href, baseUrl).href,
     })),
   })
 }
