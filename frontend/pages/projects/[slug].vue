@@ -451,11 +451,6 @@ useHead(() => {
   const base = siteConfig.value?.canonical_base || ''
   const pageUrl = base ? base + route.path : undefined
 
-  const rated = (p.testimonials || []).filter((t: any) => t.rating > 0)
-  const avgRating = rated.length > 0
-    ? Number((rated.reduce((s: number, t: any) => s + t.rating, 0) / rated.length).toFixed(1))
-    : null
-
   return {
     script: toJsonLdScripts(
       buildServiceJsonLd({
@@ -465,8 +460,6 @@ useHead(() => {
         url: pageUrl,
         image: p.cover_image,
         investmentAmount: p.investment_amount,
-        avgRating,
-        reviewCount: rated.length,
       }, toJsonLdConfig(siteConfig.value)),
       buildFAQPageJsonLd(p.faqs || []),
     ),

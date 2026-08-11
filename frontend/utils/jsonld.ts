@@ -29,8 +29,6 @@ export interface ServiceJsonLdInput {
   url?: string
   image?: string
   investmentAmount?: string
-  avgRating?: number | null
-  reviewCount?: number
   providerName?: string
 }
 
@@ -148,16 +146,6 @@ export function buildServiceJsonLd(
       '@type': 'Offer',
       description: `投资金额: ${input.investmentAmount}`,
       availability: 'https://schema.org/InStock',
-    }
-  }
-
-  if (input.avgRating != null && input.reviewCount != null && input.reviewCount > 0) {
-    service.aggregateRating = {
-      '@type': 'AggregateRating',
-      ratingValue: input.avgRating,
-      reviewCount: input.reviewCount,
-      bestRating: '5',
-      worstRating: '1',
     }
   }
 
