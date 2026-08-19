@@ -133,6 +133,7 @@
           <el-carousel-item v-for="(h, i) in honorImgs" :key="h.src">
             <figure tabindex="0" role="button" :aria-label="`查看${h.alt}大图`" @click="selectedCert = i" @keydown.enter="selectedCert = i" @keydown.space.prevent="selectedCert = i">
               <img :src="`/static/about/images/${h.src}`" :alt="h.alt" width="600" height="800" loading="lazy" />
+              <figcaption>{{ h.title }}</figcaption>
             </figure>
           </el-carousel-item>
         </el-carousel>
@@ -437,12 +438,23 @@ onMounted(() => {
   honorCarouselMedia.addEventListener('change', updateHonorCarouselType)
 })
 
+/** 荣誉墙证书按文件名前缀数字升序展示。 */
 const honorImgs = [
-  { src: '1778637606374142161.jpg', alt: '北极星移民企业荣誉证书 — 行业资质认证' },
-  { src: '1778637708046637702.jpg', alt: '北极星移民企业荣誉证书 — 优秀服务机构' },
-  { src: '1778637719093755072.jpg', alt: '北极星移民企业荣誉证书 — 诚信经营示范单位' },
-  { src: '1778637728035122831.jpg', alt: '北极星移民企业荣誉证书 — 行业标杆品牌' },
-  { src: '20260721140058.jpg', alt: '北极星移民企业荣誉证书 — 副会长单位' },
+  { src: '证书/1广东省因私出入境移民协会会员单位.png', title: '广东省因私出入境移民协会会员单位', alt: '广东省因私出入境移民协会会员单位' },
+  { src: '证书/2广省省因私出人境移民协会认证的5A级诚信企业.png', title: '广省省因私出人境移民协会认证的5A级诚信企业', alt: '广省省因私出人境移民协会认证的5A级诚信企业' },
+  { src: '证书/3深圳市跨境电子商务协会副会长单位.png', title: '深圳市跨境电子商务协会副会长单位', alt: '深圳市跨境电子商务协会副会长单位' },
+  { src: '证书/4中欧深圳校友会副会长单位.png', title: '中欧深圳校友会副会长单位', alt: '中欧深圳校友会副会长单位' },
+  { src: '证书/5子品牌三只小象是深圳市科技工作者联合会副会长单位.png', title: '子品牌三只小象是深圳市科技工作者联合会副会长单位', alt: '子品牌三只小象是深圳市科技工作者联合会副会长单位' },
+  { src: '证书/6美国 IIUSA（Invest In the USA）正式会员单位.png', title: '美国 IIUSA（Invest In the USA）正式会员单位', alt: '美国 IIUSA（Invest In the USA）正式会员单位' },
+  { src: '证书/7美国松州区域中心现已授权北极星移民为美国EB-5投资移民项目的官方认证合作伙伴.png', title: '美国松州区域中心现已授权北极星移民为美国EB-5投资移民项目的官方认证合作伙伴', alt: '美国松州区域中心现已授权北极星移民为美国EB-5投资移民项目的官方认证合作伙伴' },
+  { src: '证书/8北极星移民董事长被胡润百富评为2025年度国际化教育影响力人物.png', title: '北极星移民董事长被胡润百富评为2025年度国际化教育影响力人物', alt: '北极星移民董事长被胡润百富评为2025年度国际化教育影响力人物' },
+  { src: '证书/9ASTER葡萄牙基金授权北极星移民为全球战略合作推广伙伴.png', title: 'ASTER葡萄牙基金授权北极星移民为全球战略合作推广伙伴', alt: 'ASTER葡萄牙基金授权北极星移民为全球战略合作推广伙伴' },
+  { src: '证书/10格林纳达国家度假村项目铂金级合作伙伴.png', title: '格林纳达国家度假村项目铂金级合作伙伴', alt: '格林纳达国家度假村项目铂金级合作伙伴' },
+  { src: '证书/11JWP地产授权深圳福瑞特出入境信息咨询有限公司为全球指定合作伙伴.png', title: 'JWP地产授权深圳福瑞特出入境信息咨询有限公司为全球指定合作伙伴', alt: 'JWP地产授权深圳福瑞特出入境信息咨询有限公司为全球指定合作伙伴' },
+  { src: '证书/12巴拿马官方移民服务中心授权北极星移民为全球战略合作与推广伙伴.png', title: '巴拿马官方移民服务中心授权北极星移民为全球战略合作与推广伙伴', alt: '巴拿马官方移民服务中心授权北极星移民为全球战略合作与推广伙伴' },
+  { src: '证书/13香港西九龙核心商业地产全球战略授权推广荣誉合作伙伴.png', title: '香港西九龙核心商业地产全球战略授权推广荣誉合作伙伴', alt: '香港西九龙核心商业地产全球战略授权推广荣誉合作伙伴' },
+  { src: '证书/14AMG 集团对北极星移民颁发加拿大联邦创投SUVP专家的荣誉证书.png', title: 'AMG 集团对北极星移民颁发加拿大联邦创投SUVP专家的荣誉证书', alt: 'AMG 集团对北极星移民颁发加拿大联邦创投SUVP专家的荣誉证书' },
+  { src: '证书/15JET战略合作伙伴.png', title: 'JET战略合作伙伴', alt: 'JET战略合作伙伴' },
 ]
 
 const selectedCert = ref<number | null>(null)
@@ -621,6 +633,7 @@ const advantages = [
 /* ══════ Honors ══════ */
 .honors-carousel { margin: 0 auto; }
 .honors-carousel figure {
+  box-sizing: border-box;
   height: 100%;
   margin: 0 12px;
   padding: 24px;
@@ -629,10 +642,13 @@ const advantages = [
   box-shadow: var(--shadow-sm);
   cursor: pointer;
   transition: box-shadow .25s ease, transform .25s ease;
+  display: flex;
+  flex-direction: column;
 }
 .honors-carousel figure:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
 .honors-carousel figure:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
-.honors-carousel img { width: 100%; height: 100%; object-fit: contain; }
+.honors-carousel img { width: 100%; min-height: 0; flex: 1; object-fit: contain; }
+.honors-carousel figcaption { min-height: 3.2em; margin-top: 12px; color: var(--text-secondary); font-size: 13px; line-height: 1.6; text-align: center; font-weight: 700}
 .honors-carousel :deep(.el-carousel__item) { padding: 10px 0; }
 .honors-carousel :deep(.el-carousel__item--card) { opacity: .55; }
 .honors-carousel :deep(.el-carousel__item--card.is-active) { opacity: 1; }
