@@ -22,20 +22,18 @@
                 <div class="news-main">
                   <header class="news-header">
                     <div v-if="page.projects?.length" class="news-projects" aria-label="所属项目">
-                      <NuxtLink
-                        v-for="project in page.projects"
-                        :key="project.id"
-                        :to="`/projects/${project.slug}`"
-                        class="news-project"
-                      >
-                        {{ project.name }}
-                      </NuxtLink>
-                </div>
-                <h1 class="news-title">{{ page.title }}</h1>
-                <ul v-if="page.tags?.length" class="news-tags" aria-label="文章标签">
-                  <li v-for="tag in page.tags" :key="tag">{{ tag }}</li>
-                </ul>
-                <div class="news-meta" aria-label="文章信息">
+                      <ProjectPicker
+                        :projects="page.projects"
+                        mode="links"
+                        title="选择所属项目"
+                        subtitle="查看关联移民项目"
+                      />
+                    </div>
+                    <h1 class="news-title">{{ page.title }}</h1>
+                    <ul v-if="page.tags?.length" class="news-tags" aria-label="文章标签">
+                      <li v-for="tag in page.tags" :key="tag">{{ tag }}</li>
+                    </ul>
+                    <div class="news-meta" aria-label="文章信息">
                       <time v-if="formattedDate" :datetime="page.created_at">{{ formattedDate }}</time>
                       <span v-if="formattedDate" aria-hidden="true"></span>
                       <span>{{ readingMinutes }} 分钟阅读</span>
@@ -290,26 +288,7 @@ useSeo({
 }
 
 .news-projects {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
   margin-bottom: 18px;
-}
-
-.news-project {
-  display: inline-flex;
-  padding: 5px 12px;
-  border-radius: var(--radius-full);
-  background: var(--color-accent-soft);
-  color: var(--color-accent-dark);
-  font-size: 13px;
-  font-weight: 600;
-  transition: background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
-}
-
-.news-project:hover {
-  background: var(--color-accent);
-  color: #fff;
 }
 
 .news-title {

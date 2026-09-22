@@ -69,7 +69,11 @@
           <div class="advantages-grid">
             <div v-for="(adv, index) in advantages" :key="index" class="advantage-card">
               <div class="advantage-icon">
-                <span v-if="getIconByName(adv.icon)" v-html="getIconSvg(adv.icon, 22, '#C8963E')" class="advantage-svg"></span>
+                <span
+                  v-if="getIconByName(adv.icon)"
+                  v-html="getIconSvg(adv.icon, 22, '#C8963E')"
+                  class="advantage-svg"
+                ></span>
                 <span v-else class="advantage-svg-fallback">
                   <span v-html="getIconSvg('star', 22, '#C8963E')"></span>
                 </span>
@@ -105,17 +109,40 @@
         <section id="news" v-if="project.news.length > 0" class="detail-section">
           <h2 class="detail-section-title">最新资讯</h2>
           <div class="news-list">
-            <NuxtLink v-for="n in project.news" :key="n.id" :to="`/pages/${n.slug}`" class="news-item">
-              <ResponsiveImage v-if="n.cover" :src="n.cover" :alt="n.title" variant="thumb" :variants="n.cover_variants" class="news-cover" loading="lazy" />
+            <NuxtLink
+              v-for="n in paginatedNews"
+              :key="n.id"
+              :to="`/pages/${n.slug}`"
+              class="news-item"
+            >
+              <ResponsiveImage
+                v-if="n.cover"
+                :src="n.cover"
+                :alt="n.title"
+                variant="thumb"
+                :variants="n.cover_variants"
+                class="news-cover"
+                loading="lazy"
+              />
               <div class="news-body">
                 <h4 class="news-title">{{ n.title }}</h4>
                 <span v-if="n.date" class="news-date">{{ new Date(n.date).toLocaleDateString('zh-CN') }}</span>
               </div>
             </NuxtLink>
           </div>
+          <Pagination
+            :page="newsPage"
+            :per-page="NEWS_PER_PAGE"
+            :total="project.news.length"
+            @change="changeNewsPage"
+          />
         </section>
 
-        <section id="compare" v-if="project.compare_config && project.compare_config.compare_with.length >= 2" class="detail-section">
+        <section
+          id="compare"
+          v-if="project.compare_config && project.compare_config.compare_with.length >= 2"
+          class="detail-section"
+        >
           <h2 class="detail-section-title">项目对比</h2>
           <div v-if="comparePending" class="compare-loading">加载对比数据...</div>
           <div v-else-if="compareError" class="compare-error">{{ compareError }}</div>
@@ -163,13 +190,29 @@
                     {{ crow.label }}{{ hasDiff(crow) ? ' · 有差异' : '' }}
                   </option>
                 </select>
-                <svg class="cmp-switch-select-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg
+                  class="cmp-switch-select-arrow"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
                   <polyline points="6 9 12 15 18 9"/>
                 </svg>
               </div>
               <!-- 当前属性内容 -->
               <div class="cmp-switch-body">
-                <div class="cmp-switch-cols" :class="{ 'cols-2': compareData.projects.length === 2, 'cols-3': compareData.projects.length >= 3 }">
+                <div
+                  class="cmp-switch-cols"
+                  :class="{
+                    'cols-2': compareData.projects.length === 2,
+                    'cols-3': compareData.projects.length >= 3,
+                  }"
+                >
                   <div v-for="(proj, idx) in compareData.projects" :key="idx" class="cmp-switch-col">
                     <span class="cmp-switch-proj">{{ proj.title }}</span>
                     <template v-if="currentRow.items?.[idx]?.length">
@@ -220,9 +263,34 @@ interface ApiRequirement { label: string; is_required: boolean; }
 interface ApiCostItem { name: string; amount: string; note: string; }
 interface ApiTimelinePhase { phase_number: number; title: string; description: string; duration: string; }
 interface ApiFAQ { question: string; answer: string; }
-interface ApiCase { slug: string; name: string; country_from: string; investment_amount: string; processing_period: string; content: string; photo_url: string; photo_variants?: Record<string, ImageVariantInfo>; }
-interface ApiTestimonial { id: number; avatar_url: string; avatar_variants?: Record<string, ImageVariantInfo>; nickname: string; rating: number; content: string; }
-interface ApiNewsPage { id: number; title: string; slug: string; cover_image: string; cover_image_variants?: Record<string, ImageVariantInfo>; created_at: string; }
+interface ApiCase {
+  slug: string;
+  name: string;
+  country_from: string;
+  investment_amount: string;
+  processing_period: string;
+  content: string;
+  photo_url: string;
+  photo_variants?: Record<string, ImageVariantInfo>;
+}
+
+interface ApiTestimonial {
+  id: number;
+  avatar_url: string;
+  avatar_variants?: Record<string, ImageVariantInfo>;
+  nickname: string;
+  rating: number;
+  content: string;
+}
+
+interface ApiNewsPage {
+  id: number;
+  title: string;
+  slug: string;
+  cover_image: string;
+  cover_image_variants?: Record<string, ImageVariantInfo>;
+  created_at: string;
+}
 interface ApiCompareConfig { compare_with: string[]; compare_fields: string[]; }
 
 interface ApiAdvantage { icon: string; icon_type: string; title: string; description: string; }
@@ -484,6 +552,34 @@ const timelinePhases = computed(() => project.value.timeline);
 const faqs = computed(() => project.value.faqs);
 const advantages = computed(() => project.value.advantages);
 
+/** 最新资讯每页展示条数。 */
+const NEWS_PER_PAGE = 6;
+
+/** 最新资讯当前页码。 */
+const newsPage = ref(1);
+
+/** 最新资讯分页后的当前页数据。 */
+const paginatedNews = computed(() => {
+  const start = (newsPage.value - 1) * NEWS_PER_PAGE;
+  return project.value.news.slice(start, start + NEWS_PER_PAGE);
+});
+
+/** 切换最新资讯页码并回到资讯区。 */
+function changeNewsPage(page: number) {
+  newsPage.value = page;
+  scrollToSection('news');
+}
+
+/** 项目或资讯数量变化时，确保资讯页码仍然有效。 */
+watch(slug, () => {
+  newsPage.value = 1;
+});
+
+watch(() => project.value.news.length, (newsCount) => {
+  const totalPages = Math.max(1, Math.ceil(newsCount / NEWS_PER_PAGE));
+  newsPage.value = Math.min(newsPage.value, totalPages);
+});
+
 const faqPage = ref(1);
 const faqPerPage = 10;
 const paginatedFaqs = computed(() => {
@@ -511,7 +607,9 @@ const tabs = computed<TabItem[]>(() => {
   if (project.value.cases.length > 0) items.push({ id: 'cases', label: '成功案例' });
   if (project.value.testimonials.length > 0) items.push({ id: 'testimonials', label: '客户评价' });
   if (project.value.news.length > 0) items.push({ id: 'news', label: '最新资讯' });
-  if (project.value.compare_config && project.value.compare_config.compare_with.length >= 2) items.push({ id: 'compare', label: '项目对比' });
+  if (project.value.compare_config && project.value.compare_config.compare_with.length >= 2) {
+    items.push({ id: 'compare', label: '项目对比' });
+  }
   if (faqs.value.length > 0) items.push({ id: 'faqs', label: '常见问题' });
   return items;
 });
