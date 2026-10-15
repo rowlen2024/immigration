@@ -630,6 +630,8 @@ type SiteConfig struct {
 	CopyrightText           string   `json:"copyright_text"`
 	ICPNumber               string   `json:"icp_number"`
 	FooterTagline           string   `json:"footer_tagline"`
+	// NotificationEmail 是独立于客服邮箱的运营通知地址，留空时不发送邮件。
+	NotificationEmail string `json:"notification_email" binding:"omitempty,email"`
 }
 
 // DefaultSiteConfig returns sensible zero-value defaults.

@@ -7,6 +7,25 @@ import (
 	"time"
 )
 
+const (
+	// DefaultSMTPHost 是腾讯企业邮箱的 SMTP 服务地址。
+	DefaultSMTPHost = "smtp.exmail.qq.com"
+	// DefaultSMTPPort 是腾讯企业邮箱的隐式 TLS 端口。
+	DefaultSMTPPort = "465"
+)
+
+// SMTPConfig 保存通过环境变量配置的发件账号和 TLS SMTP 连接参数。
+type SMTPConfig struct {
+	// Host 是 SMTP 服务器域名。
+	Host string
+	// Port 是 SMTP 服务器的隐式 TLS 端口。
+	Port string
+	// Username 同时作为 SMTP 认证账号和发件邮箱。
+	Username string
+	// Password 是邮箱密码或 SMTP 授权码。
+	Password string
+}
+
 func init() {
 	loadEnvFile(".env")
 }
@@ -52,6 +71,8 @@ type Config struct {
 	CORSOrigin       string
 	Env              string
 	LogLevel         string
+	// SMTP 是联系咨询通知使用的服务端邮件配置。
+	SMTP SMTPConfig
 }
 
 func Load() *Config {
@@ -68,6 +89,12 @@ func Load() *Config {
 		CORSOrigin:       getEnv("CORS_ORIGIN", "http://localhost:3000"),
 		Env:              getEnv("ENV", "development"),
 		LogLevel:         getEnv("LOG_LEVEL", "info"),
+		SMTP: SMTPConfig{
+			Host:     getEnv("SMTP_HOST", DefaultSMTPHost),
+			Port:     getEnv("SMTP_PORT", DefaultSMTPPort),
+			Username: getEnv("SMTP_USERNAME", ""),
+			Password: getEnv("SMTP_PASSWORD", ""),
+		},
 	}
 }
 

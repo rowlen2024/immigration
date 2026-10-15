@@ -8,6 +8,7 @@ import (
 	"mygo-immigration/backend/internal/config"
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/logging"
+	"mygo-immigration/backend/internal/mailer"
 	"mygo-immigration/backend/internal/repository"
 )
 
@@ -45,7 +46,6 @@ func New(repo *repository.Repository, cfg *config.Config) *Service {
 		FAQ:        NewFAQService(repo.FAQ),
 		Page:       NewPageService(repo.Page, repo.Nav),
 		Case:       NewCaseService(repo.Case, nil),
-		Lead:       NewLeadService(repo.Lead),
 		Lawyer:     NewLawyerService(repo.Lawyer),
 		HomeConfig: &HomeConfigService{repo: repo.HomeConfig, projectRepo: repo.Project, caseRepo: repo.Case, testimonialRepo: repo.Testimonial},
 		Media: &MediaService{
@@ -67,6 +67,9 @@ func New(repo *repository.Repository, cfg *config.Config) *Service {
 		Testimonial:   &TestimonialService{repo: repo.Testimonial},
 		PublicVersion: NewPublicVersionService(),
 	}
+
+	// 网站设置服务构造完成后，注入联系咨询的邮件通知依赖。
+	svc.Lead = NewLeadService(repo.Lead, NewLeadEmailNotifier(svc.HomeConfig, mailer.NewSMTPClient(cfg.SMTP)))
 
 	// Wire home_config cleanup into entity services
 	svc.Case.homeConfigSvc = svc.HomeConfig

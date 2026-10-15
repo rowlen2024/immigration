@@ -10,6 +10,14 @@ import (
 	"mygo-immigration/backend/internal/repository"
 )
 
+// stubLeadNotifier 是不访问外部系统的必需通知依赖。
+type stubLeadNotifier struct{}
+
+// Notify 接收已保存咨询，不产生外部副作用。
+func (stubLeadNotifier) Notify(model.Lead) error {
+	return nil
+}
+
 // mockLeadRepo implements repository.LeadRepository for testing.
 type mockLeadRepo struct {
 	findAllFn      func(filter repository.LeadFilter) ([]model.Lead, int64, error)
@@ -56,7 +64,7 @@ func TestLead_Create_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewLeadService(repo)
+	svc := NewLeadService(repo, stubLeadNotifier{})
 
 	lead, err := svc.Create(&dto.LeadRequest{
 		Name:              "John Doe",
@@ -91,7 +99,7 @@ func TestLead_Create_XSSSanitization(t *testing.T) {
 		},
 	}
 
-	svc := NewLeadService(repo)
+	svc := NewLeadService(repo, stubLeadNotifier{})
 
 	_, err := svc.Create(&dto.LeadRequest{
 		Name:    "<script>alert('xss')</script>John",
@@ -111,7 +119,7 @@ func TestLead_Create_XSSSanitization(t *testing.T) {
 
 func TestLead_Create_NilRequest(t *testing.T) {
 	repo := &mockLeadRepo{}
-	svc := NewLeadService(repo)
+	svc := NewLeadService(repo, stubLeadNotifier{})
 
 	_, err := svc.Create(nil)
 	if err == nil {
@@ -121,7 +129,7 @@ func TestLead_Create_NilRequest(t *testing.T) {
 
 func TestLead_Create_MissingName(t *testing.T) {
 	repo := &mockLeadRepo{}
-	svc := NewLeadService(repo)
+	svc := NewLeadService(repo, stubLeadNotifier{})
 
 	_, err := svc.Create(&dto.LeadRequest{Phone: "1234567890"})
 	if err == nil {
@@ -131,7 +139,7 @@ func TestLead_Create_MissingName(t *testing.T) {
 
 func TestLead_Create_MissingPhone(t *testing.T) {
 	repo := &mockLeadRepo{}
-	svc := NewLeadService(repo)
+	svc := NewLeadService(repo, stubLeadNotifier{})
 
 	_, err := svc.Create(&dto.LeadRequest{Name: "John"})
 	if err == nil {
@@ -151,7 +159,7 @@ func TestLead_AdminList_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewLeadService(repo)
+	svc := NewLeadService(repo, stubLeadNotifier{})
 
 	leads, total, err := svc.List(dto.LeadListRequest{PaginationRequest: dto.PaginationRequest{Page: 1, PerPage: 10}})
 	if err != nil {
@@ -175,7 +183,7 @@ func TestLead_List_FilterByStatus(t *testing.T) {
 		},
 	}
 
-	svc := NewLeadService(repo)
+	svc := NewLeadService(repo, stubLeadNotifier{})
 	_, _, err := svc.List(dto.LeadListRequest{PaginationRequest: dto.PaginationRequest{Page: 1, PerPage: 10}, Status: "new"})
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
@@ -192,7 +200,7 @@ func TestLead_List_NoPagination(t *testing.T) {
 		},
 	}
 
-	svc := NewLeadService(repo)
+	svc := NewLeadService(repo, stubLeadNotifier{})
 	_, _, err := svc.List(dto.LeadListRequest{})
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
@@ -206,7 +214,7 @@ func TestLead_UpdateStatus_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewLeadService(repo)
+	svc := NewLeadService(repo, stubLeadNotifier{})
 
 	lead, err := svc.Update(1, "contacted", "Called the customer")
 	if err != nil {
@@ -225,7 +233,7 @@ func TestLead_UpdateStatus_Success(t *testing.T) {
 
 func TestLead_UpdateStatus_InvalidStatus(t *testing.T) {
 	repo := &mockLeadRepo{}
-	svc := NewLeadService(repo)
+	svc := NewLeadService(repo, stubLeadNotifier{})
 
 	_, err := svc.Update(1, "invalid-status", "")
 	if err == nil {
@@ -235,7 +243,7 @@ func TestLead_UpdateStatus_InvalidStatus(t *testing.T) {
 
 func TestLead_UpdateStatus_ZeroID(t *testing.T) {
 	repo := &mockLeadRepo{}
-	svc := NewLeadService(repo)
+	svc := NewLeadService(repo, stubLeadNotifier{})
 
 	_, err := svc.Update(0, "new", "")
 	if err == nil {
@@ -250,7 +258,7 @@ func TestLead_UpdateStatus_Qualified(t *testing.T) {
 		},
 	}
 
-	svc := NewLeadService(repo)
+	svc := NewLeadService(repo, stubLeadNotifier{})
 
 	lead, err := svc.Update(10, "qualified", "Customer ready to proceed")
 	if err != nil {
@@ -268,7 +276,7 @@ func TestLead_UpdateStatus_Closed(t *testing.T) {
 		},
 	}
 
-	svc := NewLeadService(repo)
+	svc := NewLeadService(repo, stubLeadNotifier{})
 
 	lead, err := svc.Update(10, "closed", "Deal closed")
 	if err != nil {
@@ -281,7 +289,7 @@ func TestLead_UpdateStatus_Closed(t *testing.T) {
 
 func TestLead_UpdateStatus_EmptyStatus(t *testing.T) {
 	repo := &mockLeadRepo{}
-	svc := NewLeadService(repo)
+	svc := NewLeadService(repo, stubLeadNotifier{})
 
 	_, err := svc.Update(1, "", "")
 	if err == nil {
@@ -296,7 +304,7 @@ func TestLead_UpdateStatus_RepoError(t *testing.T) {
 		},
 	}
 
-	svc := NewLeadService(repo)
+	svc := NewLeadService(repo, stubLeadNotifier{})
 
 	_, err := svc.Update(1, "contacted", "")
 	if err == nil {
@@ -311,7 +319,7 @@ func TestLead_List_RepoError(t *testing.T) {
 		},
 	}
 
-	svc := NewLeadService(repo)
+	svc := NewLeadService(repo, stubLeadNotifier{})
 
 	_, _, err := svc.List(dto.LeadListRequest{PaginationRequest: dto.PaginationRequest{Page: 1, PerPage: 10}})
 	if err == nil {
@@ -326,7 +334,7 @@ func TestLead_Create_RepoError(t *testing.T) {
 		},
 	}
 
-	svc := NewLeadService(repo)
+	svc := NewLeadService(repo, stubLeadNotifier{})
 
 	_, err := svc.Create(&dto.LeadRequest{
 		Name:  "John",
@@ -346,7 +354,7 @@ func TestLead_Create_SpecialCharsInName(t *testing.T) {
 		},
 	}
 
-	svc := NewLeadService(repo)
+	svc := NewLeadService(repo, stubLeadNotifier{})
 
 	// Name with special HTML chars - strict policy should strip them
 	_, err := svc.Create(&dto.LeadRequest{
@@ -375,7 +383,7 @@ func TestLead_Create_AllFieldsPopulated(t *testing.T) {
 		},
 	}
 
-	svc := NewLeadService(repo)
+	svc := NewLeadService(repo, stubLeadNotifier{})
 
 	lead, err := svc.Create(&dto.LeadRequest{
 		Name:              "Alice Smith",

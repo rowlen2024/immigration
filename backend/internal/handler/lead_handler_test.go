@@ -14,6 +14,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// handlerLeadNotifier 为 Handler 测试提供独立于邮件服务的通知依赖。
+type handlerLeadNotifier struct{}
+
+// Notify 接收咨询通知，不执行外部调用。
+func (handlerLeadNotifier) Notify(model.Lead) error {
+	return nil
+}
+
 // handlerMockLeadRepo implements repository.LeadRepository.
 type handlerMockLeadRepo struct {
 	findAll      func(filter repository.LeadFilter) ([]model.Lead, int64, error)
@@ -55,7 +63,7 @@ func TestLeadHandler_CreateLead_Success(t *testing.T) {
 		},
 	}
 
-	leadSvc := service.NewLeadService(mockRepo)
+	leadSvc := service.NewLeadService(mockRepo, handlerLeadNotifier{})
 	h := &Handler{svc: &service.Service{Lead: leadSvc}}
 
 	w := httptest.NewRecorder()
@@ -98,7 +106,7 @@ func TestLeadHandler_CreateLead_InvalidJSON(t *testing.T) {
 }
 
 func TestLeadHandler_CreateLead_MissingRequired(t *testing.T) {
-	leadSvc := service.NewLeadService(&handlerMockLeadRepo{})
+	leadSvc := service.NewLeadService(&handlerMockLeadRepo{}, handlerLeadNotifier{})
 	h := &Handler{svc: &service.Service{Lead: leadSvc}}
 
 	// Send a lead missing phone - the dto.LeadRequest has Phone with `binding:"required"`

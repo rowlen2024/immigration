@@ -5,26 +5,35 @@ import (
 	"fmt"
 
 	"mygo-immigration/backend/internal/dto"
+	"mygo-immigration/backend/internal/logging"
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
 
 	"github.com/microcosm-cc/bluemonday"
 )
 
-// LeadService handles business logic for customer leads.
+// LeadService 负责客户咨询的保存、查询和异步通知。
 type LeadService struct {
-	repo        repository.LeadRepository
+	// repo 保存和查询咨询记录。
+	repo repository.LeadRepository
+	// projectRepo 提供咨询列表中展示的项目名称。
 	projectRepo repository.ProjectRepository
+	// notifier 处理成功保存后的咨询通知，构造时必须注入。
+	notifier LeadNotifier
 }
 
-// NewLeadService creates a new LeadService with the given repository.
-func NewLeadService(repo repository.LeadRepository) *LeadService {
-	return &LeadService{repo: repo}
+// NewLeadService 注入必需的咨询仓储和通知器。
+func NewLeadService(repo repository.LeadRepository, notifier LeadNotifier) *LeadService {
+	return &LeadService{
+		repo:     repo,
+		notifier: notifier,
+	}
 }
 
+// leadSanitizer 清除咨询展示文本中的 HTML 标签。
 var leadSanitizer = bluemonday.StrictPolicy()
 
-// Create creates a new lead from a DTO request, sanitizing text fields.
+// Create 净化并保存咨询，保存成功后异步通知且不等待邮件结果。
 func (s *LeadService) Create(req *dto.LeadRequest) (*model.Lead, error) {
 	if req == nil {
 		return nil, errors.New("lead is nil")
@@ -46,7 +55,16 @@ func (s *LeadService) Create(req *dto.LeadRequest) (*model.Lead, error) {
 	if err := s.repo.Create(lead); err != nil {
 		return nil, fmt.Errorf("failed to create lead: %w", err)
 	}
+	// goroutine 参数在启动前按值复制，避免与返回记录的后续修改共享数据。
+	go s.notifyLead(*lead)
 	return lead, nil
+}
+
+// notifyLead 处理独立于 HTTP 请求的通知，失败只记录日志。
+func (s *LeadService) notifyLead(lead model.Lead) {
+	if err := s.notifier.Notify(lead); err != nil {
+		logging.Logger.Error("failed to send lead notification", "lead_id", lead.ID, "error", err)
+	}
 }
 
 // List returns leads with optional filters and pagination.

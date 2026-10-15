@@ -15,6 +15,8 @@ interface SiteConfig {
   contact_phone: string;
   contact_phone_2: string;
   contact_email: string;
+  // notification_email 是后台配置的运营通知邮箱。
+  notification_email: string;
   contact_address: string;
   contact_wechat: string;
   contact_wechat_mp: string;

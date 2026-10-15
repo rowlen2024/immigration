@@ -109,6 +109,8 @@ interface SiteConfig {
   contact_phone: string;
   contact_phone_2: string;
   contact_email: string;
+  // notification_email 是独立于客服邮箱的运营通知地址。
+  notification_email: string;
   contact_address: string;
   contact_wechat: string;
   contact_wechat_mp: string;
@@ -139,6 +141,7 @@ const defaultForm = (): SiteConfig => ({
   contact_phone: '',
   contact_phone_2: '',
   contact_email: '',
+  notification_email: '',
   contact_address: '',
   contact_wechat: '',
   contact_wechat_mp: '',
@@ -169,6 +172,7 @@ const tips: Record<string, string> = {
   contact_phone: '网站底部和结构化数据中展示的客服电话',
   contact_phone_2: '网站底部和结构化数据中展示的联系电话',
   contact_email: '网站底部和结构化数据中展示的客服邮箱',
+  notification_email: '接收联系咨询通知的运营邮箱，留空时不发送邮件',
   contact_address: '公司办公地址，显示在网站底部',
   contact_wechat: '微信二维码图片，显示在联系我们页面',
   contact_wechat_mp: '微信公众号二维码图片，显示在联系我们页面',
@@ -240,6 +244,12 @@ const groups: GroupDef[] = [
       { key: 'contact_phone', label: '客服电话', placeholder: '400-xxx-xxxx', tip: tips.contact_phone },
       { key: 'contact_phone_2', label: '联系电话', placeholder: '400-xxx-xxxx', tip: tips.contact_phone_2 },
       { key: 'contact_email', label: '客服邮箱', placeholder: 'info@example.com', tip: tips.contact_email },
+      {
+        key: 'notification_email',
+        label: '运营通知邮箱',
+        placeholder: 'operations@example.com',
+        tip: tips.notification_email,
+      },
       { key: 'contact_address', label: '公司地址', tip: tips.contact_address },
       { key: 'contact_wechat', label: '微信', image: true, sizeHint: '推荐 500×500px (1:1 正方形)', previewRatio: '1 / 1', context: 'qr-code', tip: tips.contact_wechat },
       { key: 'contact_wechat_mp', label: '微信公众号', image: true, sizeHint: '推荐 500×500px (1:1 正方形)', previewRatio: '1 / 1', context: 'qr-code', tip: tips.contact_wechat_mp },
