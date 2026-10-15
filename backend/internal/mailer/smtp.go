@@ -39,6 +39,16 @@ func NewSMTPClient(cfg config.SMTPConfig) *SMTPClient {
 
 // Send 向单个收件人发送 UTF-8 纯文本邮件，协议或网络失败直接返回。
 func (s *SMTPClient) Send(to, subject, body string) error {
+	return s.send(to, subject, body, "text/plain; charset=UTF-8")
+}
+
+// SendHTML 向单个收件人发送 UTF-8 HTML 邮件，协议或网络失败直接返回。
+func (s *SMTPClient) SendHTML(to, subject, body string) error {
+	return s.send(to, subject, body, "text/html; charset=UTF-8")
+}
+
+// send 使用指定的 MIME 内容类型执行 TLS SMTP 传输。
+func (s *SMTPClient) send(to, subject, body, contentType string) error {
 	dialer := &net.Dialer{
 		Timeout: smtpTimeout,
 	}
@@ -70,7 +80,7 @@ func (s *SMTPClient) Send(to, subject, body string) error {
 	if err != nil {
 		return fmt.Errorf("start SMTP message: %w", err)
 	}
-	if _, err := writer.Write(encodeMessage(s.config.Username, to, subject, body)); err != nil {
+	if _, err := writer.Write(encodeMessage(s.config.Username, to, subject, body, contentType)); err != nil {
 		return fmt.Errorf("write SMTP message: %w", err)
 	}
 	if err := writer.Close(); err != nil {
@@ -83,14 +93,14 @@ func (s *SMTPClient) Send(to, subject, body string) error {
 }
 
 // encodeMessage 将主题和正文编码为适合 SMTP 传输的 MIME 邮件。
-func encodeMessage(from, to, subject, body string) []byte {
+func encodeMessage(from, to, subject, body, contentType string) []byte {
 	var message bytes.Buffer
 	fmt.Fprintf(&message, "From: %s\r\n", (&mail.Address{Address: from}).String())
 	fmt.Fprintf(&message, "To: %s\r\n", (&mail.Address{Address: to}).String())
 	fmt.Fprintf(&message, "Subject: %s\r\n", mime.QEncoding.Encode("UTF-8", subject))
 	fmt.Fprintf(&message, "Date: %s\r\n", time.Now().Format(time.RFC1123Z))
 	message.WriteString("MIME-Version: 1.0\r\n")
-	message.WriteString("Content-Type: text/plain; charset=UTF-8\r\n")
+	fmt.Fprintf(&message, "Content-Type: %s\r\n", contentType)
 	message.WriteString("Content-Transfer-Encoding: quoted-printable\r\n\r\n")
 	writer := quotedprintable.NewWriter(&message)
 	writer.Write([]byte(body))

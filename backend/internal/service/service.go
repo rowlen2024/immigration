@@ -69,7 +69,7 @@ func New(repo *repository.Repository, cfg *config.Config) *Service {
 	}
 
 	// 网站设置服务构造完成后，注入联系咨询的邮件通知依赖。
-	svc.Lead = NewLeadService(repo.Lead, NewLeadEmailNotifier(svc.HomeConfig, mailer.NewSMTPClient(cfg.SMTP)))
+	svc.Lead = NewLeadService(repo.Lead, NewLeadEmailNotifier(svc.HomeConfig, repo.Project, mailer.NewSMTPClient(cfg.SMTP)))
 
 	// Wire home_config cleanup into entity services
 	svc.Case.homeConfigSvc = svc.HomeConfig

@@ -27,11 +27,21 @@
 1. Handler 维持现有表单绑定及响应行为。
 2. `LeadService.Create` 完成现有校验、净化及数据库保存；保存失败直接返回，不启动通知。
 3. 保存成功后复制咨询记录，由独立 goroutine 调用通知器，不持有请求上下文或 Gin Context。
-4. 通知器读取当前网站设置；通知邮箱为空则结束，否则组装纯文本邮件。
-5. 邮件包含咨询编号、姓名、电话、邮箱、意向项目、留言和提交时间。用户输入只进入正文，中文主题及正文使用 MIME 编码。
-6. 读取配置或 SMTP 发送失败只记录咨询编号及错误，不重试，不回滚已保存记录。
+4. 通知器读取当前网站设置；通知邮箱为空则结束，不查询项目、不发送邮件。
+5. 配置了收件人且咨询选择了项目时，通过现有 `FindBySlugsLight` 按原始 slug 查询项目名称，不加载项目关联数据。
+6. 使用内嵌 HTML 模板生成正文，经 `SendHTML` 发送 UTF-8 HTML 邮件；原 `Send` 方法继续发送纯文本邮件。
+7. 读取配置、查询项目、渲染模板或 SMTP 发送失败只记录咨询编号及错误，不重试，不回滚已保存记录。
 
-邮件发送器和配置读取器通过窄接口注入通知器，通知器作为 `LeadService` 的必需依赖注入；测试始终提供替身。通知器不重复校验已由入口保证的表单和邮箱字段。
+邮件发送器、配置读取器和项目读取器通过窄接口注入通知器，通知器作为 `LeadService` 的必需依赖注入；测试始终提供替身。通知器不重复校验已由入口保证的表单和邮箱字段。
+
+## 邮件展示契约
+
+- 主题固定为 `北极星移民官网新咨询`。
+- 正文包含咨询编号、姓名、电话、邮箱、意向项目、留言和提交时间，使用内联样式、信息表格及独立的留言区。
+- 意向项目显示项目名称，不显示 slug；未选择时显示“未指定”，查询无对应记录时显示“未找到对应项目”。
+- 提交时间使用 `time.DateTime`，展示为 `YYYY-MM-DD HH:mm:ss`，不改变保存结果的时区。
+- 使用标准库 `html/template` 自动转义所有动态文本。姓名和留言已在保存入口转换为安全 HTML 文本，展示前还原一层实体再交给模板转义，避免实体重复转义；留言换行渲染为 `<br>`。
+- 本次仅调整后端通知展示、内部依赖组装和邮件编码，不修改 HTTP 接口、数据库、环境变量或 SMTP 认证。无需迁移；部署后新通知采用新模板，清空通知邮箱仍可停止后续发送。
 
 ## 一致性与交付语义
 
@@ -40,12 +50,12 @@
 ## 验证方案
 
 - CLI：配置单元测试、本地 TLS SMTP 协议测试、通知器测试、咨询异步行为及失败日志测试、设置字段保存与绑定测试。
-- 测试覆盖旧配置、空邮箱、配置解析失败、邮件发送失败、数据库保存失败、中文和多行正文、异步不阻塞及咨询快照。
+- 测试覆盖旧配置、空邮箱、配置解析失败、项目名称查询及失败、未选择或已删除项目、邮件发送失败、数据库保存失败、固定主题、datetime 格式、HTML 转义和多行留言、异步不阻塞及咨询快照。
 - 回归：`go test ./...`、`go build ./...`、`go vet ./...`、`npx nuxi typecheck` 和前端构建；浏览器检查后台字段及保存请求。
 - Skill：Context7 查询 Go SMTP/TLS API，按完成前验证和代码评审流程检查证据、差异及校验责任边界。
 - 测试使用本地 SMTP 服务或替身，不向真实运营邮箱发送测试邮件。
 
-## 本次验证记录
+## 初始功能验证记录
 
 - `go build ./...`、`go vet ./...` 通过。
 - `go test -race ./internal/config ./internal/mailer ./internal/service ./internal/handler -count=1` 通过。
@@ -57,3 +67,13 @@
 - 已对腾讯 SMTP 端点完成 TLS 与 EHLO 只读握手，确认其支持 `AUTH PLAIN`；未验证真实账号认证或实际收件。
 
 部署时配置上述 SMTP 环境变量，启动数据库和后端，并在网站设置中填写运营通知邮箱，即可启用后续咨询通知。
+
+## 2026-10-15 邮件展示调整验证
+
+- 使用 Context7 核对 Go `html/template` 自动转义及 HTML 实体还原契约，按完成前验证流程检查实际结果。
+- `go build ./...`、`go vet ./...` 通过。
+- `go test ./internal/service ./internal/mailer -run 'TestLeadEmailNotifier|TestSiteConfigNotificationEmailRoundTrip|TestSMTPClient' -count=1` 通过，覆盖项目名称、固定主题、datetime、HTML 转义、换行及真实本地 TLS SMTP 的 HTML MIME 传输；原纯文本传输用例仍通过。
+- `go test -race ./internal/mailer ./internal/service ./internal/handler -count=1` 通过，原异步不阻塞及失败仅记日志的回归用例通过。
+- `go test ./... -count=1` 仅 `TestPageRepoFindRelatedBySlugMySQL` 因本机 `localhost:3307` 无 MySQL 服务而失败；`go test ./... -skip '^TestPageRepoFindRelatedBySlugMySQL$' -count=1` 通过。
+- 通过 Chrome DevTools 检查实际模板的本地渲染结果，1100px 桌面、390px 和 320px 移动视口均无横向溢出，长邮箱、长项目名及多行留言正常换行。
+- 未连接生产 SMTP、未发送真实测试邮件，未验证 Outlook、微信邮箱等实际收件客户端的渲染差异。

@@ -198,6 +198,37 @@ func TestSMTPClientSend(t *testing.T) {
 	}
 }
 
+// TestSMTPClientSendHTML 验证 HTML 邮件的 MIME 类型、中文主题及正文经真实 TLS SMTP 传输后保持完整。
+func TestSMTPClientSendHTML(t *testing.T) {
+	client, results := newSMTPTestServer(t, false)
+	const subject = "北极星移民官网新咨询"
+	const body = "<!doctype html>\n<html lang=\"zh-CN\"><body>\n" +
+		"<h1>北极星移民</h1><p>意向项目：希腊黄金签证</p>\n" +
+		"<p>姓名：王 &amp; 李<br>希望了解项目。</p>\n</body></html>"
+	if err := client.SendHTML("operations@example.com", subject, body); err != nil {
+		t.Fatalf("发送 HTML 邮件失败：%v", err)
+	}
+	result := waitSMTPTestResult(t, results)
+	if result.err != nil {
+		t.Fatalf("SMTP 服务端失败：%v", result.err)
+	}
+	message, err := mail.ReadMessage(bytes.NewReader(result.message))
+	if err != nil {
+		t.Fatal(err)
+	}
+	decodedSubject, err := new(mime.WordDecoder).DecodeHeader(message.Header.Get("Subject"))
+	if err != nil || decodedSubject != subject {
+		t.Fatalf("HTML 邮件主题编码不正确：%q，%v", decodedSubject, err)
+	}
+	if message.Header.Get("Content-Type") != "text/html; charset=UTF-8" || message.Header.Get("Content-Transfer-Encoding") != "quoted-printable" {
+		t.Fatal("邮件未使用 UTF-8 HTML 和 quoted-printable 编码")
+	}
+	decodedBody, err := io.ReadAll(quotedprintable.NewReader(message.Body))
+	if err != nil || strings.ReplaceAll(string(decodedBody), "\r\n", "\n") != body+"\n" {
+		t.Fatalf("HTML 邮件正文传输不完整：%q，%v", decodedBody, err)
+	}
+}
+
 // TestSMTPClientAuthenticationFailure 验证认证失败向调用方返回且不发送邮件。
 func TestSMTPClientAuthenticationFailure(t *testing.T) {
 	client, results := newSMTPTestServer(t, true)
