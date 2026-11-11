@@ -647,9 +647,14 @@
     </el-dialog>
 
     <el-dialog v-model="newsDialogVisible" title="添加资讯" width="500px" destroy-on-close>
-      <el-select v-model="newsSelected" multiple filterable placeholder="搜索新闻页面..." class="admin-full-width">
-        <el-option v-for="n in newsOptions" :key="n.id" :label="n.title" :value="n.id" />
-      </el-select>
+      <PaginatedMultiSelect
+        v-model="newsSelected"
+        :load-options="loadNewsOptions"
+        placeholder="输入标题搜索新闻页面..."
+        empty-text="未找到匹配的已发布新闻"
+        aria-label="选择新闻页面"
+        class="admin-full-width"
+      />
       <template #footer>
         <el-button @click="newsDialogVisible = false">取消</el-button>
         <el-button type="primary" :disabled="newsSelected.length === 0" @click="addNewsLinks">确认添加</el-button>
@@ -665,6 +670,8 @@ import { useNotify } from '~/composables/useNotify';
 import ImageInput from '~/components/admin/ImageInput.vue';
 import IconPicker from '~/components/admin/IconPicker.vue';
 import RichEditor from '~/components/RichEditor.vue';
+import PaginatedMultiSelect from '~/components/admin/PaginatedMultiSelect.vue';
+import type { PaginatedSelectRequest, PaginatedSelectResult } from '~/types/paginated-select';
 import { getIconByName, getIconSvg } from '~/composables/lucideIcons';
 import { formatDateTime } from '~/utils/date';
 import { generateSlugFromText } from '~/utils/slug';
@@ -721,6 +728,14 @@ interface NewsItem {
   slug: string;
   status?: string;
   created_at?: string;
+}
+
+/** 后台分页新闻选项接口经 useApi 解包后的数据。 */
+interface NewsOptionsResponse {
+  /** 当前页的新闻选项。 */
+  items: NewsItem[];
+  /** 当前标题筛选对应的新闻总数。 */
+  total: number;
 }
 
 interface CompareField {
@@ -838,8 +853,9 @@ const subDialogTitle = computed(() => {
 });
 
 const subNews = ref<NewsItem[]>([]);
+/** 资讯选择弹窗是否打开。 */
 const newsDialogVisible = ref(false);
-const newsOptions = ref<NewsItem[]>([]);
+/** 待关联的新闻页面 ID，翻页和搜索时保留。 */
 const newsSelected = ref<number[]>([]);
 
 const compareFields = ref<CompareField[]>([]);
@@ -1087,18 +1103,37 @@ const loadNews = async () => {
   } catch { subNews.value = []; }
 };
 
-const openNewsDialog = async () => {
+/** 打开资讯选择并清空本次待关联的页面。 */
+const openNewsDialog = () => {
   if (!canWritePages.value) {
     ElMessage.warning('无权限操作');
     return;
   }
-  try {
-    const api = useApi();
-    const data = await api<{ items: NewsItem[] }>('/admin/pages/options?page=1&per_page=500&page_type=news&status=published');
-    newsOptions.value = data.items ?? [];
-  } catch { newsOptions.value = []; }
   newsSelected.value = [];
   newsDialogVisible.value = true;
+};
+
+/** 将通用分页查询映射为后台已发布新闻筛选，并映射选项展示字段。 */
+const loadNewsOptions = async (request: PaginatedSelectRequest): Promise<PaginatedSelectResult<number>> => {
+  /** 后台 API 客户端负责携带鉴权信息及解包分页信封。 */
+  const api = useApi();
+  /** 当前页的新闻选项和筛选总数。 */
+  const data = await api<NewsOptionsResponse>('/admin/pages/options', {
+    query: {
+      page: request.page,
+      per_page: request.perPage,
+      page_type: 'news',
+      status: 'published',
+      title: request.keyword,
+    },
+  });
+  return {
+    items: data.items.map(item => ({
+      value: item.id,
+      label: item.title,
+    })),
+    total: data.total,
+  };
 };
 
 const addNewsLinks = async () => {

@@ -128,6 +128,13 @@ Nuxt SPA 模式对 `useFetch` 结果做 payload 缓存，客户端导航可能�
 - [ ] `go build ./...` + `go test ./...` 通过
 - [ ] 更新 mock 和测试用例
 
+### 后台分页多选规范
+
+- 面向大量远程数据的后台多选控件统一复用 `frontend/components/admin/PaginatedMultiSelect.vue`，默认每页 20 条，按需加载、远程搜索，不得一次拉取全部数据或固定只取前 500 条。
+- 业务页面提供 `loadOptions({ page, perPage, keyword })`，返回当前页 `{ items: [{ value, label }], total }`；接口调用使用 `useApi()`，筛选字段按接口真实字段命名。
+- 组件负责搜索防抖、翻页、跨页选择保留、加载/空结果/失败重试和过期请求隔离；业务页面负责权限、业务筛选、原始标识和最终保存。
+- 不得在组件中写死业务接口、状态或资源类型，不得对关键词、标识做隐式 Trim 或类型转换。完整契约、使用示例与验收场景见 `docs/admin-paginated-select.md`。
+
 ### 前后台接口隔离
 
 | 端 | 前缀 | 鉴权 |
