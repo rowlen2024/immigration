@@ -13,41 +13,43 @@ import (
 )
 
 type Service struct {
-	repo          *repository.Repository
-	Project       *ProjectService
-	Auth          *AuthService
-	User          *UserService
-	RBAC          *RBACService
-	FAQ           *FAQService
-	Page          *PageService
-	Case          *CaseService
-	Lead          *LeadService
-	Lawyer        *LawyerService
-	HomeConfig    *HomeConfigService
-	Media         *MediaService
-	Nav           *NavService
-	Search        *SearchService
-	Requirement   *RequirementService
-	CostItem      *CostItemService
-	TimelinePhase *TimelinePhaseService
-	CompareConfig *CompareConfigService
-	Advantage     *ProjectAdvantageService
-	Testimonial   *TestimonialService
-	PublicVersion *PublicVersionService
+	repo            *repository.Repository
+	Project         *ProjectService
+	ProjectCategory *ProjectCategoryService
+	Auth            *AuthService
+	User            *UserService
+	RBAC            *RBACService
+	FAQ             *FAQService
+	Page            *PageService
+	Case            *CaseService
+	Lead            *LeadService
+	Lawyer          *LawyerService
+	HomeConfig      *HomeConfigService
+	Media           *MediaService
+	Nav             *NavService
+	Search          *SearchService
+	Requirement     *RequirementService
+	CostItem        *CostItemService
+	TimelinePhase   *TimelinePhaseService
+	CompareConfig   *CompareConfigService
+	Advantage       *ProjectAdvantageService
+	Testimonial     *TestimonialService
+	PublicVersion   *PublicVersionService
 }
 
 func New(repo *repository.Repository, cfg *config.Config) *Service {
 	svc := &Service{
-		repo:       repo,
-		Project:    NewProjectService(repo.Project, repo.Nav),
-		Auth:       NewAuthService(repo.User, cfg),
-		RBAC:       NewRBACService(repo.RBAC, repo.User),
-		User:       NewUserService(repo.User, repo.RBAC),
-		FAQ:        NewFAQService(repo.FAQ),
-		Page:       NewPageService(repo.Page, repo.Nav),
-		Case:       NewCaseService(repo.Case, nil),
-		Lawyer:     NewLawyerService(repo.Lawyer),
-		HomeConfig: &HomeConfigService{repo: repo.HomeConfig, projectRepo: repo.Project, caseRepo: repo.Case, testimonialRepo: repo.Testimonial},
+		repo:            repo,
+		Project:         NewProjectService(repo.Project, repo.Nav),
+		ProjectCategory: &ProjectCategoryService{repo: repo.ProjectCategory, versionRepo: repo.PublicVersion},
+		Auth:            NewAuthService(repo.User, cfg),
+		RBAC:            NewRBACService(repo.RBAC, repo.User),
+		User:            NewUserService(repo.User, repo.RBAC),
+		FAQ:             NewFAQService(repo.FAQ),
+		Page:            NewPageService(repo.Page, repo.Nav),
+		Case:            NewCaseService(repo.Case, nil),
+		Lawyer:          NewLawyerService(repo.Lawyer),
+		HomeConfig:      &HomeConfigService{repo: repo.HomeConfig, projectRepo: repo.Project, caseRepo: repo.Case, testimonialRepo: repo.Testimonial},
 		Media: &MediaService{
 			repo:            repo.Media,
 			projectRepo:     repo.Project,
@@ -57,7 +59,7 @@ func New(repo *repository.Repository, cfg *config.Config) *Service {
 			testimonialRepo: repo.Testimonial,
 			homeConfigRepo:  repo.HomeConfig,
 		},
-		Nav:           &NavService{repo: repo.Nav, projectRepo: repo.Project, pageRepo: repo.Page},
+		Nav:           &NavService{repo: repo.Nav, projectRepo: repo.Project, pageRepo: repo.Page, categoryRepo: repo.ProjectCategory},
 		Search:        &SearchService{faqRepo: repo.FAQ, pageRepo: repo.Page},
 		Requirement:   &RequirementService{repo: repo.Requirement},
 		CostItem:      &CostItemService{repo: repo.CostItem},
@@ -90,6 +92,7 @@ func New(repo *repository.Repository, cfg *config.Config) *Service {
 	svc.Project.testimonialRepo = repo.Testimonial
 	svc.Project.faqRepo = repo.FAQ
 	svc.Project.regionRepo = repo.Project
+	svc.Project.categoryRepo = repo.ProjectCategory
 	svc.Project.versionRepo = repo.PublicVersion
 	svc.Page.versionRepo = repo.PublicVersion
 	svc.Case.versionRepo = repo.PublicVersion

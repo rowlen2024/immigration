@@ -2,31 +2,36 @@ package service
 
 import (
 	"fmt"
-	"mygo-immigration/backend/internal/logging"
 	"strings"
 	"sync"
 
+	"mygo-immigration/backend/internal/logging"
 	"mygo-immigration/backend/internal/model"
 	"mygo-immigration/backend/internal/repository"
 )
 
+type projectCategoryLookup interface {
+	FindByID(id uint64) (*model.ProjectCategory, error)
+	FindByIDs(ids []uint64) ([]model.ProjectCategory, error)
+}
+
 type NavService struct {
-	repo        repository.NavigationRepository
-	projectRepo repository.ProjectRepository
-	pageRepo    repository.PageRepository
-	versionRepo *repository.PublicVersionRepo
+	repo         repository.NavigationRepository
+	projectRepo  repository.ProjectRepository
+	pageRepo     repository.PageRepository
+	categoryRepo projectCategoryLookup
+	versionRepo  *repository.PublicVersionRepo
 }
 
 func (s *NavService) RegisterPublicVersions(reg *PublicVersionRegistry) {
 	reg.Register("public:navigation:", func(key string) (repository.PublicVersion, error) {
 		position := publicSlug(key, "public:navigation:")
-		return tableVersion(
-			s.versionRepo,
-			"navigations",
-			"deleted_at IS NULL AND status = 1 AND display_position IN (?, ?)",
-			position,
-			"both",
-		)
+		return s.versionRepo.VersionFromQuery(`
+			SELECT MAX(GREATEST(n.updated_at, COALESCE(c.updated_at, n.updated_at))) AS updated_at,
+			       COUNT(*) AS count
+			FROM navigations AS n
+			LEFT JOIN project_categories AS c ON c.id = n.category_id AND n.link_type = 'category'
+			WHERE n.deleted_at IS NULL AND n.status = 1 AND n.display_position IN (?, 'both')`, position)
 	})
 }
 
@@ -35,9 +40,23 @@ func (s *NavService) GetTree(position string) ([]model.Navigation, error) {
 	if err != nil {
 		return nil, err
 	}
-	tree := buildTree(items, nil)
-	s.fillLinks(tree)
-	return tree, nil
+	if err := s.fillLinks(items); err != nil {
+		return nil, err
+	}
+	return removeUnavailableCategoryLinks(buildTree(items, nil)), nil
+}
+
+func removeUnavailableCategoryLinks(items []model.Navigation) []model.Navigation {
+	visible := items[:0]
+	for _, item := range items {
+		item.Children = removeUnavailableCategoryLinks(item.Children)
+		// An unavailable category may still be the heading of existing shortcuts.
+		if item.LinkType == "category" && item.Link == nil && len(item.Children) == 0 {
+			continue
+		}
+		visible = append(visible, item)
+	}
+	return visible
 }
 
 func (s *NavService) GetAdminTree() ([]model.Navigation, error) {
@@ -45,9 +64,10 @@ func (s *NavService) GetAdminTree() ([]model.Navigation, error) {
 	if err != nil {
 		return nil, err
 	}
-	tree := buildTree(items, nil)
-	s.fillLinks(tree)
-	return tree, nil
+	if err := s.fillLinks(items); err != nil {
+		return nil, err
+	}
+	return buildTree(items, nil), nil
 }
 
 func (s *NavService) AdminList(page, pageSize int) ([]model.Navigation, int64, error) {
@@ -64,11 +84,15 @@ func (s *NavService) AdminList(page, pageSize int) ([]model.Navigation, int64, e
 	if end > int(total) {
 		end = int(total)
 	}
-	return allItems[offset:end], total, nil
+	items := allItems[offset:end]
+	if err := s.fillLinks(items); err != nil {
+		return nil, 0, err
+	}
+	return items, total, nil
 }
 
 func (s *NavService) Create(nav *model.Navigation) (*model.Navigation, error) {
-	if err := s.validateNav(nav); err != nil {
+	if err := s.validateNav(nav, nil); err != nil {
 		return nil, err
 	}
 	if nav.ParentID != nil {
@@ -95,7 +119,7 @@ func (s *NavService) Update(id uint64, nav *model.Navigation) (*model.Navigation
 	if err != nil {
 		return nil, fmt.Errorf("导航项不存在")
 	}
-	if err := s.validateNav(nav); err != nil {
+	if err := s.validateNav(nav, existing); err != nil {
 		return nil, err
 	}
 	if nav.ParentID != nil {
@@ -146,12 +170,15 @@ func (s *NavService) Delete(id uint64) error {
 	return s.repo.Delete(id)
 }
 
-func (s *NavService) validateNav(nav *model.Navigation) error {
+func (s *NavService) validateNav(nav, existing *model.Navigation) error {
 	if strings.TrimSpace(nav.Label) == "" {
 		return fmt.Errorf("导航名称不能为空")
 	}
 	if nav.LinkType == "" {
 		nav.LinkType = "custom"
+	}
+	if nav.LinkType != "category" {
+		nav.CategoryID = nil
 	}
 	switch nav.LinkType {
 	case "project":
@@ -164,6 +191,22 @@ func (s *NavService) validateNav(nav *model.Navigation) error {
 			return fmt.Errorf("页面链接必须选择页面")
 		}
 		nav.Link = nil // generated dynamically
+	case "category":
+		if nav.CategoryID == nil {
+			return fmt.Errorf("类目链接必须选择项目类目")
+		}
+		category, err := s.categoryRepo.FindByID(*nav.CategoryID)
+		if err != nil {
+			return fmt.Errorf("无法读取所选项目类目")
+		}
+		// An existing shortcut can still be edited while its category is a draft.
+		sameCategory := existing != nil && existing.LinkType == "category" &&
+			existing.CategoryID != nil && *existing.CategoryID == *nav.CategoryID
+		if category.Status != model.ProjectCategoryPublished && !sameCategory {
+			return fmt.Errorf("只能选择已发布的项目类目")
+		}
+		nav.Category = category
+		nav.Link, nav.ProjectID, nav.PageID = nil, nil, nil
 	case "custom":
 		// Link is optional for custom items (category headers).
 		// When provided, it must be an internal URL starting with "/".
@@ -199,30 +242,40 @@ func (s *NavService) fillLink(nav *model.Navigation) {
 			link := "/pages/" + slug
 			nav.Link = &link
 		}
+	case "category":
+		nav.Link = nil
+		if nav.Category != nil && nav.Category.Status == model.ProjectCategoryPublished {
+			link := "/projects/category/" + nav.Category.Slug
+			nav.Link = &link
+		}
 	}
 }
 
-func (s *NavService) fillLinks(items []model.Navigation) {
-	for i := range items {
-		switch items[i].LinkType {
-		case "project":
-			if items[i].ProjectID != nil {
-				slug := s.lookupProjectSlug(*items[i].ProjectID)
-				link := "/projects/" + slug
-				items[i].Link = &link
-			}
-		case "page":
-			if items[i].PageID != nil {
-				slug := s.lookupPageSlug(*items[i].PageID)
-				link := "/pages/" + slug
-				items[i].Link = &link
-			}
-		}
-		// custom: keep the Link as-is (already stored)
-		if len(items[i].Children) > 0 {
-			s.fillLinks(items[i].Children)
+func (s *NavService) fillLinks(items []model.Navigation) error {
+	ids := make([]uint64, 0)
+	for _, item := range items {
+		if item.LinkType == "category" && item.CategoryID != nil {
+			ids = append(ids, *item.CategoryID)
 		}
 	}
+	categories := make(map[uint64]*model.ProjectCategory)
+	if len(ids) > 0 {
+		rows, err := s.categoryRepo.FindByIDs(ids)
+		if err != nil {
+			return fmt.Errorf("load navigation categories: %w", err)
+		}
+		for i := range rows {
+			categories[rows[i].ID] = &rows[i]
+		}
+	}
+	for i := range items {
+		item := &items[i]
+		if item.LinkType == "category" && item.CategoryID != nil {
+			item.Category = categories[*item.CategoryID]
+		}
+		s.fillLink(item)
+	}
+	return nil
 }
 
 // slugCache avoids repeated DB lookups during tree traversal.

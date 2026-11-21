@@ -18,6 +18,7 @@
         <el-option label="全部" value="" />
         <el-option label="项目" value="project" />
         <el-option label="页面" value="page" />
+        <el-option label="项目类目" value="category" />
         <el-option label="自定义" value="custom" />
       </el-select>
       <el-select v-model="positionFilter" placeholder="显示位置" clearable class="admin-filter-select">
@@ -128,6 +129,7 @@
           <el-radio-group v-model="form.link_type" @change="onLinkTypeChange">
             <el-radio value="project">项目链接</el-radio>
             <el-radio value="page">页面链接</el-radio>
+            <el-radio value="category">类目链接</el-radio>
             <el-radio value="custom">自定义链接</el-radio>
           </el-radio-group>
         </el-form-item>
@@ -164,6 +166,21 @@
           >
             <template #label="{ label, value }">
               {{ label === value ? form.link || '已关联页面' : label }}
+            </template>
+          </PaginatedMultiSelect>
+        </el-form-item>
+
+        <el-form-item v-if="form.link_type === 'category'" label="选择项目类目" prop="category_id">
+          <PaginatedMultiSelect
+            v-model="form.category_id"
+            :load-options="loadCategoryOptions"
+            :single="true"
+            placeholder="输入类目名称搜索..."
+            empty-text="未找到匹配的已发布类目"
+            class="admin-full-width"
+          >
+            <template #label="{ label, value }">
+              {{ label === value ? selectedCategoryLabel : label }}
             </template>
           </PaginatedMultiSelect>
         </el-form-item>
@@ -220,6 +237,7 @@ import { Refresh, Search } from '@element-plus/icons-vue';
 import PaginatedMultiSelect from '~/components/admin/PaginatedMultiSelect.vue';
 import { getIconSvg } from '~/composables/lucideIcons';
 import { useNotify } from '~/composables/useNotify';
+import type { AdminProjectCategoryOption } from '~/types/admin-project-category';
 import type { PaginatedSelectRequest, PaginatedSelectResult } from '~/types/paginated-select';
 import { formatDateTime } from '~/utils/date';
 
@@ -234,6 +252,8 @@ interface NavItem {
   link_type: string;
   project_id: number | null;
   page_id: number | null;
+  category_id?: number | null;
+  category?: AdminProjectCategoryOption | null;
   parent_id: number | null;
   sort_order: number;
   status: boolean;
@@ -266,6 +286,7 @@ const positionFilter = ref('');
 
 const dialogVisible = ref(false);
 const editingId = ref<number | null>(null);
+const editingCategory = ref<AdminProjectCategoryOption | null>(null);
 const formRef = ref<FormInstance>();
 
 const defaultForm = (): {
@@ -274,6 +295,7 @@ const defaultForm = (): {
   link_type: string;
   project_id: number | null;
   page_id: number | null;
+  category_id: number | null;
   parent_id: number | null;
   sort_order: number;
   status: boolean;
@@ -284,6 +306,7 @@ const defaultForm = (): {
   link_type: 'custom',
   project_id: null,
   page_id: null,
+  category_id: null,
   parent_id: ROOT_PARENT_ID,
   sort_order: 0,
   status: true,
@@ -293,12 +316,12 @@ const defaultForm = (): {
 const form = reactive(defaultForm());
 
 const linkTypeLabel = (t: string) => {
-  const map: Record<string, string> = { project: '项目', page: '页面', custom: '自定义' };
+  const map: Record<string, string> = { project: '项目', page: '页面', category: '项目类目', custom: '自定义' };
   return map[t] || t;
 };
 
 const linkTypeTag = (t: string): 'info' | 'primary' | 'success' | 'warning' | 'danger' => {
-  const map: Record<string, 'success' | 'warning' | 'info'> = { project: 'success', page: 'warning', custom: 'info' };
+  const map: Record<string, 'success' | 'warning' | 'primary' | 'info'> = { project: 'success', page: 'warning', category: 'primary', custom: 'info' };
   return map[t] || 'info';
 };
 
@@ -315,6 +338,9 @@ const rules = computed<FormRules>(() => ({
     : [],
   page_id: form.link_type === 'page'
     ? [{ required: true, message: '请选择页面', trigger: 'change' }]
+    : [],
+  category_id: form.link_type === 'category'
+    ? [{ required: true, message: '请选择项目类目', trigger: 'change' }]
     : [],
   link: form.link_type === 'custom'
     ? [
@@ -414,9 +440,36 @@ const loadPageOptions = async (request: PaginatedSelectRequest): Promise<Paginat
   };
 };
 
+const categoryOptionLabel = (category: AdminProjectCategoryOption) => {
+  const status = category.status === 'draft' ? '（草稿）' : '';
+  return `${category.name}${status} (/projects/category/${category.slug})`;
+};
+
+const selectedCategoryLabel = computed(() => {
+  const category = editingCategory.value;
+  return category && category.id === form.category_id ? categoryOptionLabel(category) : form.link || '已关联类目';
+});
+
+const loadCategoryOptions = async (request: PaginatedSelectRequest): Promise<PaginatedSelectResult<number>> => {
+  const data = await useApi()<{ items: AdminProjectCategoryOption[]; total: number }>('/admin/project-categories/options', {
+    query: {
+      page: request.page,
+      per_page: request.perPage,
+      name: request.keyword,
+      status: 'published',
+    },
+  });
+  return {
+    items: data.items.map(category => ({ value: category.id, label: categoryOptionLabel(category) })),
+    total: data.total,
+  };
+};
+
 const onLinkTypeChange = () => {
   form.project_id = null;
   form.page_id = null;
+  form.category_id = null;
+  editingCategory.value = null;
   form.link = '';
 };
 
@@ -426,6 +479,7 @@ const onProjectChange = () => {
 
 const openCreate = (parentId?: number) => {
   editingId.value = null;
+  editingCategory.value = null;
   Object.assign(form, defaultForm());
   if (parentId !== undefined) {
     form.parent_id = parentId;
@@ -435,12 +489,14 @@ const openCreate = (parentId?: number) => {
 
 const openEdit = (row: NavItem) => {
   editingId.value = row.id;
+  editingCategory.value = row.category ?? null;
   Object.assign(form, {
     label: row.label,
     link: row.link || '',
     link_type: row.link_type || 'custom',
     project_id: row.project_id,
     page_id: row.page_id,
+    category_id: row.category_id ?? null,
     parent_id: row.parent_id ?? ROOT_PARENT_ID,
     sort_order: row.sort_order,
     status: row.status,
@@ -470,6 +526,9 @@ const handleSave = async () => {
       body.link = null;
     } else if (form.link_type === 'page') {
       body.page_id = form.page_id;
+      body.link = null;
+    } else if (form.link_type === 'category') {
+      body.category_id = form.category_id;
       body.link = null;
     } else {
       body.link = form.link || null;

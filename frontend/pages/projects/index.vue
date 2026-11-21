@@ -6,6 +6,14 @@
       <h1 class="page-title">北极星移民投资移民项目</h1>
       <p class="page-subtitle">查看北极星移民提供的美国EB-5、香港及其他全球身份方案，了解申请条件、周期与项目特点。</p>
 
+      <nav v-if="categories?.data?.length" class="category-links" aria-label="项目类目">
+        <ul>
+          <li v-for="category in categories.data" :key="category.slug">
+            <NuxtLink :to="`/projects/category/${category.slug}`">{{ category.name }}</NuxtLink>
+          </li>
+        </ul>
+      </nav>
+
       <form class="search-form" @submit.prevent="searchProjects">
         <div class="search-field">
           <label for="project-country">国家</label>
@@ -45,14 +53,8 @@
         <ProjectCard
           v-for="(project, idx) in items"
           :key="project.slug"
-          :slug="project.slug"
-          :title="project.title"
-          :description="project.description"
-          :image="project.image"
-          :features="project.features"
-          :link="project.link"
+          v-bind="project"
           :image-variant="idx"
-          :image-variants="project.imageVariants"
         />
       </div>
 
@@ -79,8 +81,8 @@
 </template>
 
 <script setup lang="ts">
-import type { ImageVariantInfo } from '~/utils/image'
 import { HOME_BREADCRUMB } from '~/utils/breadcrumb'
+import { toProjectCard, type ProjectCardItem, type ProjectCardSource } from '~/utils/project-card'
 
 /** 项目列表的稳定面包屑路径。 */
 const breadcrumbs = [
@@ -90,20 +92,8 @@ const breadcrumbs = [
 
 useSeo({ title: '移民项目', description: '探索最适合您的投资移民项目', breadcrumbs })
 
-interface ApiProject {
-  slug: string
-  name: string
-  tagline: string
-  overview_text: string
-  cover_image: string
-  cover_image_variants?: Record<string, ImageVariantInfo>
-  investment_amount: string
-  processing_period: string
-  target_crowd: string
-}
-
 interface ProjectsResponse {
-  data: ApiProject[]
+  data: ProjectCardSource[]
   pagination?: {
     page: number
     per_page: number
@@ -111,19 +101,19 @@ interface ProjectsResponse {
   }
 }
 
-interface ProjectItem {
+interface CategoryLink {
   slug: string
-  title: string
-  description: string
-  image: string
-  imageVariants?: Record<string, ImageVariantInfo>
-  features: string[]
-  link: string
+  name: string
 }
+
+const categoryListKey = 'public:project-categories:list'
+const { data: categories } = useFetch<{ data: CategoryLink[] }>('/api/v1/project-categories', {
+  key: categoryListKey,
+})
 
 const PER_PAGE = 12
 const page = ref(1)
-const items = ref<ProjectItem[]>([])
+const items = ref<ProjectCardItem[]>([])
 const totalCount = ref(0)
 const loadingMore = ref(false)
 const retryingLoadMore = ref(false)
@@ -136,22 +126,6 @@ const appliedFilters = reactive({ country: '', name: '' })
 let observer: IntersectionObserver | null = null
 let requestToken = 0
 
-function mapProject(api: ApiProject): ProjectItem {
-  const features: string[] = []
-  if (api.investment_amount) features.push(`投资金额：${api.investment_amount}`)
-  if (api.processing_period) features.push(`办理周期：${api.processing_period}`)
-  if (api.target_crowd) features.push(`适合人群：${api.target_crowd}`)
-  return {
-    slug: api.slug,
-    title: api.name,
-    description: api.tagline || api.overview_text || '',
-    image: api.cover_image || '',
-    imageVariants: api.cover_image_variants,
-    features,
-    link: `/projects/${api.slug}`,
-  }
-}
-
 function buildProjectsUrl(targetPage: number) {
   const params = new URLSearchParams({
     page: String(targetPage),
@@ -162,7 +136,10 @@ function buildProjectsUrl(targetPage: number) {
   return `/api/v1/projects?${params.toString()}`
 }
 
-usePublicDataFreshness([{ versionKey: 'public:projects:list', dataKey: 'public:projects:list:page1' }])
+usePublicDataFreshness([
+  { versionKey: 'public:projects:list', dataKey: 'public:projects:list:page1' },
+  categoryListKey,
+])
 
 onMounted(() => {
   observer = new IntersectionObserver(
@@ -187,7 +164,7 @@ const { data: firstPageResponse, pending, error: fetchError } = await useFetch<P
 
 watch(firstPageResponse, (body) => {
   if (!body || requestToken !== 0) return
-  items.value = body.data.map(mapProject)
+  items.value = body.data.map(toProjectCard)
   totalCount.value = body.pagination?.total ?? 0
   page.value = 1
   hasLoaded.value = true
@@ -209,10 +186,9 @@ async function fetchFirstPage() {
   hasLoaded.value = false
 
   try {
-    const raw = await $fetch(buildProjectsUrl(1))
+    const body = await $fetch<ProjectsResponse>(buildProjectsUrl(1))
     if (token !== requestToken) return
-    const body = raw as any
-    items.value = (body.data as ApiProject[]).map(mapProject)
+    items.value = body.data.map(toProjectCard)
     totalCount.value = body.pagination?.total ?? 0
     hasLoaded.value = true
   } catch {
@@ -249,10 +225,9 @@ async function loadMore() {
   loadingMore.value = true
   const nextPage = page.value + 1
   try {
-    const raw = await $fetch(buildProjectsUrl(nextPage))
+    const body = await $fetch<ProjectsResponse>(buildProjectsUrl(nextPage))
     if (token !== requestToken) return
-    const body = raw as any
-    const newItems = (body.data as ApiProject[]).map(mapProject)
+    const newItems = body.data.map(toProjectCard)
     items.value.push(...newItems)
     totalCount.value = body.pagination?.total ?? totalCount.value
     page.value = nextPage
@@ -277,6 +252,31 @@ async function loadMore() {
   font-size: var(--text-base);
   color: var(--color-text-muted);
   margin-bottom: 24px;
+}
+
+.category-links {
+  margin-bottom: 24px;
+}
+
+.category-links ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.category-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 6px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+}
+
+.category-links a:hover,
+.category-links a:focus-visible {
+  border-color: var(--color-accent);
 }
 
 .search-form {

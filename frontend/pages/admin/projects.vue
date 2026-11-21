@@ -164,6 +164,19 @@
                 </el-form-item>
               </el-col>
             </el-row>
+            <el-form-item label="项目类目" prop="category_ids">
+              <PaginatedMultiSelect
+                v-model="selectedCategoryIds"
+                :load-options="loadCategoryOptions"
+                placeholder="输入类目名称搜索..."
+                empty-text="未找到匹配的类目"
+                class="admin-full-width"
+              >
+                <template #label="{ label, value }">
+                  {{ label === value ? categoryLabels.get(value) || label : label }}
+                </template>
+              </PaginatedMultiSelect>
+            </el-form-item>
             <el-form-item label="标语" prop="tagline">
               <el-input v-model="form.tagline" />
             </el-form-item>
@@ -681,6 +694,7 @@ import ImageInput from '~/components/admin/ImageInput.vue';
 import IconPicker from '~/components/admin/IconPicker.vue';
 import RichEditor from '~/components/RichEditor.vue';
 import PaginatedMultiSelect from '~/components/admin/PaginatedMultiSelect.vue';
+import type { AdminProjectCategoryOption } from '~/types/admin-project-category';
 import type { PaginatedSelectRequest, PaginatedSelectResult } from '~/types/paginated-select';
 import { getIconByName, getIconSvg } from '~/composables/lucideIcons';
 import { formatDateTime } from '~/utils/date';
@@ -697,6 +711,8 @@ interface Project {
   name: string;
   country: string;
   region_id?: number | null;
+  category_ids?: number[];
+  categories?: AdminProjectCategoryOption[];
   flag_emoji: string;
   tagline: string;
   investment_amount: string;
@@ -792,12 +808,12 @@ const onSearch = () => {
   }, 300);
 };
 
-const defaultForm = () => ({
-  id: undefined as string | undefined,
+const defaultForm = (): Omit<Project, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'categories'> => ({
   slug: '',
   name: '',
   country: '',
   region_id: undefined,
+  category_ids: [],
   flag_emoji: '',
   tagline: '',
   investment_amount: '',
@@ -818,9 +834,14 @@ const defaultForm = () => ({
   sort_order: 0,
   is_pinned: false,
   status: 0,
-} as Project);
+});
 
 const form = reactive(defaultForm());
+const categoryLabels = ref(new Map<number, string>());
+const selectedCategoryIds = computed({
+  get: () => form.category_ids ?? [],
+  set: (values: number[]) => { form.category_ids = values; },
+});
 
 const rules: FormRules = {
   slug: [{ required: true, message: '请输入标识', trigger: 'blur' }],
@@ -940,9 +961,27 @@ const loadRegions = async () => {
   }
 };
 
+const loadCategoryOptions = async (request: PaginatedSelectRequest): Promise<PaginatedSelectResult<number>> => {
+  const data = await useApi()<{ items: AdminProjectCategoryOption[]; total: number }>('/admin/project-categories/options', {
+    query: {
+      page: request.page,
+      per_page: request.perPage,
+      name: request.keyword,
+    },
+  });
+  return {
+    items: data.items.map(category => ({
+      value: category.id,
+      label: category.status === 'draft' ? `${category.name}（草稿）` : category.name,
+    })),
+    total: data.total,
+  };
+};
+
 const openCreate = () => {
   editingId.value = null;
   Object.assign(form, defaultForm());
+  categoryLabels.value = new Map();
   resetSubData();
   activeTab.value = 'basic';
   drawerVisible.value = true;
@@ -950,8 +989,15 @@ const openCreate = () => {
 
 const openEdit = (row: Project) => {
   editingId.value = row.id;
-  const { id, created_at, updated_at, deleted_at, ...cleanRow } = row;
-  Object.assign(form, cleanRow, { region_id: row.region_id ?? undefined });
+  const { id, created_at, updated_at, deleted_at, categories, category_ids, ...cleanRow } = row;
+  categoryLabels.value = new Map((categories || []).map(category => [
+    category.id,
+    category.status === 'draft' ? `${category.name}（草稿）` : category.name,
+  ]));
+  Object.assign(form, cleanRow, {
+    region_id: row.region_id ?? undefined,
+    category_ids: category_ids ? [...category_ids] : categories?.map(category => category.id),
+  });
   resetSubData();
   activeTab.value = 'basic';
   drawerVisible.value = true;

@@ -7,6 +7,7 @@ import (
 
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/logging"
+	"mygo-immigration/backend/internal/model"
 
 	"github.com/gin-gonic/gin"
 )
@@ -86,9 +87,11 @@ func (h *Handler) AdminListProjects(c *gin.Context) {
 		return
 	}
 
-	items := make([]dto.AdminProject, 0, len(projects))
-	for _, project := range projects {
-		items = append(items, dto.AdminProject{Project: project, RegionID: project.RegionID})
+	items, err := h.svc.Project.AdminRows(projects)
+	if err != nil {
+		logging.Logger.Error("failed to load project categories", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		return
 	}
 	if req.Page > 0 && req.PerPage > 0 {
 		c.JSON(http.StatusOK, dto.SuccessPaginated(items, req.Page, req.PerPage, total))
@@ -107,14 +110,14 @@ func (h *Handler) CreateProject(c *gin.Context) {
 	project := req.Project
 	project.ID = 0 // ensure DB auto-increment
 	project.RegionID = req.RegionID
-	created, err := h.svc.Project.Create(&project)
+	created, err := h.svc.Project.CreateWithCategories(&project, req.CategoryIDs, req.Status)
 	if err != nil {
 		logging.Logger.Warn("business error in CreateProject", "error", err)
 		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusCreated, dto.Success(dto.AdminProject{Project: *created, RegionID: created.RegionID}))
+	h.respondAdminProject(c, http.StatusCreated, *created)
 }
 
 func (h *Handler) UpdateProject(c *gin.Context) {
@@ -137,7 +140,17 @@ func (h *Handler) UpdateProject(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.Success(dto.AdminProject{Project: *updated, RegionID: updated.RegionID}))
+	h.respondAdminProject(c, http.StatusOK, *updated)
+}
+
+func (h *Handler) respondAdminProject(c *gin.Context, status int, project model.Project) {
+	items, err := h.svc.Project.AdminRows([]model.Project{project})
+	if err != nil {
+		logging.Logger.Error("failed to load project categories", "error", err)
+		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
+		return
+	}
+	c.JSON(status, dto.Success(items[0]))
 }
 
 func (h *Handler) DeleteProject(c *gin.Context) {

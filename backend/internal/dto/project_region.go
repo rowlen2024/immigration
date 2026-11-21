@@ -4,12 +4,16 @@ import "mygo-immigration/backend/internal/model"
 
 type AdminProject struct {
 	model.Project
-	RegionID *uint64 `json:"region_id"`
+	RegionID    *uint64                 `json:"region_id"`
+	CategoryIDs []uint64                `json:"category_ids"`
+	Categories  []ProjectCategoryOption `json:"categories"`
 }
 
 type CreateProjectRequest struct {
 	model.Project
-	RegionID *uint64 `json:"region_id"`
+	RegionID    *uint64  `json:"region_id"`
+	CategoryIDs []uint64 `json:"category_ids" binding:"omitempty,dive,gt=0"`
+	Status      *int8    `json:"status"`
 }
 
 type ProjectRegion struct {

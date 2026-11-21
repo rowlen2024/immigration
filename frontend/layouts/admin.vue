@@ -215,7 +215,14 @@ const baseNavGroups: NavGroup[] = [
       { to: '/admin/media', label: '媒体库' },
     ],
   },
-  { to: '/admin/projects', label: '项目管理', icon: getIconSvg('folder', 20) },
+  {
+    label: '项目管理',
+    icon: getIconSvg('folder', 20),
+    children: [
+      { to: '/admin/projects', label: '项目列表' },
+      { to: '/admin/project-categories', label: '项目类目' },
+    ],
+  },
   { to: '/admin/faqs', label: 'FAQ 管理', icon: getIconSvg('help-circle', 20) },
   { to: '/admin/cases', label: '案例管理', icon: getIconSvg('users', 20) },
   { to: '/admin/lawyers', label: '律师团队', icon: getIconSvg('briefcase', 20) },
@@ -237,6 +244,7 @@ const routePermissions: Record<string, string[]> = {
   '/admin/pages': ['pages:read'],
   '/admin/media': ['media:read'],
   '/admin/projects': ['projects:read'],
+  '/admin/project-categories': ['projects:read'],
   '/admin/faqs': ['faqs:read'],
   '/admin/cases': ['cases:read'],
   '/admin/lawyers': ['lawyers:read'],
@@ -300,7 +308,7 @@ const toggleGroup = (label: string) => {
 
 // Auto-expand group when a child route is active
 watch(
-  () => route.path,
+  [() => route.path, navGroups],
   () => {
     for (const group of navGroups.value) {
       if (group.children && isGroupActive(group)) {

@@ -69,11 +69,17 @@ func (m *handlerMockProjectRepo) Create(project *model.Project) error {
 	}
 	return nil
 }
+func (m *handlerMockProjectRepo) CreateWithCategories(project *model.Project, _ []uint64, _ *int8) error {
+	return m.Create(project)
+}
 func (m *handlerMockProjectRepo) Update(project *model.Project) error {
 	if m.update != nil {
 		return m.update(project)
 	}
 	return nil
+}
+func (m *handlerMockProjectRepo) UpdateWithCategories(project *model.Project, _ []uint64) error {
+	return m.Update(project)
 }
 func (m *handlerMockProjectRepo) Delete(id uint64) error {
 	if m.delete != nil {

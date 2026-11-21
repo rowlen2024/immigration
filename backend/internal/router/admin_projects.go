@@ -8,6 +8,17 @@ import (
 )
 
 func registerAdminProjectRoutes(admin *gin.RouterGroup, h *handler.Handler) {
+	categories := admin.Group("/project-categories")
+	{
+		categories.GET("", middleware.RBAC("projects:read"), h.AdminListProjectCategories)
+		categories.GET("/options", middleware.RBACAny("projects:read", "navigation:read"), h.AdminListProjectCategoryOptions)
+		categories.POST("", middleware.RBAC("projects:write"), h.CreateProjectCategory)
+		categories.PUT("/:id", middleware.RBAC("projects:write"), h.UpdateProjectCategory)
+		categories.DELETE("/:id", middleware.RBAC("projects:write"), h.DeleteProjectCategory)
+		categories.GET("/:id/projects", middleware.RBAC("projects:read"), h.AdminListProjectCategoryProjects)
+		categories.PUT("/:id/projects/:projectId", middleware.RBAC("projects:write"), h.UpdateProjectCategoryProjectOrder)
+	}
+
 	projects := admin.Group("/projects")
 	{
 		projects.GET("", middleware.RBAC("projects:read"), h.AdminListProjects)

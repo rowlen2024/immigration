@@ -47,9 +47,13 @@
       </div>
 
       <div v-for="col in footerNav" :key="col.id" class="footer-column" :class="{ 'footer-col-open': footerExpanded.has(col.id) }">
-        <h3 class="footer-heading">
-          {{ col.label }}
+        <h3 class="footer-heading" :class="{ 'footer-heading--linked': col.link_type === 'category' && col.link }">
+          <NuxtLink v-if="col.link_type === 'category' && col.link" :to="col.link" class="footer-heading-link">
+            {{ col.label }}
+          </NuxtLink>
+          <template v-else>{{ col.label }}</template>
           <button
+            v-if="col.children?.length"
             type="button"
             class="footer-heading-toggle"
             :aria-label="`${footerExpanded.has(col.id) ? '收起' : '展开'}${col.label}`"
@@ -243,6 +247,15 @@ const copyrightText = computed(() => {
   color: var(--accent);
 }
 
+.footer-heading-link {
+  color: inherit;
+}
+
+.footer-heading-link:hover,
+.footer-heading-link:focus-visible {
+  text-decoration: underline;
+}
+
 .footer-heading-toggle {
   display: none;
 }
@@ -366,6 +379,16 @@ const copyrightText = computed(() => {
     padding: 0;
     cursor: pointer;
     color: rgba(200, 150, 62, 0.5);
+  }
+
+  .footer-heading--linked {
+    padding-right: 44px;
+  }
+
+  .footer-heading--linked .footer-heading-toggle {
+    left: auto;
+    width: 44px;
+    justify-content: center;
   }
 
   .footer-heading-toggle svg {

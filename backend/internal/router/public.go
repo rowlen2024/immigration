@@ -19,6 +19,8 @@ func registerPublicRoutes(api *gin.RouterGroup, h *handler.Handler) {
 	api.GET("/projects/options", h.ListProjectOptions)
 	api.GET("/projects/compare", h.CompareProjects)
 	api.GET("/project-regions", h.ListPublishedProjectRegions)
+	api.GET("/project-categories", h.ListPublishedProjectCategories)
+	api.GET("/project-categories/:slug", h.GetPublishedProjectCategory)
 	api.GET("/projects/:slug", h.GetProject)
 	api.GET("/faqs/projects", h.ListFAQProjects)
 	api.GET("/faqs", h.ListFAQs)

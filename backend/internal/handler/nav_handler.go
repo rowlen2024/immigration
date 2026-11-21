@@ -5,7 +5,6 @@ import (
 
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/logging"
-	"mygo-immigration/backend/internal/model"
 
 	"github.com/gin-gonic/gin"
 )
@@ -34,7 +33,7 @@ func (h *Handler) AdminListNavigationTree(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
-	c.JSON(http.StatusOK, dto.Success(tree))
+	c.JSON(http.StatusOK, dto.Success(dto.NewAdminNavigationItems(tree)))
 }
 
 func (h *Handler) AdminListNavigation(c *gin.Context) {
@@ -46,23 +45,24 @@ func (h *Handler) AdminListNavigation(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dto.Error(500, "internal server error"))
 		return
 	}
-	c.JSON(http.StatusOK, dto.SuccessPaginated(items, page, pageSize, total))
+	c.JSON(http.StatusOK, dto.SuccessPaginated(dto.NewAdminNavigationItems(items), page, pageSize, total))
 }
 
 func (h *Handler) CreateNavigation(c *gin.Context) {
-	var nav model.Navigation
-	if err := c.ShouldBindJSON(&nav); err != nil {
+	var req dto.NavigationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request"))
 		return
 	}
-	nav.ID = 0 // ensure DB auto-increment
-	created, err := h.svc.Nav.Create(&nav)
+	req.Navigation.ID = 0 // ensure DB auto-increment
+	req.Navigation.CategoryID = req.CategoryID
+	created, err := h.svc.Nav.Create(&req.Navigation)
 	if err != nil {
 		logging.Logger.Warn("validation error in CreateNavigation", "error", err)
 		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
-	c.JSON(http.StatusCreated, dto.Success(created))
+	c.JSON(http.StatusCreated, dto.Success(dto.NewAdminNavigationItem(*created)))
 }
 
 func (h *Handler) UpdateNavigation(c *gin.Context) {
@@ -71,18 +71,19 @@ func (h *Handler) UpdateNavigation(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid navigation id"))
 		return
 	}
-	var nav model.Navigation
-	if err := c.ShouldBindJSON(&nav); err != nil {
+	var req dto.NavigationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request"))
 		return
 	}
-	updated, err := h.svc.Nav.Update(id, &nav)
+	req.Navigation.CategoryID = req.CategoryID
+	updated, err := h.svc.Nav.Update(id, &req.Navigation)
 	if err != nil {
 		logging.Logger.Warn("validation error in UpdateNavigation", "error", err)
 		c.JSON(http.StatusBadRequest, dto.Error(400, err.Error()))
 		return
 	}
-	c.JSON(http.StatusOK, dto.Success(updated))
+	c.JSON(http.StatusOK, dto.Success(dto.NewAdminNavigationItem(*updated)))
 }
 
 func (h *Handler) DeleteNavigation(c *gin.Context) {

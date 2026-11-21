@@ -41,6 +41,7 @@ export default defineNuxtConfig({
       '/': { swr: 300 },
       '/projects': { swr: 300 },
       '/projects/**': { ssr: true, swr: 300 },
+      '/projects/category/**': { ssr: true, swr: false, cache: false },
       '/pages/**': { ssr: true, swr: 300 },
       '/case/**': { ssr: true, swr: 300 },
       // '/projects/cies': { swr: 300 },

@@ -155,11 +155,11 @@ func (r *ProjectRepo) Create(project *model.Project) error {
 }
 
 func (r *ProjectRepo) Update(project *model.Project) error {
-	return r.db.Omit("Requirements", "CostItems", "TimelinePhases", "Milestones", "FAQs", "Cases", "Advantages", "created_at").Save(project).Error
+	return r.UpdateWithCategories(project, nil)
 }
 
 func (r *ProjectRepo) Delete(id uint64) error {
-	return r.db.Unscoped().Delete(&model.Project{}, id).Error
+	return r.deleteWithCategories(id)
 }
 
 func (r *ProjectRepo) Count() (int64, error) {

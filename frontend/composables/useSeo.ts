@@ -4,13 +4,14 @@ import type { MaybeRefOrGetter } from 'vue'
 import type { BreadcrumbItem } from '~/utils/breadcrumb'
 
 interface SeoOptions {
-  title?: string
-  description?: string
+  title?: MaybeRefOrGetter<string | undefined>
+  description?: MaybeRefOrGetter<string | undefined>
   /** @deprecated 请使用 utils/jsonld.ts 的纯函数 + useHead 替代 */
   jsonLd?: Record<string, unknown>
   /** 页面提供的稳定语义面包屑。 */
   breadcrumbs?: MaybeRefOrGetter<readonly BreadcrumbItem[] | null | undefined>
-  robots?: string
+  robots?: MaybeRefOrGetter<string | undefined>
+  canonicalPath?: MaybeRefOrGetter<string | undefined>
 }
 
 export const useSeo = (options: SeoOptions) => {
@@ -24,10 +25,10 @@ export const useSeo = (options: SeoOptions) => {
     const fallbackBase = String(runtimeConfig.public.siteUrl || '').trim()
     return (configuredBase || fallbackBase).replace(/\/+$/, '')
   })
-  const canonicalUrl = computed(() => `${canonicalBase.value}${route.path}`)
+  const canonicalUrl = computed(() => `${canonicalBase.value}${toValue(options.canonicalPath) || route.path}`)
 
   const fullTitle = computed(() => {
-    const pageTitle = options.title?.trim()
+    const pageTitle = toValue(options.title)?.trim()
     if (pageTitle) {
       return pageTitle.includes(siteName.value)
         ? pageTitle
@@ -51,7 +52,7 @@ export const useSeo = (options: SeoOptions) => {
     metas.push({name: "msvalidate.01", content: "EFC906F85E9EE0CA6B69D87204515B66"})
 
     // ── Description / OG / Twitter ──
-    const desc = options.description || siteConfig.value?.seo_description || ''
+    const desc = toValue(options.description) || siteConfig.value?.seo_description || ''
     if (desc) {
       metas.push(
         { name: 'description', content: desc },
@@ -87,7 +88,7 @@ export const useSeo = (options: SeoOptions) => {
     links.push({ rel: 'canonical', href: canonicalUrl.value })
 
     // ── Robots ──
-    metas.push({ name: 'robots', content: options.robots || 'index, follow' })
+    metas.push({ name: 'robots', content: toValue(options.robots) || 'index, follow' })
 
     // ── JSON-LD: custom (兼容旧用法) ──
     if (options.jsonLd) {

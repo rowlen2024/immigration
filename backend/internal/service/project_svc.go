@@ -15,6 +15,8 @@ import (
 type ProjectService struct {
 	repo              repository.ProjectRepository
 	regionRepo        repository.ProjectRegionRepository
+	categoryRepo      *repository.ProjectCategoryRepo
+	categoryWriter    projectCategoryWriter
 	navRepo           repository.NavigationRepository
 	homeConfigSvc     *HomeConfigService
 	requirementRepo   repository.RequirementRepository
@@ -31,7 +33,8 @@ type ProjectService struct {
 
 // NewProjectService creates a new ProjectService with the given dependencies.
 func NewProjectService(repo repository.ProjectRepository, navRepo repository.NavigationRepository) *ProjectService {
-	return &ProjectService{repo: repo, navRepo: navRepo}
+	categoryWriter, _ := repo.(projectCategoryWriter)
+	return &ProjectService{repo: repo, navRepo: navRepo, categoryWriter: categoryWriter}
 }
 
 func (s *ProjectService) RegisterPublicVersions(reg *PublicVersionRegistry) {
@@ -233,6 +236,10 @@ func pluckRequirements(projects []model.Project) [][]string {
 
 // Create creates a new project.
 func (s *ProjectService) Create(project *model.Project) (*model.Project, error) {
+	return s.CreateWithCategories(project, nil, nil)
+}
+
+func (s *ProjectService) CreateWithCategories(project *model.Project, categoryIDs []uint64, requestedStatus *int8) (*model.Project, error) {
 	if project == nil {
 		return nil, errors.New("project is nil")
 	}
@@ -245,7 +252,19 @@ func (s *ProjectService) Create(project *model.Project) (*model.Project, error) 
 	if err := s.applyProjectRegion(project, project.RegionID, project.Country); err != nil {
 		return nil, err
 	}
-	if err := s.repo.Create(project); err != nil {
+	if requestedStatus != nil {
+		project.Status = *requestedStatus
+	}
+	var err error
+	if len(categoryIDs) > 0 || requestedStatus != nil && *requestedStatus == 0 {
+		err = s.categoryWriter.CreateWithCategories(project, categoryIDs, requestedStatus)
+	} else {
+		err = s.repo.Create(project)
+	}
+	if err != nil {
+		if errors.Is(err, repository.ErrUnknownProjectCategories) {
+			return nil, err
+		}
 		return nil, fmt.Errorf("failed to create project: %w", err)
 	}
 	return project, nil
@@ -306,7 +325,15 @@ func (s *ProjectService) Update(id uint64, req dto.UpdateProjectRequest) (*model
 	existing.IsPinned = req.IsPinned
 	existing.Status = req.Status
 
-	if err := s.repo.Update(existing); err != nil {
+	if req.CategoryIDs != nil {
+		err = s.categoryWriter.UpdateWithCategories(existing, req.CategoryIDs)
+	} else {
+		err = s.repo.Update(existing)
+	}
+	if err != nil {
+		if errors.Is(err, repository.ErrUnknownProjectCategories) {
+			return nil, err
+		}
 		return nil, fmt.Errorf("failed to update project: %w", err)
 	}
 	return existing, nil

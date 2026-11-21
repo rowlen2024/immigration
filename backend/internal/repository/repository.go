@@ -7,6 +7,7 @@ import (
 type Repository struct {
 	db               *gorm.DB
 	Project          *ProjectRepo
+	ProjectCategory  *ProjectCategoryRepo
 	User             *UserRepo
 	RBAC             *RBACRepo
 	FAQ              *FAQRepo
@@ -32,6 +33,7 @@ func New(db *gorm.DB) *Repository {
 	return &Repository{
 		db:               db,
 		Project:          &ProjectRepo{db: db},
+		ProjectCategory:  &ProjectCategoryRepo{db: db},
 		User:             &UserRepo{db: db},
 		RBAC:             &RBACRepo{db: db},
 		FAQ:              &FAQRepo{db: db},
