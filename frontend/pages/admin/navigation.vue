@@ -154,24 +154,18 @@
         </el-form-item>
 
         <el-form-item v-if="form.link_type === 'page'" label="选择页面" prop="page_id">
-          <el-select
+          <PaginatedMultiSelect
             v-model="form.page_id"
-            placeholder="搜索并选择页面"
-            filterable
-            clearable
+            :load-options="loadPageOptions"
+            :single="true"
+            placeholder="输入标题搜索页面..."
+            empty-text="未找到匹配的页面"
             class="admin-full-width"
-            @change="onPageChange"
           >
-            <el-option
-              v-for="p in pages"
-              :key="p.id"
-              :label="`${p.title} (/pages/${p.slug})`"
-              :value="p.id"
-            />
-          </el-select>
-          <div v-if="form.page_id" class="link-preview">
-            链接预览：<code>/pages/{{ selectedPageSlug }}</code>
-          </div>
+            <template #label="{ label, value }">
+              {{ label === value ? form.link || '已关联页面' : label }}
+            </template>
+          </PaginatedMultiSelect>
         </el-form-item>
 
         <el-form-item v-if="form.link_type === 'custom'" label="链接" prop="link">
@@ -182,6 +176,7 @@
           <el-tree-select
             v-model="form.parent_id"
             :data="parentOptions"
+            node-key="id"
             :props="{ children: 'children', label: 'label' }"
             placeholder="选择父级（留空为顶级）"
             clearable
@@ -222,8 +217,10 @@
 <script setup lang="ts">
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { Refresh, Search } from '@element-plus/icons-vue';
+import PaginatedMultiSelect from '~/components/admin/PaginatedMultiSelect.vue';
 import { getIconSvg } from '~/composables/lucideIcons';
 import { useNotify } from '~/composables/useNotify';
+import type { PaginatedSelectRequest, PaginatedSelectResult } from '~/types/paginated-select';
 import { formatDateTime } from '~/utils/date';
 
 definePageMeta({ layout: 'admin', middleware: 'auth' });
@@ -261,7 +258,6 @@ const isViewer = computed(() => !hasPermission('navigation:write'));
 
 const treeData = ref<NavItem[]>([]);
 const projects = ref<ProjectBrief[]>([]);
-const pages = ref<PageBrief[]>([]);
 const loading = ref(false);
 const saving = ref(false);
 const searchQuery = ref('');
@@ -309,12 +305,6 @@ const linkTypeTag = (t: string): 'info' | 'primary' | 'success' | 'warning' | 'd
 const selectedProjectSlug = computed(() => {
   if (!form.project_id) return '';
   const p = projects.value.find((p) => p.id === form.project_id);
-  return p ? p.slug : '';
-});
-
-const selectedPageSlug = computed(() => {
-  if (!form.page_id) return '';
-  const p = pages.value.find((p) => p.id === form.page_id);
   return p ? p.slug : '';
 });
 
@@ -396,18 +386,32 @@ const loadTree = async () => {
   }
 };
 
-const loadOptions = async () => {
+const loadProjectOptions = async () => {
   try {
     const api = useApi();
-    const [projRes, pageRes] = await Promise.all([
-      api<{ items: ProjectBrief[] }>('/admin/projects/options?page=1&per_page=500'),
-      api<{ items: PageBrief[] }>('/admin/pages/options?page=1&per_page=500'),
-    ]);
-    projects.value = projRes?.items || [];
-    pages.value = pageRes?.items || [];
+    const data = await api<{ items: ProjectBrief[] }>('/admin/projects/options?page=1&per_page=500');
+    projects.value = data?.items || [];
   } catch {
-    // non-critical; dropdowns will be empty
+    // The project dropdown remains empty when its options cannot be loaded.
   }
+};
+
+const loadPageOptions = async (request: PaginatedSelectRequest): Promise<PaginatedSelectResult<number>> => {
+  const api = useApi();
+  const data = await api<{ items: PageBrief[]; total: number }>('/admin/pages/options', {
+    query: {
+      page: request.page,
+      per_page: request.perPage,
+      title: request.keyword,
+    },
+  });
+  return {
+    items: data.items.map(page => ({
+      value: page.id,
+      label: `${page.title} (/pages/${page.slug})`,
+    })),
+    total: data.total,
+  };
 };
 
 const onLinkTypeChange = () => {
@@ -418,10 +422,6 @@ const onLinkTypeChange = () => {
 
 const onProjectChange = () => {
   // auto-fill link preview is reactive via selectedProjectSlug
-};
-
-const onPageChange = () => {
-  // auto-fill link preview is reactive via selectedPageSlug
 };
 
 const openCreate = (parentId?: number) => {
@@ -506,7 +506,7 @@ const handleDelete = async (id: number) => {
 
 onMounted(() => {
   loadTree();
-  loadOptions();
+  loadProjectOptions();
 });
 </script>
 

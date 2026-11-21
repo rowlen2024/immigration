@@ -1,7 +1,10 @@
 <template>
   <el-select
     v-model="selected"
-    multiple
+    :multiple="!single"
+    :clearable="single"
+    :value-on-clear="() => null"
+    :fit-input-width="single"
     filterable
     remote
     :remote-method="searchOptions"
@@ -16,6 +19,9 @@
       :label="option.label"
       :value="option.value"
     />
+    <template v-if="$slots.label" #label="option">
+      <slot name="label" v-bind="option" />
+    </template>
     <template #empty>
       <div class="paginated-select-empty">
         <template v-if="loading">加载中...</template>
@@ -42,7 +48,7 @@
   </el-select>
 </template>
 
-<script setup lang="ts" generic="T extends PaginatedSelectValue">
+<script setup lang="ts" generic="T extends PaginatedSelectValue, Single extends boolean = false">
 import type {
   PaginatedSelectOption,
   PaginatedSelectRequest,
@@ -50,7 +56,7 @@ import type {
   PaginatedSelectValue,
 } from '~/types/paginated-select';
 
-/** 通用分页多选配置，业务接口及筛选规则由加载函数负责。 */
+/** 通用分页选择配置，业务接口及筛选规则由加载函数负责。 */
 const props = withDefaults(defineProps<{
   /** 按当前查询返回一页选项，不得在加载函数中循环查询全量数据。 */
   loadOptions: (request: PaginatedSelectRequest) => Promise<PaginatedSelectResult<T>>;
@@ -62,6 +68,8 @@ const props = withDefaults(defineProps<{
   emptyText?: string;
   /** 是否禁止修改选择。 */
   disabled?: boolean;
+  /** 默认多选，单选只返回一个标识或 null。 */
+  single?: Single & boolean;
 }>(), {
   pageSize: 20,
   placeholder: '输入关键词搜索...',
@@ -70,7 +78,7 @@ const props = withDefaults(defineProps<{
 });
 
 /** 已选择的原始标识，搜索和翻页时保持不变。 */
-const selected = defineModel<T[]>({ required: true });
+const selected = defineModel<Single extends true ? T | null : T[]>({ required: true });
 /** 当前页选项，跨页已选项的标题由 Element Plus 的选项缓存保留。 */
 const options = ref<PaginatedSelectOption<T>[]>([]);
 /** 从 1 开始的当前页码。 */
