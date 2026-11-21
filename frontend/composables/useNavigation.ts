@@ -1,7 +1,9 @@
-interface NavItem {
+export interface NavItem {
   id: number;
   label: string;
   link: string | null;
+  link_type?: string;
+  project_id?: number | null;
   children: NavItem[];
   status: boolean;
 }
@@ -72,11 +74,12 @@ const FALLBACK_FOOTER: NavItem[] = [
 ];
 
 export const useNavigation = (position: NavPosition = 'header') => {
-  const { data } = useFetch('/api/v1/navigation', {
+  const navigationRequest = useFetch('/api/v1/navigation', {
     key: `public:navigation:${position}`,
     query: { position },
     transform: (response: any) => response?.data ?? response,
   })
+  const { data } = navigationRequest
   usePublicDataFreshness([`public:navigation:${position}`])
 
   const fallback = position === 'footer' ? FALLBACK_FOOTER : FALLBACK_HEADER
@@ -91,5 +94,5 @@ export const useNavigation = (position: NavPosition = 'header') => {
     refreshNuxtData(`public:navigation:${position}`)
   }
 
-  return { navItems, refreshNavigation, data };
+  return { navItems, refreshNavigation, data, ready: navigationRequest };
 };

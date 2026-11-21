@@ -39,6 +39,10 @@ type Project struct {
 	CreatedAt          time.Time      `json:"created_at"`
 	UpdatedAt          time.Time      `json:"updated_at"`
 
+	// 国家／地区关联用于导航分组，保留旧字段兼容历史数据。
+	RegionID *uint64        `gorm:"index:idx_projects_region_id" json:"-"`
+	Region   *ProjectRegion `gorm:"foreignKey:RegionID;constraint:OnDelete:RESTRICT" json:"-"`
+
 	Requirements   []Requirement   `gorm:"foreignKey:ProjectID" json:"requirements,omitempty"`
 	CostItems      []CostItem      `gorm:"foreignKey:ProjectID" json:"cost_items,omitempty"`
 	TimelinePhases []TimelinePhase `gorm:"foreignKey:ProjectID" json:"timeline_phases,omitempty"`

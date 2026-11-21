@@ -89,6 +89,7 @@ func New(repo *repository.Repository, cfg *config.Config) *Service {
 	svc.Project.caseRepo = repo.Case
 	svc.Project.testimonialRepo = repo.Testimonial
 	svc.Project.faqRepo = repo.FAQ
+	svc.Project.regionRepo = repo.Project
 	svc.Project.versionRepo = repo.PublicVersion
 	svc.Page.versionRepo = repo.PublicVersion
 	svc.Case.versionRepo = repo.PublicVersion

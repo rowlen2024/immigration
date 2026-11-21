@@ -12,6 +12,7 @@ func registerAdminProjectRoutes(admin *gin.RouterGroup, h *handler.Handler) {
 	{
 		projects.GET("", middleware.RBAC("projects:read"), h.AdminListProjects)
 		projects.GET("/options", middleware.RBAC("projects:read"), h.AdminListProjectOptions)
+		projects.GET("/regions", middleware.RBAC("projects:read"), h.AdminListProjectRegions)
 		projects.POST("", middleware.RBAC("projects:write"), h.CreateProject)
 		projects.PUT("/:id", middleware.RBAC("projects:write"), h.UpdateProject)
 		projects.DELETE("/:id", middleware.RBAC("projects:write"), h.DeleteProject)

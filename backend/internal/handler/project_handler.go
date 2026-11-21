@@ -7,11 +7,9 @@ import (
 
 	"mygo-immigration/backend/internal/dto"
 	"mygo-immigration/backend/internal/logging"
-	"mygo-immigration/backend/internal/model"
 
 	"github.com/gin-gonic/gin"
 )
-
 
 func (h *Handler) ListProjects(c *gin.Context) {
 	var req dto.ProjectListRequest
@@ -88,21 +86,27 @@ func (h *Handler) AdminListProjects(c *gin.Context) {
 		return
 	}
 
+	items := make([]dto.AdminProject, 0, len(projects))
+	for _, project := range projects {
+		items = append(items, dto.AdminProject{Project: project, RegionID: project.RegionID})
+	}
 	if req.Page > 0 && req.PerPage > 0 {
-		c.JSON(http.StatusOK, dto.SuccessPaginated(projects, req.Page, req.PerPage, total))
+		c.JSON(http.StatusOK, dto.SuccessPaginated(items, req.Page, req.PerPage, total))
 	} else {
-		c.JSON(http.StatusOK, dto.Success(projects))
+		c.JSON(http.StatusOK, dto.Success(items))
 	}
 }
 
 func (h *Handler) CreateProject(c *gin.Context) {
-	var project model.Project
-	if err := c.ShouldBindJSON(&project); err != nil {
+	var req dto.CreateProjectRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.Error(400, "invalid request"))
 		return
 	}
 
+	project := req.Project
 	project.ID = 0 // ensure DB auto-increment
+	project.RegionID = req.RegionID
 	created, err := h.svc.Project.Create(&project)
 	if err != nil {
 		logging.Logger.Warn("business error in CreateProject", "error", err)
@@ -110,7 +114,7 @@ func (h *Handler) CreateProject(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, dto.Success(created))
+	c.JSON(http.StatusCreated, dto.Success(dto.AdminProject{Project: *created, RegionID: created.RegionID}))
 }
 
 func (h *Handler) UpdateProject(c *gin.Context) {
@@ -133,7 +137,7 @@ func (h *Handler) UpdateProject(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.Success(updated))
+	c.JSON(http.StatusOK, dto.Success(dto.AdminProject{Project: *updated, RegionID: updated.RegionID}))
 }
 
 func (h *Handler) DeleteProject(c *gin.Context) {

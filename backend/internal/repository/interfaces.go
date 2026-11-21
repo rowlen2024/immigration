@@ -91,6 +91,13 @@ type ProjectRepository interface {
 	CountByRange(start, end time.Time) (int64, error)
 }
 
+type ProjectRegionRepository interface {
+	FindPublishedProjectRegions(ids []uint64) ([]model.Project, error)
+	ListRegions() ([]model.ProjectRegion, error)
+	FindRegionByID(id uint64) (*model.ProjectRegion, error)
+	FindRegionByName(name string) (*model.ProjectRegion, error)
+}
+
 // FAQQueryParams holds optional filters for FAQ queries.
 type FAQQueryParams struct {
 	ProjectID *uint64

@@ -14,6 +14,7 @@ import (
 // ProjectService handles business logic for immigration projects.
 type ProjectService struct {
 	repo              repository.ProjectRepository
+	regionRepo        repository.ProjectRegionRepository
 	navRepo           repository.NavigationRepository
 	homeConfigSvc     *HomeConfigService
 	requirementRepo   repository.RequirementRepository
@@ -37,6 +38,7 @@ func (s *ProjectService) RegisterPublicVersions(reg *PublicVersionRegistry) {
 	reg.Register("public:projects:list", func(string) (repository.PublicVersion, error) {
 		return tableVersion(s.versionRepo, "projects", "deleted_at IS NULL")
 	})
+	reg.Register("public:project-regions", s.publicProjectRegionsVersion)
 	reg.Register("public:project:", s.publicProjectVersion)
 	reg.Register("public:compare:", s.publicCompareVersion)
 }
@@ -240,6 +242,9 @@ func (s *ProjectService) Create(project *model.Project) (*model.Project, error) 
 	if project.Name == "" {
 		return nil, errors.New("project name is required")
 	}
+	if err := s.applyProjectRegion(project, project.RegionID, project.Country); err != nil {
+		return nil, err
+	}
 	if err := s.repo.Create(project); err != nil {
 		return nil, fmt.Errorf("failed to create project: %w", err)
 	}
@@ -276,7 +281,9 @@ func (s *ProjectService) Update(id uint64, req dto.UpdateProjectRequest) (*model
 
 	existing.Slug = req.Slug
 	existing.Name = req.Name
-	existing.Country = req.Country
+	if err := s.applyProjectRegion(existing, req.RegionID, req.Country); err != nil {
+		return nil, err
+	}
 	existing.FlagEmoji = req.FlagEmoji
 	existing.Tagline = req.Tagline
 	existing.InvestmentAmount = req.InvestmentAmount

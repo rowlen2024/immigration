@@ -47,15 +47,23 @@
       </div>
 
       <div v-for="col in footerNav" :key="col.id" class="footer-column" :class="{ 'footer-col-open': footerExpanded.has(col.id) }">
-        <h3 class="footer-heading" @click="toggleFooterCol(col.id)">
+        <h3 class="footer-heading">
           {{ col.label }}
-          <span class="footer-heading-chevron">
+          <button
+            type="button"
+            class="footer-heading-toggle"
+            :aria-label="`${footerExpanded.has(col.id) ? '收起' : '展开'}${col.label}`"
+            :aria-expanded="footerExpanded.has(col.id)"
+            :aria-controls="`footer-links-${col.id}`"
+            @click="toggleFooterCol(col.id)"
+          >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </span>
+          </button>
         </h3>
-        <ul class="footer-links" :class="{ 'footer-links-open': footerExpanded.has(col.id) }">
+        <ul :id="`footer-links-${col.id}`" class="footer-links" :class="{ 'footer-links-open': footerExpanded.has(col.id) }">
           <li v-for="child in col.children" :key="child.id">
-            <NuxtLink :to="child.link || ''" class="footer-link">{{ child.label }}</NuxtLink>
+            <NuxtLink v-if="child.link" :to="child.link" class="footer-link">{{ child.label }}</NuxtLink>
+            <span v-else class="footer-link">{{ child.label }}</span>
           </li>
         </ul>
       </div>
@@ -235,6 +243,10 @@ const copyrightText = computed(() => {
   color: var(--accent);
 }
 
+.footer-heading-toggle {
+  display: none;
+}
+
 .footer-links {
   display: flex;
   flex-direction: column;
@@ -331,7 +343,7 @@ const copyrightText = computed(() => {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    cursor: pointer;
+    position: relative;
     margin-bottom: 0;
     padding: 14px 0;
     user-select: none;
@@ -343,15 +355,24 @@ const copyrightText = computed(() => {
     color: var(--accent);
   }
 
-  .footer-heading-chevron {
-    display: inline-flex;
+  .footer-heading-toggle {
+    display: flex;
     align-items: center;
+    justify-content: flex-end;
+    position: absolute;
+    inset: 0;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
     color: rgba(200, 150, 62, 0.5);
-    transition: transform 0.25s ease;
-    flex-shrink: 0;
   }
 
-  .footer-col-open .footer-heading-chevron {
+  .footer-heading-toggle svg {
+    transition: transform 0.25s ease;
+  }
+
+  .footer-col-open .footer-heading-toggle svg {
     transform: rotate(180deg);
     color: var(--accent);
   }
@@ -363,6 +384,7 @@ const copyrightText = computed(() => {
     gap: 4px 16px;
     max-height: 0;
     opacity: 0;
+    visibility: hidden;
     overflow: hidden;
     padding-bottom: 0;
     transition: max-height 0.35s ease, opacity 0.25s ease, padding 0.3s ease;
@@ -371,6 +393,7 @@ const copyrightText = computed(() => {
   .footer-links-open {
     max-height: 400px;
     opacity: 1;
+    visibility: visible;
     padding-bottom: 14px;
   }
 
@@ -382,10 +405,6 @@ const copyrightText = computed(() => {
 }
 
 @media (min-width: 768px) {
-  .footer-heading-chevron {
-    display: none;
-  }
-
   .footer-links {
     max-height: none;
     opacity: 1;

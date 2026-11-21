@@ -144,8 +144,18 @@
             </el-row>
             <el-row :gutter="12">
               <el-col :span="12">
-                <el-form-item label="国家" prop="country">
-                  <el-input v-model="form.country" />
+                <el-form-item label="国家／地区" prop="region_id">
+                  <el-select
+                    v-model="form.region_id"
+                    filterable
+                    :loading="regionsLoading"
+                    :placeholder="form.country ? `待关联（原地区：${form.country}）` : '请选择国家或地区'"
+                  >
+                    <el-option v-for="region in regions" :key="region.id" :label="region.name" :value="region.id" />
+                  </el-select>
+                  <el-button v-if="regionsLoadFailed" link type="primary" @click="loadRegions">
+                    地区加载失败，重试
+                  </el-button>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
@@ -686,6 +696,7 @@ interface Project {
   slug: string;
   name: string;
   country: string;
+  region_id?: number | null;
   flag_emoji: string;
   tagline: string;
   investment_amount: string;
@@ -760,6 +771,9 @@ const saving = ref(false);
 const page = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
+const regions = ref<Array<{ id: number; name: string }>>([]);
+const regionsLoading = ref(false);
+const regionsLoadFailed = ref(false);
 
 const drawerVisible = ref(false);
 const editingId = ref<string | null>(null);
@@ -783,6 +797,7 @@ const defaultForm = () => ({
   slug: '',
   name: '',
   country: '',
+  region_id: undefined,
   flag_emoji: '',
   tagline: '',
   investment_amount: '',
@@ -810,7 +825,13 @@ const form = reactive(defaultForm());
 const rules: FormRules = {
   slug: [{ required: true, message: '请输入标识', trigger: 'blur' }],
   name: [{ required: true, message: '请输入项目名称', trigger: 'blur' }],
-  country: [{ required: true, message: '请输入国家', trigger: 'blur' }],
+  region_id: [{
+    validator: (_rule, value, callback) => {
+      if (value || (editingId.value && form.country)) return callback();
+      callback(new Error('请选择国家或地区'));
+    },
+    trigger: 'change',
+  }],
 };
 
 type SubType = 'requirement' | 'costItem' | 'timelinePhase' | 'caseItem' | 'advantage' | 'testimonial';
@@ -906,6 +927,19 @@ const loadList = async () => {
   }
 };
 
+const loadRegions = async () => {
+  if (regionsLoading.value) return;
+  regionsLoading.value = true;
+  regionsLoadFailed.value = false;
+  try {
+    regions.value = await useApi()<Array<{ id: number; name: string }>>('/admin/projects/regions');
+  } catch {
+    regionsLoadFailed.value = true;
+  } finally {
+    regionsLoading.value = false;
+  }
+};
+
 const openCreate = () => {
   editingId.value = null;
   Object.assign(form, defaultForm());
@@ -917,13 +951,14 @@ const openCreate = () => {
 const openEdit = (row: Project) => {
   editingId.value = row.id;
   const { id, created_at, updated_at, deleted_at, ...cleanRow } = row;
-  Object.assign(form, cleanRow);
+  Object.assign(form, cleanRow, { region_id: row.region_id ?? undefined });
   resetSubData();
   activeTab.value = 'basic';
   drawerVisible.value = true;
 };
 
 const onDialogOpened = () => {
+  if (!regions.value.length) loadRegions();
   if (editingId.value) {
     loadSubData();
     loadNews();

@@ -36,6 +36,7 @@ type UpdateProjectRequest struct {
 	Slug               string   `json:"slug"`
 	Name               string   `json:"name"`
 	Country            string   `json:"country"`
+	RegionID           *uint64  `json:"region_id"`
 	FlagEmoji          string   `json:"flag_emoji"`
 	Tagline            string   `json:"tagline"`
 	InvestmentAmount   string   `json:"investment_amount"`

@@ -44,6 +44,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&model.Permission{},
 		&model.RolePermission{},
 		&model.UserPermissionOverride{},
+		&model.ProjectRegion{},
 		&model.Project{},
 		&model.Requirement{},
 		&model.CostItem{},

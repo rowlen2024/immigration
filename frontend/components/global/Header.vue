@@ -21,48 +21,54 @@
       >
         <ul class="nav-list">
           <li
-            v-for="(item, index) in navItems"
+            v-for="(item, index) in groupedNavItems"
             :key="item.id"
             class="nav-item"
             :class="{
               'has-children': item.children?.length,
               'is-active': isNavActive(item),
             }"
-            @mouseenter="openMega(item.id)"
-            @mouseleave="closeMega"
+            @pointerenter="onNavPointerEnter(item, $event)"
+            @pointerleave="onNavPointerLeave(item.id, $event)"
+            @focusout="onNavFocusOut(item.id, $event)"
+            @keydown.esc.stop="onNavEscape(item.id, $event)"
           >
             <span v-if="index > 0" class="nav-separator" aria-hidden="true">·</span>
 
-            <NuxtLink v-if="item.link" :to="item.link" class="nav-link" @click="onNavLinkClick(item, $event)">
+            <NuxtLink v-if="item.link" :to="item.link" class="nav-link" @click="mobileMenuOpen = false">
               {{ item.label }}
-              <span v-if="item.children?.length" class="dropdown-arrow">
-                <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-              </span>
             </NuxtLink>
-            <span v-else class="nav-link" @click="onNavLinkClick(item, $event)">
+            <button
+              v-else-if="item.children?.length"
+              type="button"
+              class="nav-link nav-label-toggle"
+              :aria-expanded="navExpanded(item.id)"
+              @click="toggleNavExpand(item.id)"
+            >
               {{ item.label }}
-              <span v-if="item.children?.length" class="dropdown-arrow">
-                <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-              </span>
-            </span>
+              <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <span v-else class="nav-link">{{ item.label }}</span>
 
             <span v-if="isNavActive(item)" class="nav-active-line"></span>
 
-            <!-- Mobile expand toggle -->
             <button
-              v-if="item.children?.length"
-              class="mobile-expand-toggle"
-              @click.stop="toggleMobileExpand(item.id)"
-              :aria-label="mobileExpanded.has(item.id) ? '收起' : '展开'"
+              v-if="item.link && item.children?.length"
+              type="button"
+              class="mobile-expand-toggle nav-expand-toggle"
+              :aria-expanded="navExpanded(item.id)"
+              :aria-label="`${navExpanded(item.id) ? '收起' : '展开'}${item.label}`"
+              @click.stop="toggleNavExpand(item.id)"
             >
-              <span :class="{ rotated: mobileExpanded.has(item.id) }">
+              <span :class="{ rotated: navExpanded(item.id) }">
                 <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
               </span>
             </button>
 
             <!-- Mega Panel (desktop) -->
             <div
-              v-if="item.children?.length && activeMega === item.id"
+              v-if="item.children?.length"
+              v-show="activeMega === item.id"
               class="mega-panel"
               @mouseenter="openMega(item.id)"
             >
@@ -125,7 +131,7 @@
                   <span v-else class="mobile-subitem-label">{{ child.label }}</span>
 
                   <button
-                    v-if="child.children?.length"
+                    v-if="child.children?.length && !child.regionGroup"
                     class="mobile-expand-toggle sub"
                     @click.stop="toggleMobileExpand(child.id)"
                     :aria-label="mobileExpanded.has(child.id) ? '收起' : '展开'"
@@ -138,7 +144,7 @@
 
                 <Transition name="mobile-sub">
                   <ul
-                    v-if="child.children?.length && mobileExpanded.has(child.id)"
+                    v-if="child.children?.length && (child.regionGroup || mobileExpanded.has(child.id))"
                     class="mobile-submenu l3"
                   >
                   <li v-for="sub in child.children" :key="sub.id" class="mobile-subitem l3">
@@ -193,13 +199,76 @@
 </template>
 
 <script setup lang="ts">
+import type { NavItem } from '~/composables/useNavigation';
+
+type MenuItem = Omit<NavItem, 'id' | 'children'> & {
+  id: number | string;
+  children: MenuItem[];
+  regionGroup?: true;
+};
+
+interface ProjectRegion {
+  project_id: number;
+  region: { code: string; name: string } | null;
+}
+
 const route = useRoute();
 const { siteConfig } = useMygoSiteConfig();
-const { navItems } = useNavigation();
+const { navItems, ready: navigationReady } = useNavigation();
+
+const projectIdForRegion = (item: NavItem) =>
+  item.link_type === 'project' && item.link && !item.children?.length ? item.project_id : undefined;
+
+const projectIds = computed(() => {
+  const ids = new Set<number>();
+  for (const item of navItems.value) {
+    for (const child of item.children ?? []) {
+      const id = projectIdForRegion(child);
+      if (id != null) ids.add(id);
+    }
+  }
+  return Array.from(ids).sort((a, b) => a - b).join(',');
+});
+
+usePublicDataFreshness(['public:project-regions']);
+const { data: projectRegions } = await useAsyncData('public:project-regions', async (_nuxtApp, { signal }) => {
+  await navigationReady;
+  if (!projectIds.value) return [];
+  const result = await $fetch<{ data: ProjectRegion[] }>('/api/v1/project-regions', {
+    query: { ids: projectIds.value },
+    signal,
+  });
+  return Array.isArray(result.data) ? result.data : [];
+}, { watch: [projectIds], default: () => [] });
+
+const groupedNavItems = computed(() => {
+  const regions = new Map(projectRegions.value.map(({ project_id, region }) => [project_id, region]));
+  return navItems.value.map((item) => {
+    const groups = new Map<string, MenuItem>();
+    const children: MenuItem[] = [];
+    for (const child of item.children ?? []) {
+      const id = projectIdForRegion(child);
+      const region = id == null ? undefined : regions.get(id);
+      if (!region) {
+        children.push(child);
+        continue;
+      }
+
+      let group = groups.get(region.code);
+      if (!group) {
+        group = { id: `region-${item.id}-${region.code}`, label: region.name, link: null, children: [], status: true, regionGroup: true };
+        groups.set(region.code, group);
+        children.push(group);
+      }
+      group.children.push(child);
+    }
+    return { ...item, children };
+  });
+});
 
 const mobileMenuOpen = ref(false);
 const activeMega = ref<number | null>(null);
-const mobileExpanded = ref<Set<number>>(new Set());
+const mobileExpanded = ref<Set<MenuItem['id']>>(new Set());
 const isScrolled = ref(false);
 
 let megaCloseTimer: ReturnType<typeof setTimeout> | null = null;
@@ -223,24 +292,17 @@ const onScroll = () => {
   isScrolled.value = window.scrollY > 50;
 };
 
-const isNavActive = (item: NavItem): boolean => {
+const isNavActive = (item: MenuItem): boolean => {
   const path = route.path;
   if (item.link && path === item.link) return true;
   if (item.children?.length) {
-    return item.children.some((child: NavItem) => {
+    return item.children.some((child) => {
       if (child.link && path === child.link) return true;
-      return child.children?.some((sub: NavItem) => sub.link && path === sub.link) ?? false;
+      return child.children?.some((sub) => sub.link && path === sub.link) ?? false;
     });
   }
   return false;
 };
-
-interface NavItem {
-  id: number;
-  label: string;
-  link: string | null;
-  children: NavItem[];
-}
 
 const openMega = (id: number) => {
   if (megaCloseTimer) {
@@ -256,7 +318,23 @@ const closeMega = () => {
   }, 150);
 };
 
-const toggleMobileExpand = (id: number) => {
+const onNavPointerEnter = (item: Omit<NavItem, 'children'> & { children: MenuItem[] }, event: PointerEvent) => {
+  if (event.pointerType === 'mouse' && item.children?.length) openMega(item.id);
+};
+
+const onNavPointerLeave = (id: number, event: PointerEvent) => {
+  if (event.pointerType !== 'mouse' || activeMega.value !== id) return;
+  if (!(event.currentTarget as HTMLElement).contains(document.activeElement)) closeMega();
+};
+
+const onNavFocusOut = (id: number, event: FocusEvent) => {
+  const item = event.currentTarget as HTMLElement;
+  if (activeMega.value === id && !item.contains(event.relatedTarget as Node | null)) {
+    activeMega.value = null;
+  }
+};
+
+const toggleMobileExpand = (id: MenuItem['id']) => {
   const next = new Set(mobileExpanded.value);
   if (next.has(id)) {
     next.delete(id);
@@ -270,10 +348,24 @@ const toggleMobileMenu = () => {
   mobileMenuOpen.value = !mobileMenuOpen.value;
 };
 
-const onNavLinkClick = (item: NavItem, event: MouseEvent) => {
-  if (!mobileMenuOpen.value || !item.children?.length) return;
-  event.preventDefault();
-  toggleMobileExpand(item.id);
+const navExpanded = (id: number) => mobileMenuOpen.value
+  ? mobileExpanded.value.has(id)
+  : activeMega.value === id;
+
+const toggleNavExpand = (id: number) => {
+  if (mobileMenuOpen.value) {
+    toggleMobileExpand(id);
+  } else if (activeMega.value === id) {
+    activeMega.value = null;
+  } else {
+    openMega(id);
+  }
+};
+
+const onNavEscape = (id: number, event: KeyboardEvent) => {
+  if (!navExpanded(id)) return;
+  toggleNavExpand(id);
+  (event.currentTarget as HTMLElement).querySelector<HTMLButtonElement>('.nav-expand-toggle, .nav-label-toggle')?.focus();
 };
 
 const onNavTouchStart = (e: TouchEvent) => {
@@ -298,6 +390,7 @@ watch(mobileMenuOpen, (val) => {
 
 watch(() => route.path, () => {
   mobileMenuOpen.value = false;
+  activeMega.value = null;
 });
 </script>
 
@@ -435,8 +528,18 @@ watch(() => route.path, () => {
   position: relative;
 }
 
-a.nav-link {
+a.nav-link, .nav-label-toggle {
   cursor: pointer;
+}
+
+.nav-label-toggle {
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+}
+
+.nav-label-toggle .chevron-icon {
+  opacity: 0.65;
 }
 
 .nav-link:hover {
@@ -465,13 +568,6 @@ a.nav-link {
   to {
     transform: translateX(-50%) scaleX(1);
   }
-}
-
-.dropdown-arrow {
-  display: inline-flex;
-  align-items: center;
-  opacity: 0.5;
-  transition: opacity var(--duration-fast) var(--ease-out);
 }
 
 .chevron-icon {
@@ -735,6 +831,18 @@ a.nav-link {
   transform: rotate(180deg);
 }
 
+@media (min-width: 1280px) {
+  .nav-expand-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 36px;
+    margin-left: -6px;
+    flex-shrink: 0;
+  }
+}
+
 /* ==================== Compact Desktop ==================== */
 
 @media (min-width: 1280px) and (max-width: 1599px) {
@@ -871,8 +979,9 @@ a.nav-link {
     border-radius: 0;
   }
 
-  .nav-link .dropdown-arrow {
-    display: none;
+  .nav-label-toggle .chevron-icon {
+    position: absolute;
+    left: 16px;
   }
 
   .nav-item.is-active .nav-link {
