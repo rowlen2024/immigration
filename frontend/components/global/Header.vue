@@ -832,6 +832,11 @@ a.nav-link, .nav-label-toggle {
 }
 
 @media (min-width: 1280px) {
+  .header-container {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    column-gap: 12px;
+  }
+
   .nav-expand-toggle {
     display: inline-flex;
     align-items: center;
