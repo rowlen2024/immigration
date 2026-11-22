@@ -1,6 +1,6 @@
 <template>
   <div class="project-picker">
-    <div class="project-picker-bar">
+    <div ref="pickerBar" class="project-picker-bar" tabindex="-1">
       <template v-if="mode === 'filter'">
         <button
           type="button"
@@ -60,65 +60,64 @@
       </button>
     </div>
 
-    <PublicPickerDialog
+    <PublicDialog
       :id="panelId"
       v-model:open="showProjectPicker"
       :anchor="trigger"
       :title="title"
       :subtitle="subtitle"
+      close-label="关闭项目选择"
     >
-      <template v-if="showProjectPicker">
-        <div>
-          <label :for="`${panelId}-search`" class="public-control-label">搜索项目</label>
-          <input
-            :id="`${panelId}-search`"
-            v-model.trim="projectSearch"
-            class="public-picker-search"
-            type="search"
-            placeholder="例如 EB-5 或香港"
-            autocomplete="off"
-            autofocus
+      <div>
+        <label :for="`${panelId}-search`" class="public-control-label">搜索项目</label>
+        <input
+          :id="`${panelId}-search`"
+          v-model.trim="projectSearch"
+          class="public-control public-picker-search"
+          type="search"
+          placeholder="例如 EB-5 或香港"
+          autocomplete="off"
+          autofocus
+        >
+      </div>
+      <div v-if="filteredProjects.length" class="public-picker-options">
+        <template v-if="mode === 'filter'">
+          <button
+            v-if="!projectSearch"
+            type="button"
+            class="public-picker-option"
+            :aria-pressed="modelValue === ALL_PROJECT_SLUG"
+            @click="selectProject(ALL_PROJECT_SLUG)"
           >
-        </div>
-        <div v-if="filteredProjects.length" class="public-picker-options">
-          <template v-if="mode === 'filter'">
-            <button
-              v-if="!projectSearch"
-              type="button"
-              class="public-picker-option"
-              :aria-pressed="modelValue === ALL_PROJECT_SLUG"
-              @click="selectProject(ALL_PROJECT_SLUG)"
-            >
-              <span>全部项目</span>
-              <span v-if="modelValue === ALL_PROJECT_SLUG" aria-hidden="true">✓</span>
-            </button>
-            <button
-              v-for="project in filteredProjects"
-              :key="project.slug"
-              type="button"
-              class="public-picker-option"
-              :aria-pressed="modelValue === project.slug"
-              @click="selectProject(project.slug)"
-            >
-              <span>{{ project.name }}</span>
-              <span v-if="modelValue === project.slug" aria-hidden="true">✓</span>
-            </button>
-          </template>
-          <template v-else>
-            <NuxtLink
-              v-for="project in filteredProjects"
-              :key="project.slug"
-              :to="`/projects/${project.slug}`"
-              class="public-picker-option"
-              @click="showProjectPicker = false"
-            >
-              {{ project.name }}
-            </NuxtLink>
-          </template>
-        </div>
-        <p v-else class="public-picker-empty" role="status">未找到相关项目</p>
-      </template>
-    </PublicPickerDialog>
+            <span>全部项目</span>
+            <span v-if="modelValue === ALL_PROJECT_SLUG" aria-hidden="true">✓</span>
+          </button>
+          <button
+            v-for="project in filteredProjects"
+            :key="project.slug"
+            type="button"
+            class="public-picker-option"
+            :aria-pressed="modelValue === project.slug"
+            @click="selectProject(project.slug)"
+          >
+            <span>{{ project.name }}</span>
+            <span v-if="modelValue === project.slug" aria-hidden="true">✓</span>
+          </button>
+        </template>
+        <template v-else>
+          <NuxtLink
+            v-for="project in filteredProjects"
+            :key="project.slug"
+            :to="`/projects/${project.slug}`"
+            class="public-picker-option"
+            @click="showProjectPicker = false"
+          >
+            {{ project.name }}
+          </NuxtLink>
+        </template>
+      </div>
+      <p v-else class="public-picker-empty" role="status">未找到相关项目</p>
+    </PublicDialog>
   </div>
 </template>
 
@@ -176,6 +175,7 @@ const emit = defineEmits<{
 }>()
 
 const trigger = ref<HTMLButtonElement | null>(null)
+const pickerBar = ref<HTMLElement | null>(null)
 
 /** 是否显示更多项目面板。 */
 const showProjectPicker = ref(false)
@@ -229,7 +229,19 @@ function selectProject(slug: string) {
 }
 
 watch(showProjectPicker, value => {
-  if (!value) projectSearch.value = ''
+  if (value) projectSearch.value = ''
+})
+
+watch(() => hiddenProjects.value.length, async count => {
+  if (count || !showProjectPicker.value) return
+
+  showProjectPicker.value = false
+  await nextTick()
+  const bar = pickerBar.value
+  const fallback = bar?.querySelector<HTMLElement>('[aria-pressed="true"]')
+    ?? bar?.querySelector<HTMLElement>('button, a')
+    ?? bar
+  fallback?.focus({ preventScroll: true })
 })
 
 onMounted(() => {
@@ -269,7 +281,9 @@ onBeforeUnmount(() => {
   font-weight: 500;
   line-height: 1.4;
   text-decoration: none;
-  transition: all var(--duration-fast) var(--ease-out);
+  transition: color var(--public-motion-fast) var(--ease-out),
+              border-color var(--public-motion-fast) var(--ease-out),
+              background-color var(--public-motion-fast) var(--ease-out);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -284,6 +298,7 @@ onBeforeUnmount(() => {
   border-color: var(--color-accent);
   background-color: var(--color-accent);
   color: var(--color-text);
+  transition: none;
 }
 
 .project-link {

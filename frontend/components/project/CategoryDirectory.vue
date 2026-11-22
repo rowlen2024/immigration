@@ -18,36 +18,47 @@
       </button>
     </div>
 
-    <section v-if="canBrowse" v-show="open" :id="panelId" class="category-directory__panel" :aria-labelledby="headingId">
-      <div class="category-directory__heading">
-        <h2 :id="headingId">项目类型</h2>
-        <button type="button" class="category-directory__text-button" @click="closeDirectory()">收起</button>
-      </div>
-      <div v-if="error && !available.length" class="category-directory__message" role="status">
-        项目类型加载失败。
-        <button type="button" class="category-directory__text-button" @click="refresh()">重试</button>
-      </div>
-      <p v-else-if="pending && !available.length" class="category-directory__message" role="status">正在加载项目类型…</p>
-      <template v-else>
-        <ul v-if="regularCategories.length" class="category-directory__list">
-          <li v-for="category in regularCategories" :key="category.slug">
-            <NuxtLink :to="`/projects/category/${category.slug}`" class="category-directory__category">
-              <span>
-                <strong>{{ category.name }}</strong>
-                <small>{{ descriptions.get(category.slug) ?? `${category.project_count} 个项目` }}</small>
-              </span>
-              <span aria-hidden="true">→</span>
+    <section
+      v-if="canBrowse"
+      :id="panelId"
+      class="public-disclosure"
+      :class="{ 'is-expanded': open }"
+      :inert="!open"
+      :aria-labelledby="headingId"
+    >
+      <div class="public-disclosure__body">
+        <div class="category-directory__panel">
+          <div class="category-directory__heading">
+            <h2 :id="headingId">项目类型</h2>
+            <button type="button" class="category-directory__text-button" @click="closeDirectory()">收起</button>
+          </div>
+          <div v-if="error && !available.length" class="category-directory__message" role="status">
+            项目类型加载失败。
+            <button type="button" class="category-directory__text-button" @click="refresh()">重试</button>
+          </div>
+          <p v-else-if="pending && !available.length" class="category-directory__message" role="status">正在加载项目类型…</p>
+          <template v-else>
+            <ul v-if="regularCategories.length" class="category-directory__list">
+              <li v-for="category in regularCategories" :key="category.slug">
+                <NuxtLink :to="`/projects/category/${category.slug}`" class="category-directory__category">
+                  <span>
+                    <strong>{{ category.name }}</strong>
+                    <small>{{ descriptions.get(category.slug) ?? `${category.project_count} 个项目` }}</small>
+                  </span>
+                  <span aria-hidden="true">→</span>
+                </NuxtLink>
+              </li>
+            </ul>
+            <NuxtLink
+              v-if="featured"
+              :to="`/projects/category/${featured.slug}`"
+              class="category-directory__featured"
+            >
+              查看{{ featured.name }} <span aria-hidden="true">→</span>
             </NuxtLink>
-          </li>
-        </ul>
-        <NuxtLink
-          v-if="featured"
-          :to="`/projects/category/${featured.slug}`"
-          class="category-directory__featured"
-        >
-          查看{{ featured.name }} <span aria-hidden="true">→</span>
-        </NuxtLink>
-      </template>
+          </template>
+        </div>
+      </div>
     </section>
   </div>
 </template>
@@ -147,11 +158,14 @@ function closeDirectory(event?: KeyboardEvent) {
   border-right: 1.5px solid currentColor;
   border-bottom: 1.5px solid currentColor;
   transform: rotate(45deg);
+  transition: transform var(--public-motion-medium) var(--ease-in),
+              margin-top var(--public-motion-medium) var(--ease-in);
 }
 
 .category-directory__trigger[aria-expanded='true'] .category-directory__chevron {
   margin-top: 3px;
   transform: rotate(225deg);
+  transition-timing-function: var(--ease-out);
 }
 
 .category-directory__panel {
@@ -222,7 +236,10 @@ function closeDirectory(event?: KeyboardEvent) {
   color: var(--color-text-secondary);
 }
 
-.category-directory :focus-visible {
+.category-directory__trigger:focus-visible,
+.category-directory__text-button:focus-visible,
+.category-directory__category:focus-visible,
+.category-directory__featured:focus-visible {
   outline: 2px solid var(--color-accent-dark);
   outline-offset: 3px;
 }

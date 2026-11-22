@@ -6,17 +6,23 @@
       <p class="page-subtitle">对照投资、周期和申请条件，缩小您的选择范围。</p>
 
       <div class="comparison-selectors">
-        <PublicProjectSelect
+        <PublicSearchSelect
           v-model="selectedA"
           label="项目 A"
+          placeholder="请选择项目"
+          search-label="搜索项目"
+          search-placeholder="例如 EB-5 或香港"
           :options="options"
           :loading="optionsPending"
           :error="optionsErrorMessage"
           @retry="refreshOptions()"
         />
-        <PublicProjectSelect
+        <PublicSearchSelect
           v-model="selectedB"
           label="项目 B"
+          placeholder="请选择项目"
+          search-label="搜索项目"
+          search-placeholder="例如 EB-5 或香港"
           :options="options"
           :loading="optionsPending"
           :error="optionsErrorMessage"
@@ -25,13 +31,13 @@
       </div>
 
       <div v-if="canCompare" class="comparison-actions">
-        <button type="button" class="compare-button" @click="setPair(selectedB, selectedA)">交换两个项目</button>
-        <button type="button" class="compare-button compare-button--dark" @click="copyLink">复制对比链接</button>
+        <button type="button" class="public-button" @click="setPair(selectedB, selectedA)">交换两个项目</button>
+        <button type="button" class="public-button public-button--dark" @click="copyLink">复制对比链接</button>
       </div>
       <p v-if="copyMessage" class="copy-message" role="status">{{ copyMessage }}</p>
-      <label v-if="copyFailed" class="copy-field">
+      <label v-if="copyFailed" class="copy-field public-control-label">
         对比链接
-        <input type="url" :value="shareUrl" readonly @focus="selectLinkText" />
+        <input type="url" class="public-control" :value="shareUrl" readonly @focus="selectLinkText" />
       </label>
 
       <p v-if="sameProject" class="comparison-state" role="status">请选择两个不同的项目进行对比。</p>
@@ -41,7 +47,7 @@
       </div>
       <div v-else-if="error || !comparison" class="comparison-state comparison-state--error">
         <p role="status">暂时无法加载对比结果。请确认两个项目仍可查看，或重试。</p>
-        <button type="button" class="compare-button" @click="refreshComparison()">重试对比</button>
+        <button type="button" class="public-button" @click="refreshComparison()">重试对比</button>
       </div>
       <section v-else aria-label="对比结果">
         <div class="comparison-table-wrap">
@@ -103,7 +109,7 @@
 
     <div v-if="comparison && !pending && !error" class="compare-consult-bar">
       <div class="container">
-        <NuxtLink :to="{ path: '/contact', query: { project: selectedA, compare: selectedB } }" class="compare-button compare-button--gold">
+        <NuxtLink :to="{ path: '/contact', query: { project: selectedA, compare: selectedB } }" class="public-button public-button--gold">
           咨询这两个项目 <span aria-hidden="true">→</span>
         </NuxtLink>
       </div>
@@ -281,44 +287,6 @@ function selectLinkText(event: FocusEvent) {
   margin-top: 12px;
 }
 
-.compare-button {
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 8px 14px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  color: var(--color-text);
-  background: var(--bg-white);
-  font: 600 14px/1.4 var(--font-sans);
-  cursor: pointer;
-}
-
-.compare-button:hover {
-  border-color: var(--color-primary);
-}
-
-.compare-button--dark {
-  color: var(--bg-white);
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-.compare-button--dark:hover {
-  background: var(--color-primary-hover);
-}
-
-.compare-button--gold {
-  background: var(--gradient-gold);
-  border-color: transparent;
-}
-
-.compare-button--gold:hover {
-  background: var(--gradient-gold-hover);
-}
-
 .copy-message {
   margin-top: 6px;
   color: var(--color-text-secondary);
@@ -327,20 +295,12 @@ function selectLinkText(event: FocusEvent) {
 }
 
 .copy-field {
-  display: block;
   margin-top: 8px;
-  font-size: 14px;
 }
 
 .copy-field input {
   display: block;
-  width: 100%;
-  min-height: 44px;
-  padding: 8px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  color: var(--color-text);
-  font: inherit;
+  margin-top: 6px;
 }
 
 .comparison-state,
@@ -358,7 +318,7 @@ function selectLinkText(event: FocusEvent) {
   text-align: center;
 }
 
-.comparison-state--error .compare-button {
+.comparison-state--error .public-button {
   margin-top: 12px;
 }
 
@@ -489,7 +449,7 @@ function selectLinkText(event: FocusEvent) {
     background: var(--bg-white);
   }
 
-  .compare-consult-bar .compare-button {
+  .compare-consult-bar .public-button {
     width: 100%;
   }
 }

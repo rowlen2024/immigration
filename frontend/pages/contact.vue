@@ -13,85 +13,78 @@
             <div class="success-icon" aria-hidden="true">&#10003;</div>
             <h3>提交成功</h3>
             <p>顾问会尽快联系您。</p>
-            <button type="button" class="btn-primary" @click="resetForm">再次提交</button>
+            <button type="button" class="public-button public-button--gold" @click="resetForm">再次提交</button>
           </div>
 
           <form v-else ref="formRef" class="contact-form" novalidate @submit.prevent="handleSubmit">
-            <div class="form-group">
-              <label class="form-label" for="name">
-                姓名 <span class="required">*</span>
-              </label>
+            <PublicFormField
+              v-slot="{ control }"
+              id="name"
+              class="form-group"
+              label="姓名"
+              required
+              reserve-feedback
+              :error="errors.name"
+            >
               <input
-                id="name"
+                v-bind="control"
                 v-model="form.name"
                 type="text"
                 autocomplete="name"
-                required
-                class="form-input"
-                :class="{ 'input-error': errors.name }"
-                :aria-invalid="!!errors.name"
-                :aria-describedby="errors.name ? 'contact-name-error' : undefined"
                 placeholder="请输入姓名"
                 @input="errors.name && validateField('name')"
                 @blur="validateField('name')"
               />
-              <div class="field-feedback">
-                <span v-if="errors.name" id="contact-name-error" class="error-text">{{ errors.name }}</span>
-              </div>
-            </div>
+            </PublicFormField>
 
-            <div class="form-group">
-              <label class="form-label" for="phone">
-                联系电话 <span class="required">*</span>
-              </label>
+            <PublicFormField
+              v-slot="{ control }"
+              id="phone"
+              class="form-group"
+              label="联系电话"
+              hint="境外号码请加区号，例如 +852。"
+              required
+              reserve-feedback
+              :error="errors.phone"
+            >
               <input
-                id="phone"
+                v-bind="control"
                 v-model="form.phone"
                 type="tel"
                 autocomplete="tel"
-                required
-                class="form-input"
-                :class="{ 'input-error': errors.phone }"
-                :aria-invalid="!!errors.phone"
-                :aria-describedby="errors.phone ? 'contact-phone-error' : 'contact-phone-hint'"
                 placeholder="请输入联系电话"
                 @input="errors.phone && validateField('phone')"
                 @blur="validateField('phone')"
               />
-              <div class="field-feedback">
-                <span v-if="errors.phone" id="contact-phone-error" class="error-text">{{ errors.phone }}</span>
-                <span v-else id="contact-phone-hint">境外号码请加区号，例如 +852。</span>
-              </div>
-            </div>
+            </PublicFormField>
 
-            <div class="form-group">
-              <label class="form-label" for="email">
-                邮箱（选填）
-              </label>
+            <PublicFormField
+              v-slot="{ control }"
+              id="email"
+              class="form-group"
+              label="邮箱（选填）"
+              reserve-feedback
+              :error="errors.email"
+            >
               <input
-                id="email"
+                v-bind="control"
                 v-model="form.email"
                 type="email"
                 autocomplete="email"
-                class="form-input"
-                :class="{ 'input-error': errors.email }"
-                :aria-invalid="!!errors.email"
-                :aria-describedby="errors.email ? 'contact-email-error' : undefined"
                 placeholder="请输入邮箱"
                 @input="errors.email && validateField('email')"
                 @blur="validateField('email')"
               />
-              <div class="field-feedback">
-                <span v-if="errors.email" id="contact-email-error" class="error-text">{{ errors.email }}</span>
-              </div>
-            </div>
+            </PublicFormField>
 
             <div class="form-group">
-              <PublicProjectSelect
+              <PublicSearchSelect
                 v-model="selectedProject"
                 id="contact-project"
                 label="意向项目（选填）"
                 placeholder="请选择意向项目"
+                search-label="搜索项目"
+                search-placeholder="例如 EB-5 或香港"
                 :options="projectOptions"
                 :loading="projectListPending"
                 :error="projectListError ? '项目列表加载失败，请重试' : undefined"
@@ -100,25 +93,24 @@
               <p v-if="showProjectPrefillHint" class="field-hint">已根据您浏览的项目预选，可更改。</p>
             </div>
 
-            <div class="form-group">
-              <label class="form-label" for="message">留言（选填）</label>
+            <PublicFormField v-slot="{ control }" id="message" class="form-group" label="留言（选填）">
               <textarea
-                id="message"
+                v-bind="control"
                 v-model="message"
-                class="form-input form-textarea"
+                class="form-textarea"
                 rows="3"
                 placeholder="告诉我们您想了解的问题"
               ></textarea>
-            </div>
+            </PublicFormField>
 
             <div v-if="submitError" class="submit-error">
               <span role="alert">{{ submitError }}</span>
-              <button type="button" class="retry-btn" :disabled="submitting" @click="handleSubmit">重试</button>
+              <button type="button" class="public-button retry-btn" :disabled="submitting" @click="handleSubmit">重试</button>
             </div>
 
             <button
               type="submit"
-              class="btn-primary btn-submit"
+              class="public-button public-button--gold btn-submit"
               :disabled="submitting"
             >
               <span v-if="submitting" class="spinner" aria-hidden="true"></span>
@@ -384,48 +376,8 @@ async function resetForm() {
   margin-bottom: 16px;
 }
 
-.form-group:has(.field-feedback) {
+.form-group.public-form-field--reserve-feedback {
   margin-bottom: 8px;
-}
-
-.form-label {
-  display: block;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.required {
-  color: var(--color-danger);
-}
-
-.form-input {
-  width: 100%;
-  min-height: 44px;
-  padding: 10px 12px;
-  font-size: 16px;
-  font-family: var(--font-sans);
-  border: 1px solid var(--public-control-border);
-  border-radius: var(--radius-md);
-  background-color: var(--bg-white);
-  color: var(--color-text);
-  transition: border-color var(--duration-fast) var(--ease-out),
-              box-shadow var(--duration-fast) var(--ease-out);
-}
-
-.form-input:focus-visible {
-  outline: 2px solid var(--public-control-focus);
-  outline-offset: 2px;
-  border-radius: var(--radius-md);
-}
-
-.form-input::placeholder {
-  color: var(--color-text-secondary);
-}
-
-.form-input.input-error {
-  border-color: var(--color-danger);
 }
 
 .form-textarea {
@@ -434,19 +386,10 @@ async function resetForm() {
 }
 
 .field-hint,
-.field-feedback,
 .submission-hint {
   margin-top: 6px;
   color: var(--color-text-secondary);
   font-size: 13px;
-}
-
-.field-feedback {
-  min-height: 1.6em;
-}
-
-.error-text {
-  color: var(--color-danger);
 }
 
 .submit-error {
@@ -464,41 +407,12 @@ async function resetForm() {
 
 .retry-btn {
   flex-shrink: 0;
-  padding: 4px 14px;
-  background: none;
-  border: 1.5px solid var(--color-danger);
-  color: var(--color-danger);
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
-}
-
-.retry-btn:hover {
-  background: var(--color-danger);
-  color: #fff;
 }
 
 .btn-submit {
   width: 100%;
   font-size: 16px;
   font-weight: 700;
-  min-height: 44px;
-  color: var(--color-primary);
-  text-shadow: none;
-  box-shadow: none;
-}
-
-.btn-submit:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btn-submit:hover {
-  background: var(--gradient-gold-hover);
-  transform: none;
-  box-shadow: none;
 }
 
 .spinner {

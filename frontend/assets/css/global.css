@@ -42,50 +42,91 @@ img {
   padding: 0 20px;
 }
 
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 24px;
-  background: var(--gradient-gold);
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  box-shadow: var(--shadow-gold);
-  transition: transform var(--duration-fast) var(--ease-out),
-              box-shadow var(--duration-fast) var(--ease-out);
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-gold-hover);
-}
-
+.public-button,
+.btn-primary,
 .btn-outline {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 24px;
-  background-color: transparent;
-  color: var(--color-accent);
-  border: 1.5px solid var(--color-accent);
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  font-size: 14px;
-  font-weight: 500;
+  background-color: var(--bg-white);
+  color: var(--color-text);
+  font: 600 14px/1.4 var(--font-sans);
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
+  transition: color var(--public-motion-fast) var(--ease-out),
+              background-color var(--public-motion-fast) var(--ease-out),
+              border-color var(--public-motion-fast) var(--ease-out),
+              box-shadow var(--public-motion-fast) var(--ease-out);
 }
 
-.btn-outline:hover {
+.public-button:enabled:hover,
+a.public-button:hover {
+  border-color: var(--color-primary);
+}
+
+.public-button--dark {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+  color: var(--bg-white);
+}
+
+.public-button--dark:enabled:hover,
+a.public-button--dark:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.public-button--gold,
+.btn-primary {
+  border-color: transparent;
+  background-color: var(--color-accent);
+  color: var(--color-primary);
+}
+
+.public-button--gold:enabled:hover,
+a.public-button--gold:hover,
+.btn-primary:not(:disabled):hover {
+  border-color: transparent;
+  background-color: var(--color-accent-hover);
+}
+
+.public-button:disabled,
+.btn-primary:disabled,
+.btn-outline:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+:is(.public-button, .btn-primary, .btn-outline):not(:disabled):active {
+  filter: brightness(0.96);
+  transition: none;
+}
+
+.btn-primary,
+.btn-outline {
+  padding-inline: 24px;
+}
+
+.btn-primary {
+  box-shadow: var(--shadow-gold);
+}
+
+.btn-primary:not(:disabled):hover {
+  box-shadow: var(--shadow-gold-hover);
+}
+
+.btn-outline {
   border-color: var(--color-accent);
-  background: var(--gradient-gold);
-  color: #fff;
+  background-color: transparent;
+  color: var(--color-accent-dark);
+}
+
+.btn-outline:not(:disabled):hover {
+  background-color: var(--color-accent);
+  color: var(--color-primary);
 }
 
 /* ===== Focus ring ===== */
@@ -100,18 +141,18 @@ img {
   --public-control-focus: #805817;
 }
 
-.public-select,
-.public-picker-search {
+.public-control {
   min-height: 44px;
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid var(--public-control-border);
+  border: 1px solid var(--control-border-color, var(--public-control-border));
   border-radius: var(--radius-md);
   background-color: var(--bg-white);
   color: var(--color-text);
   font: inherit;
   font-size: 16px;
   line-height: 1.5;
+  transition: background-color var(--public-motion-fast) var(--ease-out);
 }
 
 .public-select {
@@ -126,24 +167,26 @@ img {
   cursor: pointer;
 }
 
-.public-select:disabled {
+.public-control:disabled {
   background-color: var(--bg-light);
   color: var(--color-text-secondary);
   cursor: default;
 }
 
-.public-select:focus-visible,
-.public-select[aria-expanded='true'],
-.public-picker-search:focus-visible,
+.public-control[aria-invalid='true'] {
+  --control-border-color: var(--color-danger);
+}
+
+.public-control:is(:focus, [aria-expanded='true']),
 .public-picker-option:focus-visible {
-  border-color: var(--public-control-focus);
-  outline: 2px solid var(--public-control-focus);
-  outline-offset: 2px;
+  border-color: var(--control-border-color, var(--public-control-focus));
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--control-border-color, var(--public-control-focus));
   border-radius: var(--radius-md);
 }
 
 .public-select-placeholder,
-.public-picker-search::placeholder {
+.public-control::placeholder {
   color: var(--color-text-secondary);
 }
 
@@ -183,15 +226,17 @@ img {
   text-align: start;
   overflow-wrap: anywhere;
   cursor: pointer;
+  transition: background-color var(--public-motion-fast) var(--ease-out);
 }
 
-.public-picker-option:hover {
+.public-picker-option:hover:not([aria-pressed='true']) {
   background: var(--bg-light);
 }
 
 .public-picker-option[aria-pressed='true'] {
   background: var(--color-accent-soft);
   font-weight: 700;
+  transition: none;
 }
 
 .public-picker-empty,
@@ -216,7 +261,19 @@ img {
   cursor: pointer;
 }
 
-html:has(.public-picker-dialog[open]) {
+.public-disclosure {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--public-motion-medium) var(--ease-in);
+}
+
+.public-disclosure.is-expanded {
+  grid-template-rows: 1fr;
+  transition-timing-function: var(--ease-out);
+}
+
+.public-disclosure__body {
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -225,6 +282,13 @@ html:has(.public-picker-dialog[open]) {
     appearance: auto;
     padding-inline-end: 12px;
     background-image: none;
+  }
+
+  .public-control:is(:focus, [aria-expanded='true']),
+  .public-picker-option:focus-visible {
+    border-color: Highlight;
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
   }
 }
 
@@ -337,4 +401,16 @@ html:has(.public-picker-dialog[open]) {
 .page-leave-to {
   opacity: 0;
   transform: translateY(6px);
+}
+
+.public-layout .page-enter-active {
+  transition: opacity var(--public-motion-fast) var(--ease-out);
+}
+
+.public-layout .page-leave-active {
+  transition: none;
+}
+
+.public-layout :is(.page-enter-from, .page-leave-to) {
+  transform: none;
 }

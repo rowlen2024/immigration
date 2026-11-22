@@ -18,20 +18,18 @@
                   v-if="countryOptionsError"
                   id="project-country"
                   v-model="draftFilters.country"
+                  class="public-control"
                   type="text"
                   placeholder="输入国家或地区"
                   aria-describedby="country-options-error"
                 />
-                <select
+                <PublicSelect
                   v-else
                   id="project-country"
                   v-model="draftFilters.country"
-                  class="public-select"
+                  :options="countrySelectOptions"
                   :disabled="countryOptionsPending && !countries.length"
-                >
-                  <option value="">全部地区</option>
-                  <option v-for="country in countries" :key="country" :value="country">{{ country }}</option>
-                </select>
+                />
                 <span v-if="countryOptionsError" id="country-options-error" class="search-help">
                   地区列表加载失败，可以手动输入。
                 </span>
@@ -41,11 +39,12 @@
                 <input
                   id="project-name"
                   v-model="draftFilters.name"
+                  class="public-control"
                   type="search"
                   placeholder="例如 EB-5 或黄金签证"
                 />
               </div>
-              <button type="submit" class="search-button" :disabled="searching">
+              <button type="submit" class="public-button public-button--dark" :disabled="searching">
                 {{ searching ? '查找中…' : '查找项目' }}
               </button>
             </form>
@@ -69,14 +68,14 @@
       <div v-if="hasAppliedFilters" class="applied-filters">
         <span v-if="appliedFilters.country" class="applied-filter">{{ appliedFilters.country }}</span>
         <span v-if="appliedFilters.name" class="applied-filter">{{ appliedFilters.name }}</span>
-        <button type="button" class="clear-button" @click="resetSearch">清除条件</button>
+        <button type="button" class="public-button clear-button" @click="resetSearch">清除条件</button>
       </div>
 
       <PageSkeleton v-if="initialLoading" variant="cards" :count="6" />
 
       <div v-else-if="loadError && !hasLoaded" class="empty-state">
         <p role="status">{{ loadError }}</p>
-        <button type="button" class="secondary-button" @click="fetchFirstPage">重试</button>
+        <button type="button" class="public-button" @click="fetchFirstPage">重试</button>
       </div>
 
       <div v-else-if="items.length" ref="grid" class="projects-grid">
@@ -105,29 +104,31 @@
         <p v-if="hasAppliedFilters">可以更换地区或项目名称再试。</p>
       </div>
 
-      <aside v-if="selection.length" class="compare-tray" aria-label="项目对比">
-        <strong role="status">已选 {{ selection.length }} 个项目</strong>
-        <ul class="compare-selection" aria-label="已选项目">
-          <li v-for="project in selection" :key="project.slug">
-            <button
-              type="button"
-              class="compare-chip"
-              :aria-label="`移除 ${project.title}`"
-              @click="removeComparisonChoice(project.slug)"
-            >
-              {{ project.title }} <span aria-hidden="true">×</span>
-            </button>
-          </li>
-        </ul>
-        <NuxtLink v-if="isFull" :to="compareTo" class="search-button compare-link">
-          去对比 <span aria-hidden="true">→</span>
-        </NuxtLink>
-        <span v-else class="compare-hint">再选 1 个项目</span>
-      </aside>
+      <Transition name="compare-tray" @before-leave="el => el.setAttribute('inert', '')">
+        <aside v-if="selection.length" class="compare-tray" aria-label="项目对比">
+          <strong role="status">已选 {{ selection.length }} 个项目</strong>
+          <ul class="compare-selection" aria-label="已选项目">
+            <li v-for="project in selection" :key="project.slug">
+              <button
+                type="button"
+                class="public-button compare-chip"
+                :aria-label="`移除 ${project.title}`"
+                @click="removeComparisonChoice(project.slug)"
+              >
+                {{ project.title }} <span aria-hidden="true">×</span>
+              </button>
+            </li>
+          </ul>
+          <NuxtLink v-if="isFull" :to="compareTo" class="public-button public-button--dark compare-link">
+            去对比 <span aria-hidden="true">→</span>
+          </NuxtLink>
+          <span v-else class="compare-hint">再选 1 个项目</span>
+        </aside>
+      </Transition>
 
       <div v-if="hasMore" class="more-projects">
         <p v-if="loadError" role="status">{{ loadError }}</p>
-        <button type="button" class="secondary-button" :disabled="loadingMore" @click="loadMore">
+        <button type="button" class="public-button" :disabled="loadingMore" @click="loadMore">
           {{ loadingMore ? '加载中…' : loadError ? '重新加载' : '查看更多项目' }}
           <span v-if="!loadingMore && !loadError" aria-hidden="true">↓</span>
         </button>
@@ -282,6 +283,10 @@ const countries = computed(() => {
   const selected = draftFilters.country
   return selected && !choices.includes(selected) ? [...choices, selected] : choices
 })
+const countrySelectOptions = computed(() => [
+  { value: '', label: '全部地区' },
+  ...countries.value.map(country => ({ value: country, label: country })),
+])
 
 const { data: firstPageResponse, pending, error: fetchError } = await useFetch<ProjectsResponse>(
   initialUrl,
@@ -368,7 +373,7 @@ async function removeComparisonChoice(slug: string) {
   remove(slug)
   await nextTick()
   const choice = document.getElementById(`compare-choice-${slug}`)
-    ?? results.value?.querySelector<HTMLElement>('.compare-chip')
+    ?? results.value?.querySelector<HTMLElement>('.compare-tray:not([inert]) .compare-chip')
     ?? document.getElementById('project-results-heading')
   choice?.focus()
 }
@@ -432,16 +437,8 @@ async function loadMore() {
   font-weight: 600;
 }
 
-.search-field input {
-  width: 100%;
+.search-field .public-control {
   min-width: 0;
-  min-height: 44px;
-  padding: 8px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-surface);
-  color: var(--color-text);
-  font: inherit;
 }
 
 .search-help {
@@ -449,51 +446,8 @@ async function loadMore() {
   font-size: var(--text-xs);
 }
 
-.search-button,
-.secondary-button,
-.clear-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 8px 14px;
-  border-radius: var(--radius-sm);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.search-button,
-.secondary-button {
-  border: 1px solid var(--color-border);
+.search-form .public-button {
   white-space: nowrap;
-}
-
-.search-button {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-  color: #fff;
-}
-
-.search-button:hover:not(:disabled) {
-  background: var(--color-primary-hover);
-}
-
-.search-button:disabled,
-.secondary-button:disabled {
-  opacity: 0.75;
-  cursor: wait;
-}
-
-.secondary-button {
-  background: var(--color-bg-surface);
-  color: var(--color-primary);
-}
-
-.secondary-button:hover:not(:disabled) {
-  border-color: var(--color-accent);
-  background: var(--color-accent-soft);
 }
 
 .project-results {
@@ -535,7 +489,8 @@ async function loadMore() {
   overflow-wrap: anywhere;
 }
 
-.clear-button {
+.clear-button,
+.clear-button:hover {
   border: 0;
   background: transparent;
   color: var(--color-text-secondary);
@@ -615,6 +570,27 @@ async function loadMore() {
   background: var(--color-bg-light);
 }
 
+.compare-tray-enter-active,
+.compare-tray-leave-active {
+  transition-property: opacity, transform;
+}
+
+.compare-tray-enter-active {
+  transition-duration: var(--public-motion-medium);
+  transition-timing-function: var(--ease-out);
+}
+
+.compare-tray-leave-active {
+  transition-duration: var(--public-motion-fast);
+  transition-timing-function: var(--ease-in);
+}
+
+.compare-tray-enter-from,
+.compare-tray-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
 .compare-selection {
   display: flex;
   flex: 1 1 16rem;
@@ -629,25 +605,14 @@ async function loadMore() {
 }
 
 .compare-chip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  justify-content: flex-start;
   max-width: 100%;
-  min-height: 44px;
   padding: 4px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: var(--color-bg-surface);
-  color: var(--color-text);
+  border-radius: var(--radius-full);
   font: inherit;
   text-align: start;
+  white-space: normal;
   overflow-wrap: anywhere;
-  cursor: pointer;
-}
-
-.compare-chip:hover {
-  border-color: var(--color-accent-dark);
-  background: var(--color-accent-soft);
 }
 
 .compare-link {
@@ -679,6 +644,16 @@ async function loadMore() {
   }
 }
 
+@media (max-width: 767px) {
+  .compare-tray-enter-active {
+    transition-duration: var(--public-motion-slow);
+  }
+
+  .compare-tray-leave-active {
+    transition-duration: var(--public-motion-medium);
+  }
+}
+
 @media (max-width: 600px) {
   .search-form {
     width: 100%;
@@ -687,10 +662,6 @@ async function loadMore() {
 
   .search-field:first-child {
     grid-column: 1 / -1;
-  }
-
-  .search-field input {
-    font-size: 16px;
   }
 
   .projects-grid {

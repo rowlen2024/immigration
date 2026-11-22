@@ -12,6 +12,7 @@
         </template>
       </NuxtLink>
 
+      <div class="nav-backdrop" :class="{ 'nav-open': mobileMenuOpen }" aria-hidden="true" @click="closeMobileMenu()" />
       <nav
         id="site-navigation"
         ref="navigation"
@@ -19,11 +20,11 @@
         aria-label="主导航"
         tabindex="-1"
         :class="{ 'nav-open': mobileMenuOpen }"
+        :inert="isDesktopViewport === false && !mobileMenuOpen"
         @touchstart="onNavTouchStart"
         @touchend="onNavTouchEnd"
         @click.self="closeMobileMenu()"
         @keydown.esc="closeMobileMenu()"
-        @transitionend.self="focusOpenedMenu"
       >
         <ul class="nav-list">
           <li
@@ -72,103 +73,116 @@
             </button>
 
             <!-- Mega Panel (desktop) -->
-            <div
-              v-if="item.children?.length"
-              v-show="activeMega === item.id"
-              class="mega-panel"
-              @mouseenter="openMega(item.id)"
-            >
-              <div class="mega-arrow"></div>
-              <div class="mega-inner">
-                <div class="mega-glow-orb"></div>
-                <div class="mega-list">
-                  <div
-                    v-for="child in item.children"
-                    :key="child.id"
-                    class="mega-card"
-                    :class="{ 'has-subs': child.children?.length }"
-                  >
-                    <NuxtLink v-if="child.link" :to="child.link" class="mega-card-title is-link">
-                      <span class="mega-card-title-bar"></span>
-                      {{ child.label }}
-                    </NuxtLink>
-                    <span v-else class="mega-card-title">
-                      <span class="mega-card-title-bar"></span>
-                      {{ child.label }}
-                    </span>
+            <Transition name="mega">
+              <div
+                v-if="item.children?.length"
+                v-show="activeMega === item.id"
+                class="mega-panel"
+                :inert="activeMega !== item.id"
+                @mouseenter="openMega(item.id)"
+              >
+                <div class="mega-arrow"></div>
+                <div class="mega-inner">
+                  <div class="mega-glow-orb"></div>
+                  <div class="mega-list">
+                    <div
+                      v-for="child in item.children"
+                      :key="child.id"
+                      class="mega-card"
+                      :class="{ 'has-subs': child.children?.length }"
+                    >
+                      <NuxtLink v-if="child.link" :to="child.link" class="mega-card-title is-link">
+                        <span class="mega-card-title-bar"></span>
+                        {{ child.label }}
+                      </NuxtLink>
+                      <span v-else class="mega-card-title">
+                        <span class="mega-card-title-bar"></span>
+                        {{ child.label }}
+                      </span>
 
-                    <ul v-if="child.children?.length" class="mega-subitems">
-                      <li v-for="sub in child.children" :key="sub.id">
-                        <NuxtLink v-if="sub.link" :to="sub.link" class="mega-subitem is-link">
-                          <span class="mega-subitem-dot"></span>{{ sub.label }}
-                        </NuxtLink>
-                        <span v-else class="mega-subitem">
-                          <span class="mega-subitem-dot"></span>{{ sub.label }}
-                        </span>
-                      </li>
-                    </ul>
+                      <ul v-if="child.children?.length" class="mega-subitems">
+                        <li v-for="sub in child.children" :key="sub.id">
+                          <NuxtLink v-if="sub.link" :to="sub.link" class="mega-subitem is-link">
+                            <span class="mega-subitem-dot"></span>{{ sub.label }}
+                          </NuxtLink>
+                          <span v-else class="mega-subitem">
+                            <span class="mega-subitem-dot"></span>{{ sub.label }}
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
+                  <div class="mega-bottom-line"></div>
                 </div>
-                <div class="mega-bottom-line"></div>
               </div>
-            </div>
+            </Transition>
 
             <!-- Mobile: expanded children -->
-            <Transition name="mobile-sub">
-              <ul
-                v-if="item.children?.length && mobileExpanded.has(item.id)"
-                class="mobile-submenu"
-              >
-              <li
-                v-for="child in item.children"
-                :key="child.id"
-                class="mobile-subitem"
-                :class="{ 'has-subs': child.children?.length }"
-              >
-                <div class="mobile-subitem-row">
-                  <NuxtLink
-                    v-if="child.link"
-                    :to="child.link"
-                    class="mobile-subitem-label is-link"
-                    @click="mobileMenuOpen = false"
+            <div
+              v-if="item.children?.length"
+              class="mobile-submenu public-disclosure"
+              :class="{ 'is-expanded': mobileExpanded.has(item.id) }"
+              :inert="!mobileExpanded.has(item.id)"
+            >
+              <div class="public-disclosure__body">
+                <ul class="mobile-submenu-items">
+                  <li
+                    v-for="child in item.children"
+                    :key="child.id"
+                    class="mobile-subitem"
+                    :class="{ 'has-subs': child.children?.length }"
                   >
-                    {{ child.label }}
-                  </NuxtLink>
-                  <span v-else class="mobile-subitem-label">{{ child.label }}</span>
+                    <div class="mobile-subitem-row">
+                      <NuxtLink
+                        v-if="child.link"
+                        :to="child.link"
+                        class="mobile-subitem-label is-link"
+                        @click="mobileMenuOpen = false"
+                      >
+                        {{ child.label }}
+                      </NuxtLink>
+                      <span v-else class="mobile-subitem-label">{{ child.label }}</span>
 
-                  <button
-                    v-if="child.children?.length && !child.regionGroup"
-                    class="mobile-expand-toggle sub"
-                    @click.stop="toggleMobileExpand(child.id)"
-                    :aria-label="mobileExpanded.has(child.id) ? '收起' : '展开'"
-                  >
-                    <span :class="{ rotated: mobileExpanded.has(child.id) }">
-                      <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                    </span>
-                  </button>
-                </div>
+                      <button
+                        v-if="child.children?.length && !child.regionGroup"
+                        type="button"
+                        class="mobile-expand-toggle sub"
+                        @click.stop="toggleMobileExpand(child.id)"
+                        :aria-expanded="mobileExpanded.has(child.id)"
+                        :aria-label="mobileExpanded.has(child.id) ? '收起' : '展开'"
+                      >
+                        <span :class="{ rotated: mobileExpanded.has(child.id) }">
+                          <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                        </span>
+                      </button>
+                    </div>
 
-                <Transition name="mobile-sub">
-                  <ul
-                    v-if="child.children?.length && (child.regionGroup || mobileExpanded.has(child.id))"
-                    class="mobile-submenu l3"
-                  >
-                  <li v-for="sub in child.children" :key="sub.id" class="mobile-subitem l3">
-                    <NuxtLink
-                      v-if="sub.link"
-                      :to="sub.link"
-                      class="mobile-subitem-label l3 is-link"
-                      @click="mobileMenuOpen = false"
+                    <div
+                      v-if="child.children?.length"
+                      class="mobile-submenu l3 public-disclosure"
+                      :class="{ 'is-expanded': child.regionGroup || mobileExpanded.has(child.id) }"
+                      :inert="!child.regionGroup && !mobileExpanded.has(child.id)"
                     >
-                      {{ sub.label }}
-                    </NuxtLink>
-                    <span v-else class="mobile-subitem-label l3">{{ sub.label }}</span>
+                      <div class="public-disclosure__body">
+                        <ul class="mobile-submenu-items">
+                          <li v-for="sub in child.children" :key="sub.id" class="mobile-subitem l3">
+                            <NuxtLink
+                              v-if="sub.link"
+                              :to="sub.link"
+                              class="mobile-subitem-label l3 is-link"
+                              @click="mobileMenuOpen = false"
+                            >
+                              {{ sub.label }}
+                            </NuxtLink>
+                            <span v-else class="mobile-subitem-label l3">{{ sub.label }}</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
                   </li>
                 </ul>
-                </Transition>
-              </li>
-            </ul>
-            </Transition>
+              </div>
+            </div>
           </li>
         </ul>
       </nav>
@@ -279,6 +293,7 @@ const groupedNavItems = computed(() => {
 const mobileMenuOpen = useState('public-mobile-menu-open', () => false);
 const navigation = ref<HTMLElement | null>(null);
 const menuButton = ref<HTMLButtonElement | null>(null);
+const isDesktopViewport = ref<boolean | null>(null);
 const activeMega = ref<number | null>(null);
 const mobileExpanded = ref<Set<MenuItem['id']>>(new Set());
 const isScrolled = ref(false);
@@ -291,6 +306,7 @@ onMounted(() => {
   if (import.meta.client) {
     window.addEventListener('scroll', onScroll, { passive: true });
     desktopViewport = window.matchMedia('(min-width: 1280px)');
+    isDesktopViewport.value = desktopViewport.matches;
     desktopViewport.addEventListener('change', onNavigationViewportChange);
     isScrolled.value = window.scrollY > 50;
   }
@@ -300,6 +316,7 @@ onUnmounted(() => {
   if (import.meta.client) {
     window.removeEventListener('scroll', onScroll);
     desktopViewport?.removeEventListener('change', onNavigationViewportChange);
+    if (megaCloseTimer) clearTimeout(megaCloseTimer);
     mobileMenuOpen.value = false;
   }
 });
@@ -329,13 +346,20 @@ const openMega = (id: number) => {
 };
 
 const closeMega = () => {
+  if (megaCloseTimer) clearTimeout(megaCloseTimer);
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    activeMega.value = null;
+    megaCloseTimer = null;
+    return;
+  }
   megaCloseTimer = setTimeout(() => {
     activeMega.value = null;
+    megaCloseTimer = null;
   }, 150);
 };
 
 const onNavPointerEnter = (item: Omit<NavItem, 'children'> & { children: MenuItem[] }, event: PointerEvent) => {
-  if (event.pointerType === 'mouse' && item.children?.length) openMega(item.id);
+  if (isDesktopViewport.value && event.pointerType === 'mouse' && item.children?.length) openMega(item.id);
 };
 
 const onNavPointerLeave = (id: number, event: PointerEvent) => {
@@ -367,11 +391,11 @@ const toggleMobileMenu = () => {
   }
   activeMega.value = null;
   mobileMenuOpen.value = true;
-  requestAnimationFrame(focusOpenedMenu);
+  nextTick(focusOpenedMenu);
 };
 
 function focusOpenedMenu() {
-  if (!mobileMenuOpen.value || document.activeElement !== menuButton.value) return;
+  if (!mobileMenuOpen.value) return;
   const nav = navigation.value;
   const firstLink = nav?.querySelector<HTMLElement>('.nav-item > :is(a, button).nav-link');
   const target = firstLink && getComputedStyle(firstLink).visibility === 'visible' ? firstLink : nav;
@@ -385,6 +409,7 @@ function closeMobileMenu() {
 }
 
 function onNavigationViewportChange(event: MediaQueryListEvent) {
+  isDesktopViewport.value = event.matches;
   if (event.matches) mobileMenuOpen.value = false;
   activeMega.value = null;
 }
@@ -449,9 +474,9 @@ watch(() => route.path, () => {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(200, 150, 62, 0.12);
-  transition: height var(--duration-slow) var(--ease-out),
-              background var(--duration-slow) var(--ease-out),
-              box-shadow var(--duration-slow) var(--ease-out);
+  transition: height var(--public-motion-medium) var(--ease-out),
+              border-color var(--public-motion-fast) var(--ease-out),
+              box-shadow var(--public-motion-fast) var(--ease-out);
 }
 
 .site-header.is-scrolled {
@@ -535,6 +560,11 @@ watch(() => route.path, () => {
   justify-self: center;
 }
 
+.nav-backdrop,
+.mobile-submenu {
+  display: none;
+}
+
 .nav-list {
   display: flex;
   align-items: center;
@@ -563,8 +593,8 @@ watch(() => route.path, () => {
   font-size: 14px;
   font-weight: 500;
   border-radius: 6px;
-  transition: color var(--duration-fast) var(--ease-out),
-              background-color var(--duration-fast) var(--ease-out);
+  transition: color var(--public-motion-fast) var(--ease-out),
+              background-color var(--public-motion-fast) var(--ease-out);
   white-space: nowrap;
   cursor: default;
   position: relative;
@@ -582,6 +612,12 @@ a.nav-link, .nav-label-toggle {
 
 .nav-label-toggle .chevron-icon {
   opacity: 0.65;
+  transition: transform var(--public-motion-medium) var(--ease-in);
+}
+
+.nav-label-toggle[aria-expanded='true'] .chevron-icon {
+  transform: rotate(180deg);
+  transition-timing-function: var(--ease-out);
 }
 
 .nav-link:hover {
@@ -602,14 +638,7 @@ a.nav-link, .nav-label-toggle {
   height: 2px;
   background: var(--accent);
   border-radius: 1px;
-  transform: translateX(-50%) scaleX(0);
-  animation: activeLineIn var(--duration-normal) var(--ease-spring) forwards;
-}
-
-@keyframes activeLineIn {
-  to {
-    transform: translateX(-50%) scaleX(1);
-  }
+  transform: translateX(-50%);
 }
 
 .chevron-icon {
@@ -626,19 +655,23 @@ a.nav-link, .nav-label-toggle {
   padding-top: 12px;
   min-width: 520px;
   max-width: 680px;
-  animation: megaIn var(--duration-normal) var(--ease-out);
   z-index: 101;
 }
 
-@keyframes megaIn {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
+.mega-enter-active {
+  transition: opacity var(--public-motion-medium) var(--ease-out),
+              transform var(--public-motion-medium) var(--ease-out);
+}
+
+.mega-leave-active {
+  transition: opacity var(--public-motion-fast) var(--ease-in),
+              transform var(--public-motion-fast) var(--ease-in);
+}
+
+.mega-enter-from,
+.mega-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -6px);
 }
 
 /* Arrow pointer */
@@ -690,8 +723,8 @@ a.nav-link, .nav-label-toggle {
   border: 1px solid rgba(200, 150, 62, 0.08);
   border-radius: 10px;
   padding: 10px 12px 8px;
-  transition: border-color var(--duration-fast) var(--ease-out),
-              box-shadow var(--duration-fast) var(--ease-out);
+  transition: border-color var(--public-motion-fast) var(--ease-out),
+              box-shadow var(--public-motion-fast) var(--ease-out);
 }
 
 .mega-card:hover {
@@ -707,7 +740,7 @@ a.nav-link, .nav-label-toggle {
   font-weight: 600;
   color: var(--text-primary);
   padding: 4px 0 6px;
-  transition: color var(--duration-fast) var(--ease-out);
+  transition: color var(--public-motion-fast) var(--ease-out);
 }
 
 .mega-card-title-bar {
@@ -716,7 +749,7 @@ a.nav-link, .nav-label-toggle {
   background: rgba(200, 150, 62, 0.3);
   border-radius: 2px;
   flex-shrink: 0;
-  transition: background var(--duration-fast) var(--ease-out);
+  transition: background-color var(--public-motion-fast) var(--ease-out);
 }
 
 .mega-card-title.is-link {
@@ -748,7 +781,8 @@ a.nav-link, .nav-label-toggle {
   color: var(--text-secondary);
   padding: 6px 10px 6px 11px;
   border-radius: 6px;
-  transition: all var(--duration-fast) var(--ease-out);
+  transition: color var(--public-motion-fast) var(--ease-out),
+              background-color var(--public-motion-fast) var(--ease-out);
   cursor: default;
 }
 
@@ -759,7 +793,6 @@ a.nav-link, .nav-label-toggle {
 .mega-subitem.is-link:hover {
   background-color: rgba(200, 150, 62, 0.06);
   color: var(--primary);
-  transform: translateX(4px);
 }
 
 .mega-subitem-dot {
@@ -769,13 +802,11 @@ a.nav-link, .nav-label-toggle {
   border-radius: 50%;
   margin-right: 8px;
   flex-shrink: 0;
-  transition: all var(--duration-fast) var(--ease-out);
+  transition: background-color var(--public-motion-fast) var(--ease-out);
 }
 
 .mega-subitem.is-link:hover .mega-subitem-dot {
   background: var(--accent);
-  width: 6px;
-  height: 6px;
 }
 
 /* Bottom decorative line */
@@ -811,7 +842,8 @@ a.nav-link, .nav-label-toggle {
   white-space: nowrap;
   letter-spacing: 0.3px;
   box-shadow: 0 2px 12px rgba(200, 150, 62, 0.25);
-  transition: all var(--duration-fast) var(--ease-out);
+  transition: color var(--public-motion-fast) var(--ease-out),
+              box-shadow var(--public-motion-fast) var(--ease-out);
   flex-shrink: 0;
 }
 
@@ -822,7 +854,6 @@ a.nav-link, .nav-label-toggle {
 }
 
 .header-cta:hover {
-  transform: translateY(-2px);
   box-shadow: 0 4px 20px rgba(200, 150, 62, 0.4);
 }
 
@@ -844,7 +875,13 @@ a.nav-link, .nav-label-toggle {
   height: 2.5px;
   background-color: var(--bg-white);
   border-radius: 1px;
-  transition: all 0.3s ease;
+  transition: transform var(--public-motion-medium) var(--ease-in),
+              opacity var(--public-motion-medium) var(--ease-in);
+}
+
+.hamburger.active .hamburger-bar {
+  transition-duration: var(--public-motion-slow);
+  transition-timing-function: var(--ease-out);
 }
 
 /* ==================== Mobile expand toggle ==================== */
@@ -856,7 +893,7 @@ a.nav-link, .nav-label-toggle {
   color: rgba(255, 255, 255, 0.65);
   padding: 4px 8px;
   cursor: pointer;
-  transition: color var(--duration-fast) var(--ease-out);
+  transition: color var(--public-motion-fast) var(--ease-out);
 }
 
 .mobile-expand-toggle:hover {
@@ -866,11 +903,12 @@ a.nav-link, .nav-label-toggle {
 .mobile-expand-toggle span {
   display: inline-flex;
   align-items: center;
-  transition: transform var(--duration-normal) var(--ease-out);
+  transition: transform var(--public-motion-medium) var(--ease-in);
 }
 
 .mobile-expand-toggle span.rotated {
   transform: rotate(180deg);
+  transition-timing-function: var(--ease-out);
 }
 
 @media (min-width: 1280px) {
@@ -887,6 +925,11 @@ a.nav-link, .nav-label-toggle {
     height: 36px;
     margin-left: -6px;
     flex-shrink: 0;
+  }
+
+  .nav-expand-toggle span:not(.rotated),
+  .nav-label-toggle[aria-expanded='false'] .chevron-icon {
+    transition-duration: var(--public-motion-fast);
   }
 }
 
@@ -919,6 +962,10 @@ a.nav-link, .nav-label-toggle {
 /* ==================== Collapsed Navigation ==================== */
 
 @media (max-width: 1279px) {
+  .site-header {
+    z-index: 1003;
+  }
+
   .header-container {
     grid-template-columns: minmax(0, 1fr) auto;
   }
@@ -961,6 +1008,7 @@ a.nav-link, .nav-label-toggle {
     transform: rotate(-45deg) translate(5px, -5px);
   }
 
+  .nav-backdrop,
   .header-nav {
     position: fixed;
     top: 0;
@@ -968,6 +1016,24 @@ a.nav-link, .nav-label-toggle {
     width: 100%;
     height: 100vh;
     height: 100dvh;
+  }
+
+  .nav-backdrop {
+    display: block;
+    z-index: 99;
+    background: rgba(10, 20, 37, 0.35);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--public-motion-medium) var(--ease-in);
+  }
+
+  .nav-backdrop.nav-open {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity var(--public-motion-slow) var(--ease-out);
+  }
+
+  .header-nav {
     background: rgba(10, 20, 37, 0.92);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
@@ -977,7 +1043,8 @@ a.nav-link, .nav-label-toggle {
     padding-top: 80px;
     visibility: hidden;
     transform: translateX(100%);
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--public-motion-medium) var(--ease-in),
+                visibility 0s var(--public-motion-medium);
     z-index: 100;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -986,6 +1053,8 @@ a.nav-link, .nav-label-toggle {
   .header-nav.nav-open {
     visibility: visible;
     transform: translateX(0);
+    transition: transform var(--public-motion-slow) var(--ease-out),
+                visibility 0s;
   }
 
   /* Mobile gold accent line at top of nav overlay */
@@ -1057,34 +1126,20 @@ a.nav-link, .nav-label-toggle {
   }
 
   .mobile-submenu {
+    display: grid;
     width: 100%;
-    padding: 4px 0 8px;
     background: rgba(255, 255, 255, 0.03);
     border-radius: 0 0 8px 8px;
     border-left: 1px solid rgba(200, 150, 62, 0.15);
     margin-left: 12px;
-    overflow: hidden;
   }
 
-  /* Transition: mobile submenu expand/collapse */
-  .mobile-sub-enter-active,
-  .mobile-sub-leave-active {
-    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, padding 0.3s ease;
-    overflow: hidden;
+  .mobile-submenu-items {
+    padding: 4px 0 8px;
   }
 
-  .mobile-sub-enter-from,
-  .mobile-sub-leave-to {
-    max-height: 0 !important;
-    opacity: 0;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-  }
-
-  .mobile-sub-enter-to,
-  .mobile-sub-leave-from {
-    max-height: 800px;
-    opacity: 1;
+  .mobile-submenu.l3 > .public-disclosure__body > .mobile-submenu-items {
+    padding: 0 0 6px 20px;
   }
 
   .mobile-subitem {
@@ -1105,7 +1160,7 @@ a.nav-link, .nav-label-toggle {
     font-size: 15px;
     text-align: left;
     width: 100%;
-    transition: color 0.15s ease;
+    transition: color var(--public-motion-fast) var(--ease-out);
   }
 
   .mobile-subitem-label.is-link:active {
@@ -1121,7 +1176,6 @@ a.nav-link, .nav-label-toggle {
   }
 
   .mobile-submenu.l3 {
-    padding: 0 0 6px 20px;
     margin-left: 0;
     background: rgba(255, 255, 255, 0.015);
     border-left: 1px solid rgba(200, 150, 62, 0.08);
@@ -1161,7 +1215,6 @@ a.nav-link, .nav-label-toggle {
   }
 
   .header-cta:hover {
-    transform: none;
     box-shadow: none;
     color: var(--accent-light);
   }
@@ -1169,6 +1222,15 @@ a.nav-link, .nav-label-toggle {
   .header-cta-icon {
     width: 20px;
     height: 20px;
+  }
+}
+
+@media (max-width: 1279px) and (prefers-reduced-motion: reduce) {
+  .header-nav,
+  .header-nav.nav-open,
+  .nav-backdrop,
+  .nav-backdrop.nav-open {
+    transition: none;
   }
 }
 </style>

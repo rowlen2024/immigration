@@ -12,7 +12,7 @@
         :images="heroImages"
       >
         <div class="category-actions">
-          <a v-if="projects.length" href="#category-projects" class="category-jump">
+          <a v-if="projects.length" href="#category-projects" class="public-button public-button--gold">
             查看本类项目
             <span aria-hidden="true">↓</span>
           </a>
@@ -31,10 +31,7 @@
                 </div>
                 <label v-if="showRegionFilter" class="category-region">
                   <span>国家或地区</span>
-                  <select v-model="selectedRegion" class="public-select" name="category-region">
-                    <option value="">全部地区</option>
-                    <option v-for="region in regions" :key="region" :value="region">{{ region }}</option>
-                  </select>
+                  <PublicSelect v-model="selectedRegion" :options="regionSelectOptions" name="category-region" />
                 </label>
               </div>
             </template>
@@ -50,12 +47,12 @@
               />
             </div>
             <div v-if="visibleProjects.length < filteredProjects.length" class="category-more">
-              <button type="button" class="category-directory-link" @click="showMore">查看更多项目</button>
+              <button type="button" class="public-button" @click="showMore">查看更多项目</button>
             </div>
           </template>
           <div v-else class="category-state">
             <p>该类目暂无已发布项目。</p>
-            <NuxtLink to="/projects" class="category-directory-link">查看全部移民项目</NuxtLink>
+            <NuxtLink to="/projects" class="public-button">查看全部移民项目</NuxtLink>
           </div>
         </section>
 
@@ -74,7 +71,7 @@
             <h2>想缩小选择范围？</h2>
             <p>和顾问聊聊你的目的地与家庭规划。</p>
           </div>
-          <NuxtLink to="/contact" class="category-consultation-link">咨询顾问 <span aria-hidden="true">→</span></NuxtLink>
+          <NuxtLink to="/contact" class="public-button public-button--dark">咨询顾问 <span aria-hidden="true">→</span></NuxtLink>
         </aside>
       </div>
     </template>
@@ -82,7 +79,7 @@
     <div v-else class="container category-content">
       <div class="category-state" role="status">
         <p>类目信息加载失败。</p>
-        <button type="button" class="category-directory-link" @click="refresh()">重试</button>
+        <button type="button" class="public-button" @click="refresh()">重试</button>
       </div>
     </div>
   </div>
@@ -193,6 +190,10 @@ const projects = computed(() => category.value?.projects ?? [])
 const regions = computed(() => Array.from(new Set(projects.value.map(project => projectRegionLabel(project.country))))
   .filter(Boolean)
   .sort((first, second) => first.localeCompare(second, 'zh-CN')))
+const regionSelectOptions = computed(() => [
+  { value: '', label: '全部地区' },
+  ...regions.value.map(region => ({ value: region, label: region })),
+])
 const showRegionFilter = computed(() => projects.value.length >= 4 && regions.value.length > 1)
 const selectedRegion = computed({
   get() {
@@ -271,36 +272,13 @@ useSeo({
   gap: 12px 20px;
 }
 
-.category-jump,
-.category-hero-contact,
-.category-consultation-link,
-.category-directory-link {
+.category-hero-contact {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   min-height: 44px;
-  gap: 8px;
+  color: #fff;
   font-size: var(--text-sm);
   font-weight: 600;
-}
-
-.category-jump,
-.category-consultation-link {
-  border-radius: var(--radius-sm);
-  padding: 0 16px;
-}
-
-.category-jump {
-  background: var(--gradient-gold);
-  color: var(--color-primary-dark);
-}
-
-.category-jump:hover {
-  background: var(--gradient-gold-hover);
-}
-
-.category-hero-contact {
-  color: #fff;
 }
 
 .category-hero-contact:hover {
@@ -365,23 +343,8 @@ useSeo({
   color: var(--color-text-muted);
 }
 
-.category-state .category-directory-link {
+.category-state .public-button {
   margin-top: 8px;
-}
-
-.category-directory-link {
-  padding: 0 16px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-bg-surface);
-  color: var(--color-text);
-  font-family: inherit;
-  cursor: pointer;
-}
-
-.category-directory-link:hover {
-  border-color: var(--color-accent);
-  background: var(--color-accent-soft);
 }
 
 .category-guide {
@@ -425,15 +388,6 @@ useSeo({
 
 .category-consultation p {
   color: var(--color-text-secondary);
-}
-
-.category-consultation-link {
-  background: var(--color-primary);
-  color: #fff;
-}
-
-.category-consultation-link:hover {
-  background: var(--color-primary-hover);
 }
 
 @media (max-width: 1000px) {

@@ -27,80 +27,60 @@
     </a>
 
     <!-- 微信 -->
-    <div v-if="siteConfig?.contact_wechat" class="cs-item" @click="showMobileQR('wechat')">
+    <button v-if="siteConfig?.contact_wechat" type="button" class="cs-item" aria-haspopup="dialog" @click="showMobileQR('wechat', $event)">
       <span class="cs-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
       </span>
       <span class="cs-label">微信</span>
-      <div class="cs-tooltip">
-        <div class="tt-name">微信扫码咨询</div>
+      <span class="cs-tooltip">
+        <span class="tt-name">微信扫码咨询</span>
         <img :src="siteConfig.contact_wechat" alt="微信二维码" class="tt-qr-img" loading="lazy" />
-      </div>
-    </div>
+      </span>
+    </button>
 
     <!-- 公众号 -->
-    <div v-if="siteConfig?.contact_wechat_mp" class="cs-item" @click="showMobileQR('mp')">
+    <button v-if="siteConfig?.contact_wechat_mp" type="button" class="cs-item" aria-haspopup="dialog" @click="showMobileQR('mp', $event)">
       <span class="cs-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
       </span>
       <span class="cs-label">公众号</span>
-      <div class="cs-tooltip">
-        <div class="tt-name">关注微信公众号</div>
-        <div class="tt-desc">获取最新移民资讯</div>
+      <span class="cs-tooltip">
+        <span class="tt-name">关注微信公众号</span>
+        <span class="tt-desc">获取最新移民资讯</span>
         <img :src="siteConfig.contact_wechat_mp" alt="微信公众号二维码" class="tt-qr-img" loading="lazy" />
-      </div>
-    </div>
+      </span>
+    </button>
 
     <!-- 视频号 -->
-    <div v-if="siteConfig?.contact_wechat_video" class="cs-item" @click="showMobileQR('video')">
+    <button v-if="siteConfig?.contact_wechat_video" type="button" class="cs-item" aria-haspopup="dialog" @click="showMobileQR('video', $event)">
       <span class="cs-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
       </span>
       <span class="cs-label">视频号</span>
-      <div class="cs-tooltip">
-        <div class="tt-name">关注企业视频号</div>
-        <div class="tt-desc">了解更多移民动态</div>
+      <span class="cs-tooltip">
+        <span class="tt-name">关注企业视频号</span>
+        <span class="tt-desc">了解更多移民动态</span>
         <img :src="siteConfig.contact_wechat_video" alt="企业视频号二维码" class="tt-qr-img" loading="lazy" />
+      </span>
+    </button>
+
+    <PublicDialog :id="contactDialogId" v-model:open="contactDialogOpen" :title="contactPopup?.title ?? ''">
+      <div v-if="contactPopup" class="contact-popup-content">
+        <img v-if="contactPopup.type === 'qr'" :src="contactPopup.image" :alt="contactPopup.title" class="mobile-qr-img" loading="lazy" />
+        <div v-else class="mobile-phone-number">{{ contactPopup.number }}</div>
+        <div v-if="contactPopup.description" class="mobile-qr-desc">{{ contactPopup.description }}</div>
+        <div v-if="contactPopup.type === 'phone'" class="mobile-phone-actions">
+          <a :href="`tel:${contactPopup.number}`" class="public-button public-button--gold">立即拨打</a>
+          <button type="button" class="public-button" :class="{ copied: copied === contactPopup.number }" @click="contactPopup?.type === 'phone' && copy(contactPopup.number)">{{ copied === contactPopup.number ? '已复制' : '复制号码' }}</button>
+        </div>
+        <p v-if="contactPopup.type === 'phone' && copyFailed" class="mobile-qr-desc" role="status">复制失败，请手动复制号码。</p>
       </div>
-    </div>
-
-    <!-- Mobile overlay: QR / Phone popup -->
-    <Teleport to="body">
-      <Transition name="mobile-popup">
-        <div v-if="mobileQrVisible" class="mobile-qr-overlay" @click.self="mobileQrVisible = false">
-          <div class="mobile-qr-card">
-            <button class="mobile-qr-close" @click="mobileQrVisible = false" aria-label="关闭">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-            <div class="mobile-qr-title">{{ mobileQrTitle }}</div>
-            <img v-if="mobileQrSrc" :src="mobileQrSrc" :alt="mobileQrTitle" class="mobile-qr-img" loading="lazy" />
-            <div v-if="mobileQrDesc" class="mobile-qr-desc">{{ mobileQrDesc }}</div>
-          </div>
-        </div>
-      </Transition>
-
-      <Transition name="mobile-popup">
-        <div v-if="mobilePhoneVisible" class="mobile-qr-overlay" @click.self="mobilePhoneVisible = false">
-          <div class="mobile-qr-card mobile-phone-card">
-            <button class="mobile-qr-close" @click="mobilePhoneVisible = false" aria-label="关闭">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-            <div class="mobile-qr-title">{{ mobilePhoneLabel }}</div>
-            <div class="mobile-phone-number">{{ mobilePhoneNumber }}</div>
-            <div v-if="mobilePhoneDesc" class="mobile-qr-desc">{{ mobilePhoneDesc }}</div>
-            <div class="mobile-phone-actions">
-              <a :href="`tel:${mobilePhoneNumber}`" class="mobile-phone-btn call">立即拨打</a>
-              <button class="mobile-phone-btn copy" :class="{ copied: copied === mobilePhoneNumber }" @click="copy(mobilePhoneNumber)">{{ copied === mobilePhoneNumber ? '已复制' : '复制号码' }}</button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
+    </PublicDialog>
 
     <!-- 回到顶部 -->
-    <div class="cs-scroll-top" :class="{ visible: showScrollTop }" @click="scrollToTop">
+    <button type="button" class="cs-scroll-top" :class="{ visible: showScrollTop }" aria-label="回到顶部" @click="scrollToTop">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-    </div>
+    </button>
   </div>
 </template>
 
@@ -109,46 +89,41 @@ const { siteConfig } = useMygoSiteConfig();
 
 const showScrollTop = ref(false);
 const copied = ref<string | null>(null);
+const copyFailed = ref(false);
 let copyTimer: ReturnType<typeof setTimeout> | null = null;
 
-const mobileQrVisible = ref(false);
-const mobileQrSrc = ref('');
-const mobileQrTitle = ref('');
-const mobileQrDesc = ref('');
+type ContactPopup = {
+  title: string;
+  description?: string;
+} & ({ type: 'qr'; image: string } | { type: 'phone'; number: string });
 
-const mobilePhoneVisible = ref(false);
-const mobilePhoneNumber = ref('');
-const mobilePhoneLabel = ref('');
-const mobilePhoneDesc = ref('');
+const contactDialogId = useId();
+const contactDialogOpen = ref(false);
+const contactPopup = ref<ContactPopup | null>(null);
 
-const showMobileQR = (type: string) => {
+function openContactDialog(popup: ContactPopup, event: MouseEvent) {
+  (event.currentTarget as HTMLElement).focus({ preventScroll: true });
+  contactPopup.value = popup;
+  copyFailed.value = false;
+  contactDialogOpen.value = true;
+}
+
+const showMobileQR = (type: 'wechat' | 'mp' | 'video', event: MouseEvent) => {
   const c = siteConfig.value;
   if (!c) return;
-  mobileQrDesc.value = '';
-  if (type === 'wechat' && c.contact_wechat) {
-    mobileQrSrc.value = c.contact_wechat;
-    mobileQrTitle.value = '微信扫码咨询';
-  } else if (type === 'mp' && c.contact_wechat_mp) {
-    mobileQrSrc.value = c.contact_wechat_mp;
-    mobileQrTitle.value = '关注微信公众号';
-    mobileQrDesc.value = '获取最新移民资讯';
-  } else if (type === 'video' && c.contact_wechat_video) {
-    mobileQrSrc.value = c.contact_wechat_video;
-    mobileQrTitle.value = '关注企业视频号';
-    mobileQrDesc.value = '了解更多移民动态';
-  }
-  if (mobileQrSrc.value) {
-    mobileQrVisible.value = true;
-  }
+  const channels = {
+    wechat: { image: c.contact_wechat, title: '微信扫码咨询' },
+    mp: { image: c.contact_wechat_mp, title: '关注微信公众号', description: '获取最新移民资讯' },
+    video: { image: c.contact_wechat_video, title: '关注企业视频号', description: '了解更多移民动态' },
+  };
+  const { image, ...details } = channels[type];
+  if (image) openContactDialog({ type: 'qr', image, ...details }, event);
 };
 
-const showMobilePhone = (number: string, label: string, desc: string, event?: MouseEvent) => {
+const showMobilePhone = (number: string, label: string, desc: string, event: MouseEvent) => {
   if (window.innerWidth > 890) return;
-  event?.preventDefault();
-  mobilePhoneNumber.value = number;
-  mobilePhoneLabel.value = label;
-  mobilePhoneDesc.value = desc;
-  mobilePhoneVisible.value = true;
+  event.preventDefault();
+  openContactDialog({ type: 'phone', number, title: label, description: desc }, event);
 };
 
 const hasContent = computed(() => {
@@ -157,19 +132,35 @@ const hasContent = computed(() => {
 });
 
 async function copy(text: string) {
+  copyFailed.value = false;
   try {
     await navigator.clipboard.writeText(text);
   } catch {
+    const focused = document.activeElement;
     const ta = document.createElement('textarea');
     ta.value = text;
+    ta.readOnly = true;
     ta.style.position = 'fixed';
     ta.style.left = '-9999px';
     ta.style.top = '-9999px';
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
+    const host = focused?.closest('dialog[open]') ?? document.body;
+    host.appendChild(ta);
+    let success = false;
+    try {
+      ta.focus({ preventScroll: true });
+      ta.select();
+      success = document.activeElement === ta && document.execCommand('copy');
+    } catch {
+      success = false;
+    } finally {
+      ta.remove();
+      if (focused instanceof HTMLElement) focused.focus({ preventScroll: true });
+    }
+    if (!success) {
+      copied.value = null;
+      copyFailed.value = true;
+      return;
+    }
   }
   copied.value = text;
   if (copyTimer) clearTimeout(copyTimer);
@@ -177,7 +168,8 @@ async function copy(text: string) {
 }
 
 function scrollToTop() {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({ top: 0, behavior: reduceMotion ? 'instant' : 'smooth' });
 }
 
 function onScroll() {
@@ -218,7 +210,8 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  transition: all .3s;
+  font-family: inherit;
+  transition: background-color var(--public-motion-fast) var(--ease-out);
 }
 
 .cs-item:hover {
@@ -233,7 +226,7 @@ onUnmounted(() => {
 .cs-icon {
   line-height: 1;
   color: var(--accent);
-  transition: color .3s;
+  transition: color var(--public-motion-fast) var(--ease-out);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -243,7 +236,7 @@ onUnmounted(() => {
   font-size: 11px;
   color: var(--accent);
   margin-top: 3px;
-  transition: color .3s;
+  transition: color var(--public-motion-fast) var(--ease-out);
   font-weight: 500;
 }
 
@@ -259,6 +252,7 @@ onUnmounted(() => {
 /* Tooltip */
 .cs-tooltip {
   visibility: hidden;
+  opacity: 0;
   position: absolute;
   right: calc(100% + 8px);
   top: 50%;
@@ -270,6 +264,8 @@ onUnmounted(() => {
   box-shadow: 0 8px 30px rgba(0, 0, 0, .12);
   text-align: center;
   z-index: 1001;
+  transition: opacity var(--public-motion-fast) var(--ease-in),
+              visibility 0s var(--public-motion-fast);
 }
 
 .cs-tooltip::after {
@@ -282,8 +278,12 @@ onUnmounted(() => {
   border-left: 6px solid #fff;
 }
 
-.cs-item:hover .cs-tooltip {
+.cs-item:hover .cs-tooltip,
+.cs-item:focus-visible .cs-tooltip {
   visibility: visible;
+  opacity: 1;
+  transition: opacity var(--public-motion-fast) var(--ease-out),
+              visibility 0s;
 }
 
 .tt-phone {
@@ -296,6 +296,7 @@ onUnmounted(() => {
 }
 
 .tt-desc {
+  display: block;
   font-size: 12px;
   color: #8e8ea0;
   margin-bottom: 8px;
@@ -309,7 +310,8 @@ onUnmounted(() => {
   border: 1px solid var(--accent);
   border-radius: 4px;
   cursor: pointer;
-  transition: all .2s;
+  transition: color var(--public-motion-fast) var(--ease-out),
+              background-color var(--public-motion-fast) var(--ease-out);
 }
 
 .tt-copy:hover {
@@ -323,6 +325,7 @@ onUnmounted(() => {
 }
 
 .tt-name {
+  display: block;
   font-size: 14px;
   font-weight: 600;
   color: #15294D;
@@ -353,7 +356,9 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   color: #8e8ea0;
-  transition: all .3s;
+  transition: color var(--public-motion-fast) var(--ease-out),
+              background-color var(--public-motion-fast) var(--ease-out),
+              border-color var(--public-motion-fast) var(--ease-out);
 }
 
 .cs-scroll-top.visible {
@@ -447,97 +452,8 @@ onUnmounted(() => {
   }
 }
 
-/* Mobile QR/Phone overlay */
-.mobile-qr-overlay {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100dvh;
-  background: rgba(0, 0, 0, 0.55);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-
-/* Overlay transition */
-.mobile-popup-enter-active {
-  transition: opacity 0.25s ease;
-}
-.mobile-popup-leave-active {
-  transition: opacity 0.2s ease;
-}
-.mobile-popup-enter-from,
-.mobile-popup-leave-to {
-  opacity: 0;
-}
-
-.mobile-popup-enter-active .mobile-qr-card {
-  animation: popupSlideIn 0.3s ease;
-}
-.mobile-popup-leave-active .mobile-qr-card {
-  animation: popupSlideOut 0.2s ease;
-}
-
-@keyframes popupSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes popupSlideOut {
-  from {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(10px) scale(0.98);
-  }
-}
-
-.mobile-qr-card {
-  position: relative;
-  background: #fff;
-  border-radius: 16px;
-  padding: 36px 28px 28px;
+.contact-popup-content {
   text-align: center;
-  width: min(300px, calc(100vw - 48px));
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25);
-}
-
-.mobile-qr-close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  color: #999;
-  cursor: pointer;
-  border-radius: 50%;
-}
-
-.mobile-qr-close:hover {
-  background: #f0f0f0;
-}
-
-.mobile-qr-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #15294D;
-  margin-bottom: 16px;
 }
 
 .mobile-qr-desc {
@@ -573,39 +489,21 @@ onUnmounted(() => {
   margin-top: 20px;
 }
 
-.mobile-phone-btn {
+.mobile-phone-actions > .public-button {
   flex: 1;
-  padding: 12px 0;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: center;
-  border: none;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  min-width: 0;
 }
 
-.mobile-phone-btn.call {
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  color: #fff;
+.mobile-phone-actions .copied {
+  background-color: var(--color-accent-soft);
+  transition: none;
 }
 
-.mobile-phone-btn.call:hover {
-  filter: brightness(1.1);
-}
-
-.mobile-phone-btn.copy {
-  background: #fff;
-  color: var(--accent);
-  border: 1.5px solid var(--accent);
-}
-
-.mobile-phone-btn.copy.copied {
-  background: var(--accent);
-  color: #fff;
+@media (prefers-reduced-motion: reduce) {
+  .cs-tooltip,
+  .cs-item:hover .cs-tooltip,
+  .cs-item:focus-visible .cs-tooltip {
+    transition: none;
+  }
 }
 </style>

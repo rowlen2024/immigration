@@ -47,33 +47,31 @@
         </div>
         <div class="detail-directory hidden-desktop">
           <label for="project-detail-directory">页面目录</label>
-          <select
+          <PublicSelect
             id="project-detail-directory"
             v-model="activeTab"
-            class="public-select"
+            :options="directoryOptions"
             @change="scrollToSection(activeTab)"
-          >
-            <option v-for="tab in tabs" :key="tab.id" :value="tab.id">{{ tab.label }}</option>
-          </select>
+          />
         </div>
       </div>
     </nav>
 
     <div v-if="!pending && !error" ref="projectActionsRef" class="project-detail-actions">
       <div class="container project-detail-actions-inner">
-        <NuxtLink v-if="isFull" :to="compareTo" class="project-compare-action">
+        <NuxtLink v-if="isFull" :to="compareTo" class="public-button project-compare-action">
           对比已选项目
         </NuxtLink>
         <button
           v-else
           type="button"
-          class="project-compare-action"
+          class="public-button project-compare-action"
           :aria-pressed="isSelected(slug)"
           @click="toggleCurrentProject"
         >
           {{ isSelected(slug) ? '已加入对比' : '加入对比' }}
         </button>
-        <NuxtLink :to="consultationLink" class="project-contact-action">
+        <NuxtLink :to="consultationLink" class="public-button public-button--gold">
           咨询此项目 <span aria-hidden="true">→</span>
         </NuxtLink>
       </div>
@@ -191,7 +189,7 @@
           <div v-if="comparePending" class="compare-loading" role="status">加载对比数据...</div>
           <div v-else-if="compareError" class="compare-error">
             <p role="alert">{{ compareError }}</p>
-            <button type="button" class="project-compare-action" @click="refreshCompare()">重试</button>
+            <button type="button" class="public-button" @click="refreshCompare()">重试</button>
           </div>
           <template v-else-if="compareData">
             <!-- 桌面端：传统表格 -->
@@ -228,16 +226,12 @@
               @touchend="onCompareTouchEnd"
             >
               <div class="cmp-switch-select-wrap">
-                <label for="project-compare-dimension">对比维度</label>
-                <select
+                <label for="project-compare-dimension" class="public-control-label">对比维度</label>
+                <PublicSelect
                   id="project-compare-dimension"
                   v-model="compareIdx"
-                  class="public-select"
-                >
-                  <option v-for="(crow, ci) in compareData.rows" :key="crow.label" :value="ci">
-                    {{ crow.label }}{{ hasDiff(crow) ? ' · 有差异' : '' }}
-                  </option>
-                </select>
+                  :options="compareDimensionOptions"
+                />
               </div>
               <!-- 当前属性内容 -->
               <div class="cmp-switch-body">
@@ -503,6 +497,10 @@ const compareError = computed(() =>
 // 移动端 — 当前对比属性索引 + 触摸滑动
 const compareIdx = ref(0);
 const compareCardRef = ref<HTMLElement | null>(null);
+const compareDimensionOptions = computed(() => (compareData.value?.rows ?? []).map((row, index) => ({
+  value: index,
+  label: hasDiff(row) ? `${row.label} · 有差异` : row.label,
+})));
 let compareTouchStartX = 0;
 
 function goCompareIdx(idx: number) {
@@ -668,6 +666,7 @@ const tabs = computed<TabItem[]>(() => {
   return items;
 });
 
+const directoryOptions = computed(() => tabs.value.map(tab => ({ value: tab.id, label: tab.label })));
 const activeTab = ref('overview');
 const tabNavRef = ref<HTMLElement | null>(null);
 
@@ -854,38 +853,9 @@ function cleanupSectionObserver() {
   padding-block: 10px;
 }
 
-.project-compare-action,
-.project-contact-action {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--bg-white);
-  color: var(--color-primary);
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  text-align: center;
-  cursor: pointer;
-}
-
-.project-compare-action:hover,
 .project-compare-action[aria-pressed='true'] {
   border-color: var(--color-accent-dark);
   background: var(--color-accent-soft);
-}
-
-.project-contact-action {
-  border-color: transparent;
-  background: var(--gradient-gold);
-}
-
-.project-contact-action:hover {
-  background: var(--gradient-gold-hover);
 }
 
 .detail-hero {
@@ -1187,7 +1157,7 @@ function cleanupSectionObserver() {
   color: #c62828;
 }
 
-.compare-error .project-compare-action {
+.compare-error .public-button {
   margin-top: 8px;
 }
 
@@ -1219,18 +1189,6 @@ function cleanupSectionObserver() {
 /* ── 下拉选择器 ── */
 .cmp-switch-select-wrap {
   margin-bottom: 16px;
-}
-
-.cmp-switch-select-wrap label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-primary);
-}
-
-.cmp-switch-select-wrap select {
-  width: 100%;
 }
 
 /* ── 内容区 ── */

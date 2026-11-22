@@ -2,12 +2,15 @@
   <dialog
     :id="id"
     ref="dialog"
-    class="public-picker-dialog"
+    class="public-dialog"
+    :class="{ 'public-dialog--anchored': anchor !== undefined }"
+    :inert="!open"
     :aria-labelledby="`${id}-title`"
     :aria-describedby="subtitle ? `${id}-description` : undefined"
     :style="position"
+    @cancel.prevent="open = false"
     @click.self="closeOnBackdrop"
-    @close="open = false"
+    @close="syncClosed"
     @keydown="navigateOptions"
   >
     <div class="picker-header">
@@ -15,22 +18,26 @@
         <h2 :id="`${id}-title`">{{ title }}</h2>
         <p v-if="subtitle" :id="`${id}-description`">{{ subtitle }}</p>
       </div>
-      <button type="button" class="picker-close" aria-label="关闭项目选择" @click="open = false">×</button>
+      <button type="button" class="public-button dialog-close" :aria-label="closeLabel" @click="open = false">×</button>
     </div>
-    <slot />
+    <slot v-if="open || wasOpened" />
   </dialog>
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   id: string
   title: string
   subtitle?: string
-  anchor: HTMLElement | null
-}>()
+  anchor?: HTMLElement | null
+  closeLabel?: string
+}>(), {
+  closeLabel: '关闭',
+})
 
 const open = defineModel<boolean>('open', { required: true })
 const dialog = ref<HTMLDialogElement | null>(null)
+const wasOpened = ref(false)
 const position = ref<Record<string, string>>({})
 
 function placeDialog() {
@@ -38,8 +45,9 @@ function placeDialog() {
   if (!anchor) return
 
   const gutter = 12
-  const width = Math.min(Math.max(anchor.width, 332), window.innerWidth - gutter * 2)
-  const left = Math.max(gutter, Math.min(anchor.left, window.innerWidth - width - gutter))
+  const viewportWidth = document.body.clientWidth
+  const width = Math.min(Math.max(anchor.width, 332), viewportWidth - gutter * 2)
+  const left = Math.max(gutter, Math.min(anchor.left, viewportWidth - width - gutter))
   const spaceBelow = window.innerHeight - anchor.bottom - gutter * 2
   const spaceAbove = anchor.top - gutter * 2
   const showBelow = spaceBelow >= 360 || spaceBelow >= spaceAbove
@@ -57,11 +65,17 @@ watch(open, (value) => {
   if (!dialog.value) return
   if (value && !dialog.value.open) {
     placeDialog()
+    wasOpened.value = true
+    props.anchor?.focus({ preventScroll: true })
     dialog.value.showModal()
   } else if (!value && dialog.value.open) {
     dialog.value.close()
   }
 }, { flush: 'post' })
+
+function syncClosed() {
+  if (!dialog.value?.open) open.value = false
+}
 
 function closeOnBackdrop(event: MouseEvent) {
   const bounds = dialog.value?.getBoundingClientRect()
@@ -99,13 +113,16 @@ function placeDialogWhenOpen() {
 </script>
 
 <style scoped>
-.public-picker-dialog {
+.public-dialog {
+  --dialog-enter-duration: var(--public-motion-slow);
+  --dialog-leave-duration: var(--public-motion-medium);
+  --dialog-offset-y: 12px;
   position: fixed;
-  inset: var(--picker-top) auto var(--picker-bottom) var(--picker-left);
-  width: var(--picker-width);
-  max-width: none;
-  max-height: var(--picker-max-height);
-  margin: 0;
+  inset: 0;
+  width: min(420px, calc(100% - 32px));
+  max-height: 85vh;
+  max-height: 85dvh;
+  margin: auto;
   padding: 14px;
   border: 1px solid var(--public-control-border);
   border-radius: var(--radius-lg);
@@ -113,15 +130,31 @@ function placeDialogWhenOpen() {
   color: var(--color-text);
   box-shadow: var(--shadow-lg);
   overscroll-behavior: contain;
-}
-
-.public-picker-dialog[open] {
-  display: flex;
   flex-direction: column;
   gap: 10px;
+  visibility: visible;
 }
 
-.public-picker-dialog::backdrop {
+.public-dialog--anchored {
+  --dialog-enter-duration: var(--public-motion-medium);
+  --dialog-leave-duration: var(--public-motion-fast);
+  --dialog-offset-y: -4px;
+  inset: var(--picker-top) auto var(--picker-bottom) var(--picker-left);
+  width: var(--picker-width);
+  max-width: none;
+  max-height: var(--picker-max-height);
+  margin: 0;
+}
+
+.public-dialog[open] {
+  display: flex;
+}
+
+.public-dialog::backdrop {
+  background: rgba(15, 27, 45, 0.55);
+}
+
+.public-dialog--anchored::backdrop {
   background: transparent;
 }
 
@@ -143,19 +176,17 @@ function placeDialogWhenOpen() {
   font-size: 13px;
 }
 
-.picker-close {
+.dialog-close {
   flex: 0 0 44px;
-  min-height: 44px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--bg-white);
-  color: var(--color-text);
-  font: 22px/1 var(--font-sans);
-  cursor: pointer;
+  padding: 0;
+  font-size: 22px;
 }
 
 @media (max-width: 767px) {
-  .public-picker-dialog {
+  .public-dialog--anchored {
+    --dialog-enter-duration: var(--public-motion-slow);
+    --dialog-leave-duration: var(--public-motion-medium);
+    --dialog-offset-y: 12px;
     inset: auto 0 0;
     width: 100%;
     max-height: 78vh;
@@ -164,7 +195,7 @@ function placeDialogWhenOpen() {
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   }
 
-  .public-picker-dialog::before {
+  .public-dialog--anchored::before {
     content: '';
     flex: 0 0 4px;
     width: 28px;
@@ -173,8 +204,62 @@ function placeDialogWhenOpen() {
     background: var(--public-control-border);
   }
 
-  .public-picker-dialog::backdrop {
+  .public-dialog--anchored::backdrop {
     background: rgba(15, 27, 45, 0.55);
+  }
+}
+
+@supports (overlay: auto) and (transition-behavior: allow-discrete) {
+  .public-dialog {
+    opacity: 0;
+    transform: translateY(var(--dialog-offset-y));
+    transition: opacity var(--dialog-leave-duration) var(--ease-in),
+                transform var(--dialog-leave-duration) var(--ease-in),
+                display var(--dialog-leave-duration) allow-discrete,
+                overlay var(--dialog-leave-duration) allow-discrete;
+  }
+
+  .public-dialog[open] {
+    opacity: 1;
+    transform: translateY(0);
+    transition-timing-function: var(--ease-out);
+    transition-duration: var(--dialog-enter-duration);
+  }
+
+  .public-dialog:not([open]),
+  .public-dialog:not([open])::backdrop {
+    pointer-events: none;
+  }
+
+  .public-dialog::backdrop {
+    opacity: 0;
+    transition: opacity var(--dialog-leave-duration) var(--ease-in),
+                display var(--dialog-leave-duration) allow-discrete,
+                overlay var(--dialog-leave-duration) allow-discrete;
+  }
+
+  .public-dialog[open]::backdrop {
+    opacity: 1;
+    transition-timing-function: var(--ease-out);
+    transition-duration: var(--dialog-enter-duration);
+  }
+
+  @starting-style {
+    .public-dialog[open] {
+      opacity: 0;
+      transform: translateY(var(--dialog-offset-y));
+    }
+
+    .public-dialog[open]::backdrop {
+      opacity: 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-dialog,
+  .public-dialog::backdrop {
+    transition: none !important;
   }
 }
 </style>

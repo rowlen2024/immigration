@@ -12,15 +12,19 @@
         :aria-expanded="activeIndex === index"
       >
         <span>{{ faq.question }}</span>
-        <span class="faq-icon">
+        <span class="faq-icon" aria-hidden="true">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
         </span>
       </button>
-      <div class="faq-answer-wrapper" :ref="(el) => setAnswerRef(el as HTMLElement, index)">
-        <div class="faq-answer">
+      <div
+        class="public-disclosure"
+        :class="{ 'is-expanded': activeIndex === index }"
+        :aria-hidden="activeIndex !== index"
+      >
+        <div class="public-disclosure__body faq-answer">
           <p>{{ faq.answer }}</p>
         </div>
       </div>
@@ -39,48 +43,9 @@ defineProps<{
 }>();
 
 const activeIndex = ref<number | null>(null);
-const answerRefs = ref<Record<number, HTMLElement | null>>({});
-
-const setAnswerRef = (el: HTMLElement | null, index: number) => {
-  if (el) answerRefs.value[index] = el;
-};
 
 const toggle = (index: number) => {
-  if (activeIndex.value === index) {
-    // 收起当前
-    const wrapper = answerRefs.value[index];
-    if (wrapper) {
-      // 先锁定当前高度，再过渡到 0
-      wrapper.style.transition = 'none';
-      wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
-      wrapper.offsetHeight; // 强制回流
-      wrapper.style.transition = '';
-      wrapper.style.maxHeight = '0px';
-    }
-    activeIndex.value = null;
-  } else {
-    // 收起上一个
-    if (activeIndex.value !== null) {
-      const prev = answerRefs.value[activeIndex.value];
-      if (prev) {
-        prev.style.transition = 'none';
-        prev.style.maxHeight = prev.scrollHeight + 'px';
-        prev.offsetHeight;
-        prev.style.transition = '';
-        prev.style.maxHeight = '0px';
-      }
-    }
-    // 展开当前
-    activeIndex.value = index;
-    const wrapper = answerRefs.value[index];
-    if (wrapper) {
-      wrapper.style.transition = 'none';
-      wrapper.style.maxHeight = '0px';
-      wrapper.offsetHeight;
-      wrapper.style.transition = '';
-      wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
-    }
-  }
+  activeIndex.value = activeIndex.value === index ? null : index;
 };
 </script>
 
@@ -108,7 +73,7 @@ const toggle = (index: number) => {
   color: var(--color-text);
   text-align: left;
   gap: 16px;
-  transition: color var(--duration-fast) var(--ease-out);
+  transition: color var(--public-motion-fast) var(--ease-out);
 }
 
 .faq-question:hover {
@@ -120,35 +85,23 @@ const toggle = (index: number) => {
   display: flex;
   align-items: center;
   color: var(--color-accent);
-  transition: transform var(--duration-normal) var(--ease-out);
+  transition: transform var(--public-motion-medium) var(--ease-in),
+              color var(--public-motion-medium) var(--ease-in);
 }
 
 .faq-item.active .faq-icon {
   transform: rotate(45deg);
   color: var(--color-primary);
-}
-
-.faq-answer-wrapper {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 400ms var(--ease-out);
-  will-change: max-height;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .faq-answer-wrapper {
-    transition: none;
-  }
-
-  .faq-icon {
-    transition: none;
-  }
+  transition-timing-function: var(--ease-out);
 }
 
 .faq-answer {
-  padding-bottom: 20px;
   font-size: 15px;
   color: var(--color-text-secondary);
   line-height: 1.8;
+}
+
+.faq-answer p {
+  padding-bottom: 20px;
 }
 </style>

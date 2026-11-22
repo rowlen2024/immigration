@@ -74,7 +74,11 @@ useHead(() => {
   margin-top: var(--header-height);
 }
 
-html:has(.public-layout.navigation-open) {
+html:has(.public-layout) {
+  scrollbar-gutter: stable;
+}
+
+html:has(.public-layout.navigation-open, .public-dialog[open]) {
   overflow: hidden;
 }
 
@@ -83,7 +87,7 @@ html:has(.public-layout.navigation-open) {
     --public-contact-bar-height: calc(49px + env(safe-area-inset-bottom, 0px));
   }
 
-  .public-layout:is(.navigation-open, :has(.public-picker-dialog[open])) .contact-sidebar {
+  .public-layout:is(.navigation-open, :has(.public-dialog[open])) .contact-sidebar:not(:has(.public-dialog[open])) {
     visibility: hidden;
   }
 }
@@ -97,7 +101,7 @@ html:has(.public-layout.navigation-open) {
     display: none;
   }
 
-  .public-layout:is(.navigation-open, :has(.public-picker-dialog[open])) :is(.project-detail-actions, .compare-consult-bar) {
+  .public-layout:is(.navigation-open, :has(.public-dialog[open])) :is(.project-detail-actions, .compare-consult-bar) {
     visibility: hidden;
   }
 }
