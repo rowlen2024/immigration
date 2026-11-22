@@ -95,6 +95,139 @@ img {
   border-radius: 2px;
 }
 
+:root {
+  --public-control-border: #9aaabb;
+  --public-control-focus: #805817;
+}
+
+.public-select,
+.public-picker-search {
+  min-height: 44px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--public-control-border);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-white);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.public-select {
+  appearance: none;
+  padding-inline-end: 36px;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+                    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: right 19px center, right 14px center;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  text-align: start;
+  cursor: pointer;
+}
+
+.public-select:disabled {
+  background-color: var(--bg-light);
+  color: var(--color-text-secondary);
+  cursor: default;
+}
+
+.public-select:focus-visible,
+.public-select[aria-expanded='true'],
+.public-picker-search:focus-visible,
+.public-picker-option:focus-visible {
+  border-color: var(--public-control-focus);
+  outline: 2px solid var(--public-control-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
+.public-select-placeholder,
+.public-picker-search::placeholder {
+  color: var(--color-text-secondary);
+}
+
+.public-control-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.public-picker-options {
+  min-height: 0;
+  padding: 3px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.public-picker-options::-webkit-scrollbar-track {
+  background: var(--bg-light);
+}
+
+.public-picker-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-bottom-color: var(--color-border);
+  background: var(--bg-white);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 14px;
+  text-align: start;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.public-picker-option:hover {
+  background: var(--bg-light);
+}
+
+.public-picker-option[aria-pressed='true'] {
+  background: var(--color-accent-soft);
+  font-weight: 700;
+}
+
+.public-picker-empty,
+.public-picker-error {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.public-picker-empty {
+  padding: 12px 0;
+  text-align: center;
+}
+
+.public-picker-error button {
+  min-height: 44px;
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+html:has(.public-picker-dialog[open]) {
+  overflow: hidden;
+}
+
+@media (forced-colors: active) {
+  select.public-select {
+    appearance: auto;
+    padding-inline-end: 12px;
+    background-image: none;
+  }
+}
+
 /* ===== Text selection ===== */
 ::selection {
   background-color: rgba(200, 150, 62, 0.2);

@@ -13,11 +13,17 @@
       </NuxtLink>
 
       <nav
+        id="site-navigation"
+        ref="navigation"
         class="header-nav"
+        aria-label="主导航"
+        tabindex="-1"
         :class="{ 'nav-open': mobileMenuOpen }"
         @touchstart="onNavTouchStart"
         @touchend="onNavTouchEnd"
-        @click.self="mobileMenuOpen = false"
+        @click.self="closeMobileMenu()"
+        @keydown.esc="closeMobileMenu()"
+        @transitionend.self="focusOpenedMenu"
       >
         <ul class="nav-list">
           <li
@@ -183,11 +189,15 @@
         </a>
 
         <button
+          ref="menuButton"
           type="button"
           class="hamburger"
           :class="{ active: mobileMenuOpen }"
+          :aria-expanded="mobileMenuOpen"
+          aria-controls="site-navigation"
           @click.stop="toggleMobileMenu"
-          aria-label="Toggle navigation menu"
+          @keydown.esc="closeMobileMenu()"
+          :aria-label="mobileMenuOpen ? '关闭导航菜单' : '打开导航菜单'"
         >
           <span class="hamburger-bar"></span>
           <span class="hamburger-bar"></span>
@@ -266,17 +276,22 @@ const groupedNavItems = computed(() => {
   });
 });
 
-const mobileMenuOpen = ref(false);
+const mobileMenuOpen = useState('public-mobile-menu-open', () => false);
+const navigation = ref<HTMLElement | null>(null);
+const menuButton = ref<HTMLButtonElement | null>(null);
 const activeMega = ref<number | null>(null);
 const mobileExpanded = ref<Set<MenuItem['id']>>(new Set());
 const isScrolled = ref(false);
 
 let megaCloseTimer: ReturnType<typeof setTimeout> | null = null;
 let navTouchStartX = 0;
+let desktopViewport: MediaQueryList | undefined;
 
 onMounted(() => {
   if (import.meta.client) {
     window.addEventListener('scroll', onScroll, { passive: true });
+    desktopViewport = window.matchMedia('(min-width: 1280px)');
+    desktopViewport.addEventListener('change', onNavigationViewportChange);
     isScrolled.value = window.scrollY > 50;
   }
 });
@@ -284,7 +299,8 @@ onMounted(() => {
 onUnmounted(() => {
   if (import.meta.client) {
     window.removeEventListener('scroll', onScroll);
-    document.body.style.overflow = '';
+    desktopViewport?.removeEventListener('change', onNavigationViewportChange);
+    mobileMenuOpen.value = false;
   }
 });
 
@@ -345,8 +361,33 @@ const toggleMobileExpand = (id: MenuItem['id']) => {
 };
 
 const toggleMobileMenu = () => {
-  mobileMenuOpen.value = !mobileMenuOpen.value;
+  if (mobileMenuOpen.value) {
+    closeMobileMenu();
+    return;
+  }
+  activeMega.value = null;
+  mobileMenuOpen.value = true;
+  requestAnimationFrame(focusOpenedMenu);
 };
+
+function focusOpenedMenu() {
+  if (!mobileMenuOpen.value || document.activeElement !== menuButton.value) return;
+  const nav = navigation.value;
+  const firstLink = nav?.querySelector<HTMLElement>('.nav-item > :is(a, button).nav-link');
+  const target = firstLink && getComputedStyle(firstLink).visibility === 'visible' ? firstLink : nav;
+  target?.focus({ preventScroll: true });
+}
+
+function closeMobileMenu() {
+  if (!mobileMenuOpen.value) return;
+  mobileMenuOpen.value = false;
+  menuButton.value?.focus({ preventScroll: true });
+}
+
+function onNavigationViewportChange(event: MediaQueryListEvent) {
+  if (event.matches) mobileMenuOpen.value = false;
+  activeMega.value = null;
+}
 
 const navExpanded = (id: number) => mobileMenuOpen.value
   ? mobileExpanded.value.has(id)
@@ -363,7 +404,10 @@ const toggleNavExpand = (id: number) => {
 };
 
 const onNavEscape = (id: number, event: KeyboardEvent) => {
-  if (!navExpanded(id)) return;
+  if (!navExpanded(id)) {
+    closeMobileMenu();
+    return;
+  }
   toggleNavExpand(id);
   (event.currentTarget as HTMLElement).querySelector<HTMLButtonElement>('.nav-expand-toggle, .nav-label-toggle')?.focus();
 };
@@ -375,15 +419,12 @@ const onNavTouchStart = (e: TouchEvent) => {
 const onNavTouchEnd = (e: TouchEvent) => {
   const diff = e.changedTouches[0].clientX - navTouchStartX;
   if (diff > 60) {
-    mobileMenuOpen.value = false;
+    closeMobileMenu();
   }
 };
 
-watch(mobileMenuOpen, (val) => {
-  if (import.meta.client) {
-    document.body.style.overflow = val ? 'hidden' : '';
-  }
-  if (!val) {
+watch(mobileMenuOpen, (open) => {
+  if (!open) {
     mobileExpanded.value = new Set();
   }
 });
@@ -522,7 +563,8 @@ watch(() => route.path, () => {
   font-size: 14px;
   font-weight: 500;
   border-radius: 6px;
-  transition: all var(--duration-fast) var(--ease-out);
+  transition: color var(--duration-fast) var(--ease-out),
+              background-color var(--duration-fast) var(--ease-out);
   white-space: nowrap;
   cursor: default;
   position: relative;
@@ -933,6 +975,7 @@ a.nav-link, .nav-label-toggle {
     align-items: center;
     justify-content: flex-start;
     padding-top: 80px;
+    visibility: hidden;
     transform: translateX(100%);
     transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 100;
@@ -941,6 +984,7 @@ a.nav-link, .nav-label-toggle {
   }
 
   .header-nav.nav-open {
+    visibility: visible;
     transform: translateX(0);
   }
 

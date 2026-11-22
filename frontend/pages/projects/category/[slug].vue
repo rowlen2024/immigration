@@ -31,7 +31,7 @@
                 </div>
                 <label v-if="showRegionFilter" class="category-region">
                   <span>国家或地区</span>
-                  <select v-model="selectedRegion" name="category-region">
+                  <select v-model="selectedRegion" class="public-select" name="category-region">
                     <option value="">全部地区</option>
                     <option v-for="region in regions" :key="region" :value="region">{{ region }}</option>
                   </select>
@@ -342,15 +342,7 @@ useSeo({
 }
 
 .category-region select {
-  min-height: 44px;
   max-width: 100%;
-  border: 1px solid var(--color-text-muted);
-  border-radius: var(--radius-sm);
-  padding: 0 12px;
-  background-color: var(--color-bg-surface);
-  color: var(--color-text);
-  font-family: inherit;
-  font-size: var(--text-base);
 }
 
 .category-projects {

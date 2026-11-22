@@ -3,7 +3,7 @@
     <ProjectBrowseHero
       :breadcrumbs="breadcrumbs"
       title="移民项目"
-      description="从国家或地区、项目名称或移民方式出发，找到想进一步了解的方案。"
+      description="按地区、名称或项目类型，缩小您的选择范围。"
       :images="heroImages"
     />
 
@@ -26,6 +26,7 @@
                   v-else
                   id="project-country"
                   v-model="draftFilters.country"
+                  class="public-select"
                   :disabled="countryOptionsPending && !countries.length"
                 >
                   <option value="">全部地区</option>
@@ -41,7 +42,7 @@
                   id="project-name"
                   v-model="draftFilters.name"
                   type="search"
-                  placeholder="例如 EB-5"
+                  placeholder="例如 EB-5 或黄金签证"
                 />
               </div>
               <button type="submit" class="search-button" :disabled="searching">
@@ -60,8 +61,9 @@
       :aria-busy="initialLoading || loadingMore"
     >
       <header class="results-heading">
-        <h2 id="project-results-heading">{{ hasAppliedFilters ? '查找结果' : '全部项目' }}</h2>
+        <h2 id="project-results-heading" tabindex="-1">{{ hasAppliedFilters ? '查找结果' : '全部项目' }}</h2>
         <span v-if="hasLoaded" class="result-count" role="status">{{ totalCount }} 个项目</span>
+        <span v-if="items.length" class="compare-hint">选择 2 个项目进行对比</span>
       </header>
 
       <div v-if="hasAppliedFilters" class="applied-filters">
@@ -78,18 +80,50 @@
       </div>
 
       <div v-else-if="items.length" ref="grid" class="projects-grid">
-        <ProjectCard
+        <article
           v-for="(project, index) in items"
           :key="project.slug"
-          v-bind="project"
-          :image-variant="index"
-        />
+          class="project-result"
+        >
+          <ProjectCard v-bind="project" :image-variant="index" class="result-card" />
+          <label class="compare-choice">
+            <input
+              :id="`compare-choice-${project.slug}`"
+              type="checkbox"
+              :checked="isSelected(project.slug)"
+              :disabled="isFull && !isSelected(project.slug)"
+              :aria-label="`加入对比：${project.title}`"
+              @change="toggle({ slug: project.slug, title: project.title })"
+            />
+            {{ isSelected(project.slug) ? '已加入对比' : '加入对比' }}
+          </label>
+        </article>
       </div>
 
       <div v-else class="empty-state">
         <p>{{ hasAppliedFilters ? '没有找到符合条件的项目' : '暂无移民项目' }}</p>
         <p v-if="hasAppliedFilters">可以更换地区或项目名称再试。</p>
       </div>
+
+      <aside v-if="selection.length" class="compare-tray" aria-label="项目对比">
+        <strong role="status">已选 {{ selection.length }} 个项目</strong>
+        <ul class="compare-selection" aria-label="已选项目">
+          <li v-for="project in selection" :key="project.slug">
+            <button
+              type="button"
+              class="compare-chip"
+              :aria-label="`移除 ${project.title}`"
+              @click="removeComparisonChoice(project.slug)"
+            >
+              {{ project.title }} <span aria-hidden="true">×</span>
+            </button>
+          </li>
+        </ul>
+        <NuxtLink v-if="isFull" :to="compareTo" class="search-button compare-link">
+          去对比 <span aria-hidden="true">→</span>
+        </NuxtLink>
+        <span v-else class="compare-hint">再选 1 个项目</span>
+      </aside>
 
       <div v-if="hasMore" class="more-projects">
         <p v-if="loadError" role="status">{{ loadError }}</p>
@@ -168,6 +202,7 @@ const results = ref<HTMLElement | null>(null)
 const grid = ref<HTMLElement | null>(null)
 const searchForm = ref<HTMLFormElement | null>(null)
 const hasAppliedFilters = computed(() => Boolean(appliedFilters.country || appliedFilters.name))
+const { selection, isSelected, isFull, toggle, remove, compareTo } = useProjectComparison()
 let requestToken = 0
 let requestController: AbortController | undefined
 
@@ -329,6 +364,15 @@ function resetSearch() {
     ?.focus({ preventScroll: true })
 }
 
+async function removeComparisonChoice(slug: string) {
+  remove(slug)
+  await nextTick()
+  const choice = document.getElementById(`compare-choice-${slug}`)
+    ?? results.value?.querySelector<HTMLElement>('.compare-chip')
+    ?? document.getElementById('project-results-heading')
+  choice?.focus()
+}
+
 async function loadMore() {
   if (loadingMore.value || searching.value || !hasMore.value) return
   const token = requestToken
@@ -348,7 +392,7 @@ async function loadMore() {
     page.value = nextPage
     if (nextItems.length) {
       await nextTick()
-      const firstNewCard = grid.value?.children[previousLength] as HTMLElement | undefined
+      const firstNewCard = grid.value?.children[previousLength]?.querySelector<HTMLAnchorElement>('a')
       firstNewCard?.focus({ preventScroll: true })
     }
   } catch {
@@ -368,7 +412,7 @@ async function loadMore() {
 
 .search-form {
   display: grid;
-  grid-template-columns: minmax(110px, 0.85fr) minmax(140px, 1.15fr) auto;
+  grid-template-columns: clamp(110px, 20vw, 236px) minmax(0, 1fr) auto;
   align-items: end;
   gap: 8px;
   min-width: 0;
@@ -388,14 +432,13 @@ async function loadMore() {
   font-weight: 600;
 }
 
-.search-field input,
-.search-field select {
+.search-field input {
   width: 100%;
   min-width: 0;
   min-height: 44px;
   padding: 8px 10px;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--color-bg-surface);
   color: var(--color-text);
   font: inherit;
@@ -471,9 +514,14 @@ async function loadMore() {
   font-size: var(--text-xl);
 }
 
-.result-count {
+.result-count,
+.compare-hint {
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
+}
+
+.results-heading .compare-hint {
+  margin-inline-start: auto;
 }
 
 .applied-filters {
@@ -499,6 +547,111 @@ async function loadMore() {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: clamp(14px, 2vw, 24px);
+}
+
+.project-result {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.project-result:hover,
+.project-result:focus-within {
+  border-color: var(--color-accent-dark);
+}
+
+.result-card,
+.result-card:hover {
+  flex: 1;
+  height: auto;
+  border: 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: none;
+  transform: none;
+}
+
+.compare-choice {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  gap: 8px;
+  min-height: 44px;
+  margin-inline: 20px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.compare-choice:has(input:disabled) {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.compare-choice input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+  cursor: inherit;
+}
+
+.compare-tray {
+  position: sticky;
+  bottom: var(--public-contact-bar-height);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 20px;
+  padding: 12px clamp(12px, 2vw, 20px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+}
+
+.compare-selection {
+  display: flex;
+  flex: 1 1 16rem;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.compare-selection li {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.compare-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 4px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.compare-chip:hover {
+  border-color: var(--color-accent-dark);
+  background: var(--color-accent-soft);
+}
+
+.compare-link {
+  margin-inline-start: auto;
 }
 
 .empty-state,
@@ -536,13 +689,17 @@ async function loadMore() {
     grid-column: 1 / -1;
   }
 
-  .search-field input,
-  .search-field select {
+  .search-field input {
     font-size: 16px;
   }
 
   .projects-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .results-heading .compare-hint {
+    flex-basis: 100%;
+    margin-inline-start: 0;
   }
 }
 </style>

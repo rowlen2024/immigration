@@ -49,7 +49,8 @@ export default defineNuxtConfig({
       '/cases': { swr: 300 },
       '/faq': { swr: 300 },
       '/contact': { swr: 300 },
-      '/compare': { swr: 300 },
+      // Comparison selections come from the query, so the payload must stay with each SSR response.
+      '/compare': { swr: false, cache: false },
 
       // Admin — never SSR
       '/admin/**': { ssr: false },

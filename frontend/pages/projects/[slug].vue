@@ -23,19 +23,61 @@
       </div>
     </section>
 
-    <nav v-if="tabs.length > 0" class="tab-nav" ref="tabNavRef">
+    <div v-if="!pending && !error" class="container mobile-quick-facts hidden-desktop">
+      <dl class="detail-facts">
+        <div v-for="fact in mobileFacts" :key="fact.label" class="detail-fact">
+          <dt>{{ fact.label }}</dt>
+          <dd>{{ fact.value }}</dd>
+        </div>
+      </dl>
+    </div>
+
+    <nav ref="tabNavRef" class="tab-nav" aria-label="项目详情目录">
       <div class="container">
-        <div class="tab-nav-scroll">
+        <div class="tab-nav-scroll hidden-mobile">
           <button
             v-for="tab in tabs"
             :key="tab.id"
+            type="button"
             class="tab-btn"
             :class="{ active: activeTab === tab.id }"
+            :aria-current="activeTab === tab.id ? 'location' : undefined"
             @click="scrollToSection(tab.id)"
           >{{ tab.label }}</button>
         </div>
+        <div class="detail-directory hidden-desktop">
+          <label for="project-detail-directory">页面目录</label>
+          <select
+            id="project-detail-directory"
+            v-model="activeTab"
+            class="public-select"
+            @change="scrollToSection(activeTab)"
+          >
+            <option v-for="tab in tabs" :key="tab.id" :value="tab.id">{{ tab.label }}</option>
+          </select>
+        </div>
       </div>
     </nav>
+
+    <div v-if="!pending && !error" ref="projectActionsRef" class="project-detail-actions">
+      <div class="container project-detail-actions-inner">
+        <NuxtLink v-if="isFull" :to="compareTo" class="project-compare-action">
+          对比已选项目
+        </NuxtLink>
+        <button
+          v-else
+          type="button"
+          class="project-compare-action"
+          :aria-pressed="isSelected(slug)"
+          @click="toggleCurrentProject"
+        >
+          {{ isSelected(slug) ? '已加入对比' : '加入对比' }}
+        </button>
+        <NuxtLink :to="consultationLink" class="project-contact-action">
+          咨询此项目 <span aria-hidden="true">→</span>
+        </NuxtLink>
+      </div>
+    </div>
 
     <div class="container">
       <div v-if="pending" class="page-skeleton-wrapper"><PageSkeleton variant="detail" /></div>
@@ -43,7 +85,9 @@
       <template v-else>
         <section id="overview" class="detail-section">
           <h2 class="detail-section-title">项目概览</h2>
-          <ProjectQuickFacts :facts="quickFacts" />
+          <div class="hidden-mobile">
+            <ProjectQuickFacts :facts="quickFacts" />
+          </div>
           <div v-if="project.description" class="detail-content" style="margin-top: 24px;">
             <p>{{ project.description }}</p>
           </div>
@@ -144,8 +188,11 @@
           class="detail-section"
         >
           <h2 class="detail-section-title">项目对比</h2>
-          <div v-if="comparePending" class="compare-loading">加载对比数据...</div>
-          <div v-else-if="compareError" class="compare-error">{{ compareError }}</div>
+          <div v-if="comparePending" class="compare-loading" role="status">加载对比数据...</div>
+          <div v-else-if="compareError" class="compare-error">
+            <p role="alert">{{ compareError }}</p>
+            <button type="button" class="project-compare-action" @click="refreshCompare()">重试</button>
+          </div>
           <template v-else-if="compareData">
             <!-- 桌面端：传统表格 -->
             <div class="compare-table-wrap" :class="{ 'hidden-mobile': true }">
@@ -180,29 +227,17 @@
               @touchstart="onCompareTouchStart"
               @touchend="onCompareTouchEnd"
             >
-              <!-- 属性下拉选择 -->
               <div class="cmp-switch-select-wrap">
+                <label for="project-compare-dimension">对比维度</label>
                 <select
+                  id="project-compare-dimension"
                   v-model="compareIdx"
-                  class="cmp-switch-select"
+                  class="public-select"
                 >
                   <option v-for="(crow, ci) in compareData.rows" :key="crow.label" :value="ci">
                     {{ crow.label }}{{ hasDiff(crow) ? ' · 有差异' : '' }}
                   </option>
                 </select>
-                <svg
-                  class="cmp-switch-select-arrow"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
               </div>
               <!-- 当前属性内容 -->
               <div class="cmp-switch-body">
@@ -242,6 +277,7 @@
         <ConsultCTA
           :title="`对${project.title}感兴趣？`"
           description="立即联系我们，专业顾问为您一对一解答"
+          :button-link="consultationLink"
         />
       </template>
     </div>
@@ -258,6 +294,8 @@ import { HOME_BREADCRUMB } from '~/utils/breadcrumb'
 const route = useRoute();
 const slug = computed(() => route.params.slug as string);
 const projectDataKey = computed(() => `public:project:${slug.value}`);
+const consultationLink = computed(() => `/contact?project=${encodeURIComponent(slug.value)}`);
+const { isSelected, isFull, toggle, compareTo } = useProjectComparison();
 
 interface ApiRequirement { label: string; is_required: boolean; }
 interface ApiCostItem { name: string; amount: string; note: string; }
@@ -545,6 +583,17 @@ const quickFacts = computed(() => [
   { label: '办理周期', value: project.value.processing_period },
   { label: '适合人群', value: project.value.target_crowd },
 ]);
+const mobileFacts = computed(() => quickFacts.value.filter((fact) => fact.value));
+
+const projectActionsRef = ref<HTMLElement | null>(null);
+
+async function toggleCurrentProject() {
+  toggle({ slug: slug.value, title: project.value.title });
+  if (isFull.value) {
+    await nextTick();
+    projectActionsRef.value?.querySelector<HTMLAnchorElement>('.project-compare-action')?.focus();
+  }
+}
 
 const requirements = computed(() => project.value.requirements);
 const costTable = computed(() => project.value.cost_table);
@@ -588,9 +637,14 @@ const paginatedFaqs = computed(() => {
 });
 const changeFaqPage = (p: number) => {
   faqPage.value = p;
-  const el = document.getElementById('faqs');
-  if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
+  scrollToSection('faqs');
 };
+
+watch(slug, () => {
+  faqPage.value = 1;
+  compareIdx.value = 0;
+  activeTab.value = 'overview';
+});
 
 interface TabItem {
   id: string;
@@ -621,8 +675,10 @@ function scrollToSection(id: string) {
   const el = document.getElementById(id);
   if (!el) return;
   const navH = tabNavRef.value?.offsetHeight || 0;
-  const top = el.getBoundingClientRect().top + window.scrollY - navH - 64;
-  window.scrollTo({ top, behavior: 'smooth' });
+  const headerH = document.querySelector<HTMLElement>('.site-header')?.offsetHeight || 64;
+  const top = el.getBoundingClientRect().top + window.scrollY - navH - headerH - 8;
+  const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+  window.scrollTo({ top, behavior });
 }
 
 let observer: IntersectionObserver | null = null;
@@ -685,7 +741,7 @@ function setupSectionObserver() {
 watch(activeTab, (id) => {
   nextTick(() => {
     const btn = tabNavRef.value?.querySelector('.tab-btn.active');
-    if (btn) {
+    if (btn?.getClientRects().length) {
       btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
   });
@@ -784,6 +840,52 @@ function cleanupSectionObserver() {
   color: var(--primary);
   border-bottom-color: var(--primary);
   font-weight: 600;
+}
+
+.project-detail-actions {
+  border-bottom: 1px solid var(--color-border);
+  background: var(--bg-white);
+}
+
+.project-detail-actions-inner {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-block: 10px;
+}
+
+.project-compare-action,
+.project-contact-action {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--bg-white);
+  color: var(--color-primary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+
+.project-compare-action:hover,
+.project-compare-action[aria-pressed='true'] {
+  border-color: var(--color-accent-dark);
+  background: var(--color-accent-soft);
+}
+
+.project-contact-action {
+  border-color: transparent;
+  background: var(--gradient-gold);
+}
+
+.project-contact-action:hover {
+  background: var(--gradient-gold-hover);
 }
 
 .detail-hero {
@@ -1085,6 +1187,10 @@ function cleanupSectionObserver() {
   color: #c62828;
 }
 
+.compare-error .project-compare-action {
+  margin-top: 8px;
+}
+
 /* ══════════════════════════════════════════════
    桌面/移动端 显示切换
    ══════════════════════════════════════════════ */
@@ -1112,40 +1218,19 @@ function cleanupSectionObserver() {
 
 /* ── 下拉选择器 ── */
 .cmp-switch-select-wrap {
-  position: relative;
   margin-bottom: 16px;
 }
 
-.cmp-switch-select {
-  width: 100%;
-  padding: 12px 40px 12px 14px;
-  font-size: 15px;
+.cmp-switch-select-wrap label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
   font-weight: 600;
-  font-family: var(--font-sans);
   color: var(--color-primary);
-  background: var(--bg-white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  appearance: none;
-  -webkit-appearance: none;
-  cursor: pointer;
-  min-height: 48px;
-  line-height: 1.4;
 }
 
-.cmp-switch-select:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
-  border-color: var(--accent);
-}
-
-.cmp-switch-select-arrow {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--accent);
-  pointer-events: none;
+.cmp-switch-select-wrap select {
+  width: 100%;
 }
 
 /* ── 内容区 ── */
@@ -1236,20 +1321,100 @@ function cleanupSectionObserver() {
 
 @media (max-width: 767px) {
   .detail-hero {
-    min-height: 280px;
-    padding: 48px 0;
+    min-height: 176px;
+    padding: 24px 0;
+  }
+
+  .detail-hero .container {
+    width: 100%;
   }
 
   .detail-title {
-    font-size: 30px;
+    font-size: 26px;
+    line-height: 1.4;
   }
 
   .detail-summary {
-    font-size: 16px;
+    font-size: 14px;
+  }
+
+  .mobile-quick-facts {
+    padding-top: 16px;
+  }
+
+  .detail-facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .detail-fact {
+    padding: 8px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .detail-fact:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .detail-fact dt {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+  }
+
+  .detail-fact dd {
+    font-size: 14px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .tab-nav::before,
+  .tab-nav::after {
+    display: none;
+  }
+
+  .detail-directory {
+    position: relative;
+    padding-block: 8px;
+  }
+
+  .detail-directory label {
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
+    color: var(--color-primary);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .detail-directory select {
+    width: 100%;
+    padding-inline-start: 90px;
+    text-align-last: right;
+  }
+
+  .project-detail-actions {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 99;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border-top: 1px solid var(--color-border);
+    border-bottom: 0;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .project-detail-actions-inner > * {
+    flex: 1 1 0;
   }
 
   .detail-section {
     padding: 36px 0;
+  }
+
+  #overview {
+    padding-top: 20px;
   }
 
   .detail-section-title {
@@ -1258,17 +1423,8 @@ function cleanupSectionObserver() {
 }
 
 @media (max-width: 374px) {
-  .detail-hero {
-    min-height: 220px;
-    padding: 36px 0;
-  }
-
   .detail-title {
-    font-size: 26px;
-  }
-
-  .detail-summary {
-    font-size: 14px;
+    font-size: 24px;
   }
 }
 

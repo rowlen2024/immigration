@@ -1,10 +1,10 @@
 <template>
-  <div class="public-layout">
+  <div class="public-layout" :class="{ 'navigation-open': mobileMenuOpen }">
     <Header />
-    <main class="main-content">
+    <main class="main-content" :inert="mobileMenuOpen">
       <slot />
     </main>
-    <Footer />
+    <Footer :inert="mobileMenuOpen" />
     <ContactSidebar />
   </div>
 </template>
@@ -13,6 +13,7 @@
 import { buildOrganizationJsonLd, buildWebSiteJsonLd, toJsonLdConfig, toJsonLdScripts } from '~/utils/jsonld'
 
 const { siteConfig } = useMygoSiteConfig()
+const mobileMenuOpen = useState('public-mobile-menu-open', () => false)
 const route = useRoute()
 
 const isPublicPage = computed(() => !route.path.startsWith('/admin'))
@@ -55,19 +56,49 @@ useHead(() => {
     ))
   }
 
-  return { link: links, script: scripts }
+  return { htmlAttrs: { lang: 'zh-CN' }, link: links, script: scripts }
 })
 </script>
 
-<style scoped>
+<style>
 .public-layout {
+  --public-contact-bar-height: 0px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  padding-bottom: var(--public-contact-bar-height);
 }
 
-.main-content {
+.public-layout > .main-content {
   flex: 1;
   margin-top: var(--header-height);
+}
+
+html:has(.public-layout.navigation-open) {
+  overflow: hidden;
+}
+
+@media (max-width: 890px) {
+  .public-layout:has(.contact-sidebar) {
+    --public-contact-bar-height: calc(49px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .public-layout:is(.navigation-open, :has(.public-picker-dialog[open])) .contact-sidebar {
+    visibility: hidden;
+  }
+}
+
+@media (max-width: 767px) {
+  .public-layout:has(.project-detail-actions, .compare-consult-bar) {
+    --public-contact-bar-height: calc(66px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .public-layout:has(.project-detail-actions, .compare-consult-bar) .contact-sidebar {
+    display: none;
+  }
+
+  .public-layout:is(.navigation-open, :has(.public-picker-dialog[open])) :is(.project-detail-actions, .compare-consult-bar) {
+    visibility: hidden;
+  }
 }
 </style>
