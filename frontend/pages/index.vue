@@ -552,7 +552,7 @@ const advantageTitle = computed(() => advantageSection.value?.section_title || '
 const advantageSubtitle = computed(() => advantageSection.value?.section_subtitle || '专业服务，值得信赖');
 
 const sectionTitle = computed(() => showcaseConfig.value?.section_title || '精选移民项目');
-const sectionSubtitle = computed(() => showcaseConfig.value?.section_subtitle || '为您量身定制的最佳移民方案');
+const sectionSubtitle = computed(() => showcaseConfig.value?.section_subtitle || '为您量身定制的移民方案');
 
 interface ProjectCard {
   slug: string;

@@ -38,7 +38,7 @@
             <el-input v-model="projectShowcase.section_title" placeholder="精选移民项目" />
           </el-form-item>
           <el-form-item label="区域副标题">
-            <el-input v-model="projectShowcase.section_subtitle" placeholder="为您量身定制的最佳移民方案" />
+            <el-input v-model="projectShowcase.section_subtitle" placeholder="为您量身定制的移民方案" />
           </el-form-item>
           <el-form-item label="精选项目">
             <div class="featured-area">
